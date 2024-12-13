@@ -39,7 +39,8 @@ public class DeliveryAreaManager : MonoBehaviour
 
     private bool IsDeliveryAreaEmpty()
     {
-        return transform.childCount == 0;
+        // Considero DeliveryPoint all'interno
+        return transform.childCount == 1;
     }
 
     private void GenerateDeliveryObject()

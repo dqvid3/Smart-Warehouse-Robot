@@ -5,8 +5,8 @@ public class WarehouseManager : MonoBehaviour
 {
     // Scaffali
     public GameObject shelvesParent;
-    // Posizione dell'area di spedizione
-    public Transform shippingArea;
+    // Posizione nella zona di consegna dove lasciare l'oggetto    
+    public Transform shippingPoint;
     public GameObject robot;
     private GameObject requestedObject;
 
@@ -20,7 +20,7 @@ public class WarehouseManager : MonoBehaviour
         // Ottengo tutti i figli del genitore "Shelves"
         List<GameObject> shelves = GetChildObjects(shelvesParent);
 
-        // Filtra le shelves per ottenere solo quelle che hanno almeno un figlio
+        // Filtro le shelves per ottenere solo quelle che hanno almeno un figlio
         List<GameObject> validShelves = new();
 
         foreach (GameObject shelf in shelves)
@@ -41,7 +41,7 @@ public class WarehouseManager : MonoBehaviour
             // Seleziono un oggetto casuale dallo scaffale
             requestedObject = objectsOnShelf[Random.Range(0, objectsOnShelf.Count)];
             // Chiedi al robot di prendere l'oggetto
-            robot.GetComponent<RobotController>().PickUpObject(requestedObject, shippingArea.position);
+            robot.GetComponent<RobotController>().PickUpObject(requestedObject, shippingPoint.position);
         }
         else
         {
