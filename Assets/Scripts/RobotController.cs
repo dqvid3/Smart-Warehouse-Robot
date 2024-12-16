@@ -1,64 +1,77 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 public class RobotController : MonoBehaviour
 {
-    // Oggetto da prelevare
+    [SerializeField] private NavMeshAgent agent;
+    private WarehouseManager warehouseManager;
+    private const float DEFAULT_DISTANCE = 1f;
     private GameObject targetObject;
-    // Posizione di destinazione
     private Vector3 targetPosition;
-    // Stato del robot
-    private bool hasObject = false;
-    public float speed = 2f;
+    private bool hasObject;
+    private bool returningToBase;
+    private Vector3 basePosition = new(0, 0.5f, 0);
 
+    private void Start()
+    {
+        warehouseManager = FindFirstObjectByType<WarehouseManager>();
+    }
     public void PickUpObject(GameObject obj, Vector3 destination)
     {
         targetObject = obj;
         targetPosition = destination;
+        hasObject = false;
+        returningToBase = false;
     }
 
-    void Update()
+    private void Update()
     {
         if (targetObject != null && !hasObject)
         {
-            MoveTowards(targetObject.transform.position);
-
-            // Se è vicino all'oggetto, lo preleva
-            if (Vector3.Distance(transform.position, targetObject.transform.position) < 0.5f)
+            agent.SetDestination(targetObject.transform.position);
+            if (IsCloseEnough(targetObject.transform.position, 2.5f))
             {
                 PickUp();
             }
         }
         else if (hasObject)
         {
-            MoveTowards(targetPosition);
-
-            // Se è arrivato alla destinazione, rilascia l'oggetto
-            if (Vector3.Distance(transform.position, targetPosition) < 0.5f)
+            agent.SetDestination(targetPosition);
+            if (IsCloseEnough(targetPosition))
             {
                 DropObject();
             }
         }
+        else if (!hasObject && returningToBase)
+        {
+            agent.SetDestination(basePosition);
+            if (IsCloseEnough(basePosition))
+            {
+                returningToBase = false;
+            }
+        }
     }
 
-    void MoveTowards(Vector3 destination)
+    private bool IsCloseEnough(Vector3 position, float threshold = DEFAULT_DISTANCE)
     {
-        transform.position = Vector3.MoveTowards(transform.position, destination, speed * Time.deltaTime);
+        Debug.Log(Vector3.Distance(transform.position, position));
+        return Vector3.Distance(transform.position, position) < threshold;
     }
 
-    void PickUp()
+    private void PickUp()
     {
-        // Attacca l'oggetto al robot
         targetObject.transform.SetParent(transform);
-        targetObject.transform.localPosition = Vector3.up; // Solleva l'oggetto sopra il robot
+        targetObject.transform.localPosition = Vector3.up;
         hasObject = true;
     }
 
-    void DropObject()
+    private void DropObject()
     {
-        // Rilascia l'oggetto
         targetObject.transform.SetParent(null);
         targetObject.transform.position = targetPosition;
         hasObject = false;
         targetObject = null;
+        warehouseManager.EnableDelivery();
+        returningToBase = true;
     }
 }
