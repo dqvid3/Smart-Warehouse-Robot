@@ -49,9 +49,31 @@ public class ForkliftGrabber : MonoBehaviour
     {
         if (heldObject != null)
         {
-            heldObject.GetComponent<Rigidbody>().isKinematic = false;
-            heldObject.transform.SetParent(null);
-            heldObject = null;
+            RaycastHit hit;
+            Vector3 rayOrigin = heldObject.transform.position;
+
+            // Raycast verso il basso per verificare il livello
+            if (Physics.Raycast(rayOrigin, Vector3.down, out hit, 2f))
+            {
+                if (hit.collider != null)
+                {
+                    // Posiziona la box sopra il punto colpito
+                    heldObject.transform.position = hit.point + Vector3.up * 0.1f; // Piccolo offset per evitare compenetrazione
+                    heldObject.GetComponent<Rigidbody>().isKinematic = false;
+                    heldObject.transform.SetParent(null);
+                    heldObject = null;
+                    Debug.Log("Box rilasciata su: " + hit.collider.name);
+                }
+                else
+                {
+                    Debug.LogWarning("Nessun collider trovato sotto la box!");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Raycast non ha trovato nulla sotto la box!");
+            }
         }
     }
+
 }

@@ -47,7 +47,7 @@ public class ForkliftController : MonoBehaviour
 
     void HandleLift()
     {
-        if (masts.Length == 0) return;
+        if (masts == null || masts.Length == 0) return;
 
         MastSettings currentMast = masts[currentMastIndex];
 
@@ -73,6 +73,8 @@ public class ForkliftController : MonoBehaviour
 
     void SwitchMast()
     {
+        if (masts == null || masts.Length == 0) return;
+
         if (Input.GetKeyDown(KeyCode.Tab))
         {
             currentMastIndex = (currentMastIndex + 1) % masts.Length;
@@ -82,6 +84,8 @@ public class ForkliftController : MonoBehaviour
 
     void RotateWheels(float moveDirection)
     {
+        if (wheels == null || wheels.Length == 0) return;
+
         foreach (Transform wheel in wheels)
         {
             wheel.Rotate(Vector3.right * moveDirection * wheelRotationSpeed * Time.deltaTime);
