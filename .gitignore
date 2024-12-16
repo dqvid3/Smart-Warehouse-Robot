@@ -13,6 +13,7 @@
 *.code-workspace
 
 # Visual Studio specific files
+.vs/
 .vsconfig
 *.csproj
 *.unityproj
