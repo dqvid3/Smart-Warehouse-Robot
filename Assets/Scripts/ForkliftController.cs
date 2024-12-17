@@ -24,6 +24,19 @@ public class ForkliftController : MonoBehaviour
 
     private int currentMastIndex = 0; // Indice del mast attualmente controllato
 
+    // Aggiungi un array per salvare le posizioni iniziali dei masti
+    private Vector3[] initialMastPositions;
+
+    void Start()
+    {
+        // Salva le posizioni iniziali dei masti
+        initialMastPositions = new Vector3[masts.Length];
+        for (int i = 0; i < masts.Length; i++)
+        {
+            initialMastPositions[i] = masts[i].liftTransform.localPosition;
+        }
+    }
+
     void Update()
     {
         HandleMovement();
@@ -91,4 +104,6 @@ public class ForkliftController : MonoBehaviour
             wheel.Rotate(Vector3.right * moveDirection * wheelRotationSpeed * Time.deltaTime);
         }
     }
+
+   
 }
