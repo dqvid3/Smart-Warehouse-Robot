@@ -1070,15 +1070,15 @@ MonoBehaviour:
   - liftTransform: {fileID: 572324112}
     liftSpeed: 2
     minLiftHeight: 0
-    maxLiftHeight: 2
+    maxLiftHeight: 1.75
   - liftTransform: {fileID: 1155159052}
     liftSpeed: 2
     minLiftHeight: 0
-    maxLiftHeight: 4
+    maxLiftHeight: 2.3
   - liftTransform: {fileID: 429206106}
     liftSpeed: 2
     minLiftHeight: 0
-    maxLiftHeight: 6
+    maxLiftHeight: 2.7
   wheels: []
   wheelRotationSpeed: 300
 --- !u!114 &477509573
@@ -1216,11 +1216,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 97e2978d97fd2824eb0a01cc12b42abe, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0
+      value: -1.721
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 97e2978d97fd2824eb0a01cc12b42abe, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.13
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 97e2978d97fd2824eb0a01cc12b42abe, type: 3}
       propertyPath: m_LocalPosition.z
