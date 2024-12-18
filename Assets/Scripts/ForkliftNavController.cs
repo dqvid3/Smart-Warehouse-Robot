@@ -9,13 +9,12 @@ public class ForkliftNavController : MonoBehaviour
     public Transform shippingPoint;
     public ForkliftController forkliftController;
     public float liftHeightOffset = 0.5f;
-    private int finalMastIndex = 2;
+    public LayerMask boxLayerMask;
+    private float[] mastHeights = new float[] { 1.372069f, 1.525879e-07f, -7.629394e-08f };
 
     private GameObject targetBox;
     private Vector3 originalPosition;
     private int currentMastIndex = 0;
-
-    private float[] mastHeights = new float[] { 1.372069f, 1.525879e-07f, -7.629394e-08f };
 
     void Start()
     {
@@ -24,11 +23,10 @@ public class ForkliftNavController : MonoBehaviour
 
     void Update()
     {
-        // Se vuoi mantenere anche la selezione della box via click
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit) && hit.collider.CompareTag("Grabbable"))
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, boxLayerMask) && hit.collider.CompareTag("Grabbable"))
             {
                 targetBox = hit.collider.gameObject;
                 StartCoroutine(PickUpAndDeliver());
@@ -45,22 +43,21 @@ public class ForkliftNavController : MonoBehaviour
             yield break;
         }
 
-        // 1. Avvicinati fino a 0.5m dalla box (solo orizzontalmente)
+        // 1. Avvicinati alla box
         Vector3 approachPoint = CalculateApproachPoint(targetBox.transform.position, 0.5f);
         agent.SetDestination(approachPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
-        // Ora siamo a 0.5m dalla box, alziamo il braccio e cerchiamo la box durante la salita
+        // 2. Solleva l'elevatore in base all'altezza della box
         yield return StartCoroutine(AdjustLiftHeightAndDetectBox());
 
         if (targetBox == null)
         {
-            // Se non abbiamo trovato nessuna box col raycast durante la salita, fermiamo qui
             Debug.LogWarning("Nessuna box rilevata durante la salita!");
             yield break;
         }
 
-        // 3. Avvicinati ulteriormente alla box e prendila
+        // 3. Avvicinati ulteriormente e prendi la box
         yield return StartCoroutine(ApproachAndGrabBox());
 
         // 4. Abbassa tutti i masti
@@ -70,10 +67,10 @@ public class ForkliftNavController : MonoBehaviour
         agent.SetDestination(shippingPoint.position);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
-        // Rilascia la box
+        // 6. Rilascia la box
         ReleaseBox();
 
-        // Torna alla posizione originale
+        // 7. Torna alla posizione originale
         agent.SetDestination(originalPosition);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
@@ -82,7 +79,6 @@ public class ForkliftNavController : MonoBehaviour
 
     Vector3 CalculateApproachPoint(Vector3 boxPosition, float distance)
     {
-        // Prende la direzione orizzontale dal forklift alla box
         Vector3 boxHorizPos = boxPosition;
         boxHorizPos.y = transform.position.y;
         Vector3 directionToBox = (boxHorizPos - transform.position).normalized;
@@ -93,31 +89,43 @@ public class ForkliftNavController : MonoBehaviour
     {
         if (!CheckForkliftController()) yield break;
 
+        Transform grabPoint = forkliftController.grabPoint;
+        if (grabPoint == null)
+        {
+            Debug.LogError("Grab point non assegnato!");
+            yield break;
+        }
+
         bool boxFound = false;
 
-        while (currentMastIndex < forkliftController.masts.Length && !boxFound)
+        // Calcola l'altezza della box
+        float boxHeight = targetBox.transform.position.y;
+
+        // Usa il mast 4 (indice 2) per calcolare l'altezza necessaria
+        float liftHeight = CalculateLiftHeight(boxHeight, forkliftController.masts[2]);
+
+        // Inverti l'ordine dei masti: dall'ultimo al primo
+        for (int i = forkliftController.masts.Length - 1; i >= 0; i--)
         {
-            var mast = forkliftController.masts[currentMastIndex];
+            var mast = forkliftController.masts[i];
 
-            while (mast.liftTransform.localPosition.y < mast.maxLiftHeight && !boxFound)
+            // Solleva il mast fino all'altezza necessaria
+            while (mast.liftTransform.localPosition.y < liftHeight)
             {
-                float oldY = mast.liftTransform.localPosition.y;
                 mast.liftTransform.localPosition += Vector3.up * mast.liftSpeed * Time.deltaTime;
-                float newY = mast.liftTransform.localPosition.y;
 
-                // Se saliti di almeno 0.001 in Y, controlliamo il raycast frontale
-                if (Mathf.Abs(newY - oldY) > 0.001f)
+                // Controlla il raycast per rilevare la box durante la salita
+                if (DetectBoxInFront(grabPoint, 1.5f))
                 {
-                    if (DetectBoxInFront(1.5f))
-                    {
-                        boxFound = true;
-                    }
+                    boxFound = true;
+                    Debug.Log($"Box rilevata durante la salita con il mast {i}!");
+                    break;
                 }
 
                 yield return null;
             }
 
-            if (!boxFound) currentMastIndex++;
+            if (boxFound) break;
         }
 
         if (!boxFound)
@@ -126,18 +134,48 @@ public class ForkliftNavController : MonoBehaviour
         }
     }
 
-    bool DetectBoxInFront(float maxDistance)
+
+    float CalculateLiftHeight(float boxHeight, MastSettings mast)
     {
-        Ray forwardRay = new Ray(transform.position + Vector3.up * 1.0f, transform.forward);
-        if (Physics.Raycast(forwardRay, out RaycastHit hit, maxDistance))
+        // Altezza minima del mast
+        float minLiftHeight = mast.minLiftHeight;
+        float maxLiftHeight = mast.maxLiftHeight;
+
+        // Calcola l'altezza del centro della box rispetto al forklift
+        float boxCenterHeight = boxHeight - forkliftController.transform.position.y;
+
+        // Calcola l'altezza necessaria considerando l'offset
+        float targetLiftHeight = minLiftHeight + boxCenterHeight + liftHeightOffset;
+
+        // Assicurati che l'altezza sia entro i limiti del mast
+        return Mathf.Clamp(targetLiftHeight, minLiftHeight, maxLiftHeight);
+    }
+
+
+
+    bool DetectBoxInFront(Transform grabPoint, float maxDistance)
+    {
+        if (grabPoint == null)
+        {
+            Debug.LogError("Grab point non valido per il rilevamento della box!");
+            return false;
+        }
+
+        Vector3 rayOrigin = grabPoint.position;
+        Ray forwardRay = new Ray(rayOrigin, grabPoint.forward);
+
+        Debug.DrawRay(rayOrigin, grabPoint.forward * maxDistance, Color.red, 2.0f);
+
+        if (Physics.Raycast(forwardRay, out RaycastHit hit, maxDistance, boxLayerMask))
         {
             if (hit.collider.CompareTag("Grabbable"))
             {
                 targetBox = hit.collider.gameObject;
-                Debug.Log("Box trovata frontalmente a distanza ≤ " + maxDistance + "m!");
+                Debug.Log("Box trovata frontalmente!");
                 return true;
             }
         }
+
         return false;
     }
 
@@ -145,44 +183,54 @@ public class ForkliftNavController : MonoBehaviour
     {
         if (targetBox == null) yield break;
 
-        Vector3 approachPoint = CalculateApproachPoint(targetBox.transform.position, 0.5f);
+        Vector3 approachPoint = CalculateApproachPoint(targetBox.transform.position, 0.2f);
         agent.SetDestination(approachPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
-        // Aggancia la box
-        AttachBox(currentMastIndex);
-        ReattachBoxToMast(finalMastIndex);
+        AttachBox(0);
 
-        // Arretra di 0.5 metri per allontanarsi
-        agent.SetDestination(transform.position - transform.forward * 0.5f);
+        // Dopo aver preso la box, arretra di 0.5 metri
+        Vector3 retreatPoint = transform.position - transform.forward * 0.5f;
+        agent.SetDestination(retreatPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
     }
 
     IEnumerator LowerAllMasts()
     {
+        // Controlla che il numero di altezze corrisponda al numero di masti
+        if (mastHeights.Length != forkliftController.masts.Length)
+        {
+            Debug.LogError("Il numero di altezze specificate non corrisponde al numero di masti!");
+            yield break;
+        }
+
         for (int i = 0; i < forkliftController.masts.Length; i++)
         {
             var mast = forkliftController.masts[i];
             if (mast.liftTransform == null) continue;
 
-            float targetH = mastHeights[i];
-            while (mast.liftTransform.localPosition.y > targetH)
+            float targetHeight = mastHeights[i];
+
+            while (mast.liftTransform.localPosition.y > targetHeight)
             {
                 mast.liftTransform.localPosition -= Vector3.up * mast.liftSpeed * Time.deltaTime;
                 yield return null;
             }
 
+            // Imposta l'altezza finale esatta per evitare piccoli errori di arrotondamento
             mast.liftTransform.localPosition = new Vector3(
                 mast.liftTransform.localPosition.x,
-                targetH,
+                targetHeight,
                 mast.liftTransform.localPosition.z
             );
         }
     }
 
+
     void AttachBox(int mastIndex)
     {
         if (!CheckMastIndex(mastIndex)) return;
+
         var mast = forkliftController.masts[mastIndex];
         targetBox.transform.SetParent(mast.liftTransform);
         targetBox.transform.localPosition = new Vector3(0, 0, 0.5f);
@@ -195,19 +243,10 @@ public class ForkliftNavController : MonoBehaviour
         }
     }
 
-    void ReattachBoxToMast(int mastIndex)
-    {
-        if (!CheckMastIndex(mastIndex)) return;
-        var mast = forkliftController.masts[mastIndex];
-
-        targetBox.transform.SetParent(null);
-        targetBox.transform.SetParent(mast.liftTransform);
-        targetBox.transform.localPosition = Vector3.zero;
-    }
-
     void ReleaseBox()
     {
         if (targetBox == null) return;
+
         var rb = targetBox.GetComponent<Rigidbody>();
         if (rb != null)
         {
@@ -227,25 +266,14 @@ public class ForkliftNavController : MonoBehaviour
             Debug.LogError("ForkliftController non assegnato!");
             return false;
         }
-        if (forkliftController.masts == null || forkliftController.masts.Length == 0)
-        {
-            Debug.LogError("Masts non assegnati!");
-            return false;
-        }
         return true;
     }
 
     bool CheckMastIndex(int index)
     {
-        if (!CheckForkliftController()) return false;
         if (index < 0 || index >= forkliftController.masts.Length)
         {
             Debug.LogError("Mast index fuori limiti!");
-            return false;
-        }
-        if (forkliftController.masts[index].liftTransform == null)
-        {
-            Debug.LogError($"Mast {index} senza liftTransform!");
             return false;
         }
         return true;

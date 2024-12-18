@@ -22,6 +22,10 @@ public class ForkliftController : MonoBehaviour
     public Transform[] wheels; // Array dei Transform delle ruote
     public float wheelRotationSpeed = 300f; // Velocità di rotazione delle ruote
 
+    [Header("Grab Points")]
+    public Transform grabPoint;  // Punto di presa per i livelli più alti
+
+
     private int currentMastIndex = 0; // Indice del mast attualmente controllato
 
     // Aggiungi un array per salvare le posizioni iniziali dei masti
@@ -34,6 +38,12 @@ public class ForkliftController : MonoBehaviour
         for (int i = 0; i < masts.Length; i++)
         {
             initialMastPositions[i] = masts[i].liftTransform.localPosition;
+        }
+
+        // Controlla se il grab point è assegnato
+        if (grabPoint == null)
+        {
+            Debug.LogError("Grab point non assegnato! Assegna un grab point unico nell'Inspector.");
         }
     }
 
@@ -104,6 +114,4 @@ public class ForkliftController : MonoBehaviour
             wheel.Rotate(Vector3.right * moveDirection * wheelRotationSpeed * Time.deltaTime);
         }
     }
-
-   
 }
