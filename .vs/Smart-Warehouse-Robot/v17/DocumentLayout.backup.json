@@ -1,51 +1,12 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\ForkliftNavController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
       "DocumentGroups": []
-    },
-    {
-      "Orientation": 0,
-      "VerticalTabListWidth": 256,
-      "FloatingWindowState": {
-        "Id": "8c98367b-ea2d-4947-aa4c-ddf99c4eef3a",
-        "Display": 0,
-        "X": 30,
-        "Y": 90,
-        "Width": 1510,
-        "Height": 730,
-        "WindowState": 0
-      },
-      "DocumentGroups": [
-        {
-          "DockedWidth": 200,
-          "SelectedChildIndex": 0,
-          "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ForkliftNavController.cs",
-              "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\ForkliftNavController.cs",
-              "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
-              "RelativeToolTip": "Assets\\Scripts\\ForkliftNavController.cs",
-              "ViewState": "AgIAAJcAAAAAAAAAAAAAALEAAAAMAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-18T11:16:01.841Z",
-              "EditorCaption": ""
-            }
-          ]
-        }
-      ]
     }
   ]
 }

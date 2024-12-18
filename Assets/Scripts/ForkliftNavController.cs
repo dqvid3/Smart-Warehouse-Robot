@@ -12,7 +12,7 @@ public class ForkliftNavController : MonoBehaviour
     public LayerMask boxLayerMask;
     private float[] mastHeights = new float[] { 1.372069f, 1.525879e-07f, -7.629394e-08f };
 
-    private GameObject targetBox;
+    public GameObject targetBox;
     private Vector3 originalPosition;
     private int currentMastIndex = 0;
 
@@ -36,7 +36,7 @@ public class ForkliftNavController : MonoBehaviour
         }
     }
 
-    IEnumerator PickUpAndDeliver()
+    public IEnumerator PickUpAndDeliver()
     {
         if (!CheckForkliftController()) yield break;
         if (targetBox == null)
