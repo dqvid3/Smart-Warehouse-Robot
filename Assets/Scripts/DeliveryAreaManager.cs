@@ -3,16 +3,16 @@ using UnityEngine;
 public class DeliveryAreaManager : MonoBehaviour
 {
     // Array di prefabs degli oggetti da generare
-    public GameObject[] deliveryObjectPrefabs;
+    [SerializeField] private GameObject[] deliveryObjectPrefabs;
 
     // Posizione nella zona di consegna dove generare l'oggetto
-    public Transform deliveryPoint;
+    [SerializeField] private Transform deliveryPoint;
 
     // Altezza di generazione dell'oggetto sopra il deliveryPoint
-    public float deliveryHeight = 5f;
+    [SerializeField] private float deliveryHeight = 5f;
 
     // Timer per simulare una consegna periodica
-    public float deliveryInterval = 10f;
+    [SerializeField] private float deliveryInterval = 10f;
     private float deliveryTimer;
 
     // Forza applicata per far cadere il pacco
@@ -50,8 +50,13 @@ public class DeliveryAreaManager : MonoBehaviour
             // Seleziono un prefab casuale dall'array
             GameObject selectedPrefab = deliveryObjectPrefabs[Random.Range(0, deliveryObjectPrefabs.Length)];
 
-            // Calcolo la posizione sopra il deliveryPoint
-            Vector3 spawnPosition = deliveryPoint.position + Vector3.up * deliveryHeight;
+            // Genero un offset casuale per la posizione (intorno al deliveryPoint)
+            float randomOffsetX = Random.Range(-4f, 4f);
+            float randomOffsetZ = Random.Range(-4f, 4f);
+
+            // Calcolo la posizione sopra il deliveryPoint con il random offset
+            Vector3 spawnPosition = deliveryPoint.position + Vector3.up * deliveryHeight
+                                    + new Vector3(randomOffsetX, 0f, randomOffsetZ);
 
             // Instanzio il prefab selezionato
             GameObject spawnedObject = Instantiate(selectedPrefab, spawnPosition, deliveryPoint.rotation, transform);
