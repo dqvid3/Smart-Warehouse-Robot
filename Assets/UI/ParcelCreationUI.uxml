@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="container">
+        <ui:Label text="Product Name:" />
+        <ui:TextField name="productNameField" />
+        <ui:Label text="Category:" />
+        <ui:DropdownField name="categoryDropdown" choices="" />
+        <ui:Label text="QR Code:" />
+        <ui:TextField name="qrcodeField" />
+        <ui:Button name="generateQRButton" text="Generate QR Code" />
+        <ui:Button name="submitButton" text="Submit" />
+        <ui:Label name="notificationLabel" text="" style="color: red; font-size: 14px;" />
+    </ui:VisualElement>
+</ui:UXML>
