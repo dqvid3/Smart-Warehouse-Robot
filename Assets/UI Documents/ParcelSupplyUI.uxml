@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+  <ui:VisualElement style="flex-grow: 1; padding: 10px;">
+    <ui:Label text="Pacchi Disponibili" style="font-size: 20px; -unity-font-style: bold; margin-bottom: 10px;" />
+    <ui:ScrollView name="parcelScrollView" style="flex-grow: 1; height: 200px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgb(100, 100, 100); border-right-color: rgb(100, 100, 100); border-bottom-color: rgb(100, 100, 100); border-left-color: rgb(100, 100, 100);">
+      <ui:ListView name="parcelListView" style="flex-grow: 1;" />
+    </ui:ScrollView>
+    <ui:DropdownField name="availableSlotsDropdown" label="Slot Disponibili (Categoria)" choices="1" value="1" style="margin-top: 10px;" />
+    
+    <ui:Button name="addButton" text="Aggiungi a Riepilogo" style="margin-top: 10px;" />
+    <ui:Label text="Riepilogo Rifornimento" style="font-size: 20px; -unity-font-style: bold; margin-bottom: 10px; margin-top: 20px;" />
+    <ui:ScrollView name="summaryScrollView" style="flex-grow: 1; height: 200px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgb(100, 100, 100); border-right-color: rgb(100, 100, 100); border-bottom-color: rgb(100, 100, 100); border-left-color: rgb(100, 100, 100);">
+      <ui:ListView name="summaryListView" style="flex-grow: 1;" />
+    </ui:ScrollView>
+    
+    <ui:Button name="supplyButton" text="Richiedi Rifornimento" style="margin-top: 10px;" />
+    <ui:Label name="notificationLabel" text="" style="margin-top: 10px; color: rgb(255, 0, 0);" />
+  </ui:VisualElement>
+</ui:UXML>

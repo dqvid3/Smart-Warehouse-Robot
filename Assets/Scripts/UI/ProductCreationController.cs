@@ -4,15 +4,15 @@ using Neo4j.Driver;
 using System;
 using System.Threading.Tasks;
 
-public class ParcelCreationController : MonoBehaviour
+public class ProductCreationController : MonoBehaviour
 {
-    private TextField productNameField, qrcodeField;
+    private TextField productNameField;
     private DropdownField categoryDropdown;
     private Button generateQRButton, submitButton;
     private Label notificationLabel;
     private IDriver driver;
     private UIDocument uiDocument;
-    private bool isUIVisible = true;
+    private bool isUIVisible = false;
 
     private async void Start()
     {
@@ -21,13 +21,10 @@ public class ParcelCreationController : MonoBehaviour
         var root = (uiDocument = GetComponent<UIDocument>()).rootVisualElement;
         productNameField = root.Q<TextField>("productNameField");
         categoryDropdown = root.Q<DropdownField>("categoryDropdown");
-        qrcodeField = root.Q<TextField>("qrcodeField");
-        generateQRButton = root.Q<Button>("generateQRButton");
         submitButton = root.Q<Button>("submitButton");
         notificationLabel = root.Q<Label>("notificationLabel");
         notificationLabel.style.display = DisplayStyle.None;
 
-        generateQRButton.clicked += () => qrcodeField.value = Guid.NewGuid().ToString();
         submitButton.clicked += async () => await SubmitParcel();
 
         await PopulateCategoryDropdown();
@@ -36,7 +33,8 @@ public class ParcelCreationController : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.T))
-            uiDocument.rootVisualElement.style.display = (isUIVisible = !isUIVisible) ? DisplayStyle.Flex : DisplayStyle.None;
+            isUIVisible = !isUIVisible;
+        uiDocument.rootVisualElement.style.display = isUIVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     private async Task PopulateCategoryDropdown()
@@ -55,9 +53,10 @@ public class ParcelCreationController : MonoBehaviour
 
     private async Task SubmitParcel()
     {
-        string productName = productNameField.value, category = categoryDropdown.value, qrcode = qrcodeField.value;
+        string productName = productNameField.value;
+        string category = categoryDropdown.value;
 
-        if (string.IsNullOrEmpty(productName) || string.IsNullOrEmpty(category) || string.IsNullOrEmpty(qrcode))
+        if (string.IsNullOrEmpty(productName) || string.IsNullOrEmpty(category))
         {
             ShowNotification("Please fill in all fields and select a category.");
             return;
@@ -67,21 +66,21 @@ public class ParcelCreationController : MonoBehaviour
         {
             await using var session = driver.AsyncSession();
             var exists = (await session.ExecuteReadAsync(tx =>
-                tx.RunAsync("MATCH (p:Parcel {qrcode: $qrcode}) RETURN p", new { qrcode })
+                tx.RunAsync("MATCH (p:Product {productName: $productName}) RETURN p", new { productName })
                   .Result.ToListAsync())).Count > 0;
 
             if (exists)
             {
-                ShowNotification($"A parcel with QR Code {qrcode} already exists!");
+                ShowNotification($"A parcel with Product Name {productName} already exists!");
                 return;
             }
 
             await session.ExecuteWriteAsync(tx =>
-                tx.RunAsync("CREATE (p:Parcel {product_name: $productName, qrcode: $qrcode, category: $category})",
-                new { productName, category, qrcode }));
+                tx.RunAsync("CREATE (p:Product {product_name: $productName, category: $category})",
+                new { productName, category}));
 
             ShowNotification("Parcel successfully created!");
-            productNameField.value = qrcodeField.value = "";
+            productNameField.value = "";
         }
         catch (Exception ex)
         {
@@ -97,10 +96,7 @@ public class ParcelCreationController : MonoBehaviour
         Invoke(nameof(HideNotification), 3f);
     }
 
-    private void HideNotification()
-    {
-        notificationLabel.style.display = DisplayStyle.None;
-    }
+    private void HideNotification() => notificationLabel.style.display = DisplayStyle.None;
 
     private void OnDestroy() => driver?.Dispose();
 }
