@@ -1,0 +1,27 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+  <ui:VisualElement style="flex-grow: 1; padding: 10px;">
+    <ui:Label text="Ordina" style="font-size: 20px; -unity-font-style: bold; margin-bottom: 10px;" />
+
+    <!-- Primo box con bottone e dropdown per ogni stringa -->
+    <ui:Label text="Oggetti Disponibili" style="font-size: 16px; -unity-font-style: bold; margin-bottom: 5px;" />
+    <ui:ScrollView name="primaryScrollView" style="flex-grow: 1; height: 100px; margin-bottom: 10px; border-width: 1px; border-color: rgb(100, 100, 100); padding: 5px;">
+      <ui:VisualElement name="primaryList">
+        <!-- Placeholder per le stringhe, ognuna con bottone e dropdown -->
+      </ui:VisualElement>
+    </ui:ScrollView>
+
+    <!-- Secondo box con tre bottoni per ogni stringa -->
+    <ui:Label text="Carrello" style="font-size: 16px; -unity-font-style: bold; margin-bottom: 5px;" />
+    <ui:ScrollView name="secondaryScrollView" style="flex-grow: 1; height: 100px; margin-bottom: 10px; border-width: 1px; border-color: rgb(100, 100, 100); padding: 5px;">
+      <ui:VisualElement name="secondaryList">
+        <!-- Placeholder per le stringhe, ognuna con tre bottoni -->
+      </ui:VisualElement>
+    </ui:ScrollView>
+
+    <!-- Pulsante di completamento -->
+    <ui:Button name="completeButton" text="Completa" style="margin-top: 10px;" />
+
+    <!-- Etichetta per le notifiche -->
+    <ui:Label name="notificationLabel" text="" style="margin-top: 10px; color: rgb(255, 0, 0);" />
+  </ui:VisualElement>
+</ui:UXML>
