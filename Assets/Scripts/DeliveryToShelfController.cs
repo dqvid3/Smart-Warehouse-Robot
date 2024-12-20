@@ -26,9 +26,6 @@ public class DeliveryToShelfController : MonoBehaviour
         return distanceToDelivery <= 5.0f;
     }
 
-
-
-
     void Start()
     {
         originalPosition = transform.position;
@@ -41,7 +38,6 @@ public class DeliveryToShelfController : MonoBehaviour
             Debug.Log($"ForkliftNavController assegnato: {forkliftNavController}");
         }
     }
-
 
     void Update()
     {
@@ -59,7 +55,7 @@ public class DeliveryToShelfController : MonoBehaviour
                     if (forkliftNavController != null)
                     {
                         forkliftNavController.StopAllCoroutines();
-                        forkliftNavController.agent.ResetPath(); // Ferma il percorso corrente senza disabilitare l'agente
+                        forkliftNavController.agent.ResetPath();
                         forkliftNavController.enabled = false;
                         Debug.Log("ForkliftNavController disattivato senza disabilitare il NavMeshAgent.");
                     }
@@ -72,19 +68,17 @@ public class DeliveryToShelfController : MonoBehaviour
                 }
                 else
                 {
-                    Debug.Log("La box NON è nella Delivery Area, trasporto alla Shipping Area non consentito.");
+                    Debug.Log("La box NON è nella Delivery Area.");
                 }
             }
         }
     }
 
-
-
     IEnumerator PickUpFromDeliveryAndStore(int shelfLevelIndex)
     {
         Debug.Log("Avviata coroutine PickUpFromDeliveryAndStore");
 
-        if (!CheckForkliftController())
+        if (!ForkliftCommonFunctions.CheckForkliftController(forkliftController))
         {
             Debug.LogWarning("ForkliftController non assegnato!");
             yield break;
@@ -118,22 +112,41 @@ public class DeliveryToShelfController : MonoBehaviour
             yield break;
         }
 
-        // 3. Vai al livello specifico dello shelf
+
+        // 3. Vai al livello specifico dello shelf ma fermati a 1.5 m di distanza
         Transform targetShelfLevel = shelfLevels[shelfLevelIndex];
-        Vector3 approachPoint = CalculateApproachPoint(targetShelfLevel.position, 0.5f);
+        Vector3 approachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetShelfLevel.position, 1.5f, 0.0f);
+        Vector3 positionPoint = ForkliftCommonFunctions.CalculateFromPoint(approachPoint, transform, 2.5f);
         agent.ResetPath();
-        agent.SetDestination(approachPoint);
+        agent.SetDestination(positionPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
-        Debug.Log("Arrivato davanti allo scaffale");
+        Debug.Log("Arrivato a 1.5m dallo scaffale");
+
+        // Rotazione graduale per essere parallelo allo scaffale
+        Vector3 targetForwardDir = Quaternion.Euler(0, 270, 0) * targetShelfLevel.forward;
+        yield return StartCoroutine(SmoothRotateToDirection(targetForwardDir, 1f));
+        Debug.Log("Rotazione completata, ora parallelo allo scaffale.");
+
 
         // 4. Solleva l'elevatore fino al livello dello shelf
         yield return StartCoroutine(LiftToShelfLevel(targetShelfLevel.position.y));
 
-        // 5. Rilascia la box
-        ReleaseBox();
+        positionPoint = ForkliftCommonFunctions.CalculateFromPoint(approachPoint, transform, 1.1f);
+        agent.ResetPath();
+        agent.SetDestination(positionPoint);
+        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
-        // **Riattiva il ForkliftNavController subito dopo aver rilasciato la box**
+        // 5. Rilascia la box
+        ForkliftCommonFunctions.ReleaseBox(ref targetBox, ref isCarryingBox, Vector3.down * 0.1f, true);
+
+        positionPoint = ForkliftCommonFunctions.CalculateFromPoint(approachPoint, transform, 2.5f);
+        agent.ResetPath();
+        agent.SetDestination(positionPoint);
+        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
+
+
+        // Riattiva il ForkliftNavController
         forkliftNavController.enabled = true;
         if (!forkliftNavController.agent.enabled)
         {
@@ -142,7 +155,7 @@ public class DeliveryToShelfController : MonoBehaviour
         Debug.Log("ForkliftNavController riattivato.");
 
         // 6. Abbassa tutti i masti
-        yield return StartCoroutine(LowerAllMasts());
+        yield return StartCoroutine(ForkliftCommonFunctions.LowerAllMasts(forkliftController));
 
         // 7. Torna alla posizione originale
         agent.ResetPath();
@@ -152,46 +165,25 @@ public class DeliveryToShelfController : MonoBehaviour
         Debug.Log("Ritornato alla posizione originale");
     }
 
-    bool SelectBoxInDelivery()
-    {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, boxLayerMask) && hit.collider.CompareTag("Grabbable"))
-        {
-            targetBox = hit.collider.gameObject;
-            return true;
-        }
-        return false;
-    }
-
-    // Rimuovi qualsiasi sollevamento nel metodo `ApproachAndGrabBox`
     IEnumerator ApproachAndGrabBox()
     {
         if (targetBox == null) yield break;
 
-        Vector3 approachPoint = CalculateApproachPoint(targetBox.transform.position, 0.4f);
+        Vector3 approachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetBox.transform.position, 0.4f, 0.0f);
         agent.SetDestination(approachPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
-        AttachBox();
+        // Attacca la box (senza mastIndex, con reset velocità, messaggio di successo)
+        ForkliftCommonFunctions.AttachBox(ref targetBox, forkliftController.grabPoint, ref isCarryingBox, forkliftController);
 
-        // Arretra leggermente per evitare collisioni
         Vector3 retreatPoint = transform.position - transform.forward * 1.0f;
         agent.SetDestination(retreatPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
     }
 
-
-    Vector3 CalculateApproachPoint(Vector3 targetPosition, float distance)
-    {
-        Vector3 targetHorizPos = targetPosition;
-        targetHorizPos.y = transform.position.y;
-        Vector3 directionToTarget = (targetHorizPos - transform.position).normalized;
-        return targetHorizPos - directionToTarget * distance;
-    }
-
     IEnumerator LiftToShelfLevel(float targetHeight)
     {
-        if (!CheckForkliftController()) yield break;
+        if (!ForkliftCommonFunctions.CheckForkliftController(forkliftController)) yield break;
 
         Transform grabPoint = forkliftController.grabPoint;
         if (grabPoint == null)
@@ -200,10 +192,8 @@ public class DeliveryToShelfController : MonoBehaviour
             yield break;
         }
 
-        // Altezza corrente del grab point rispetto alla base del forklift
         float currentHeight = grabPoint.position.y;
 
-        // Solleva i masti in ordine finché non si raggiunge l'altezza desiderata
         for (int i = 0; i < forkliftController.masts.Length; i++)
         {
             var mast = forkliftController.masts[i];
@@ -217,7 +207,6 @@ public class DeliveryToShelfController : MonoBehaviour
                 yield return null;
             }
 
-            // Se l'altezza desiderata è stata raggiunta, interrompi il sollevamento
             if (currentHeight >= targetHeight)
             {
                 Debug.Log($"Elevatore sollevato con successo fino all'altezza desiderata con il mast {i}!");
@@ -225,7 +214,6 @@ public class DeliveryToShelfController : MonoBehaviour
             }
         }
 
-        // Assicurati che il liftTransform non vada sotto il limite minimo
         foreach (var mast in forkliftController.masts)
         {
             float minLiftHeight = mast.minLiftHeight;
@@ -241,77 +229,19 @@ public class DeliveryToShelfController : MonoBehaviour
         }
     }
 
-
-    void AttachBox()
+    IEnumerator SmoothRotateToDirection(Vector3 targetForward, float rotationSpeed = 1f)
     {
-        if (targetBox == null) return;
-
-        // Disabilita temporaneamente il rigidbody per evitare rimbalzi
-        Rigidbody rb = targetBox.GetComponent<Rigidbody>();
-        if (rb != null)
+        Quaternion startRotation = transform.rotation;
+        Quaternion finalRotation = Quaternion.LookRotation(targetForward, Vector3.up);
+        float angle = Quaternion.Angle(startRotation, finalRotation);
+        float t = 0f;
+        while (t < 1f)
         {
-            rb.isKinematic = true;
-            rb.useGravity = false;
-            rb.linearVelocity = Vector3.zero;    // Annulla qualsiasi velocit� residua
-            rb.angularVelocity = Vector3.zero; // Annulla la rotazione residua
+            t += Time.deltaTime * rotationSpeed;
+            transform.rotation = Quaternion.Slerp(startRotation, finalRotation, t);
+            yield return null;
         }
-
-        // Attacca la box al grab point
-        targetBox.transform.SetParent(forkliftController.grabPoint);
-        targetBox.transform.localPosition = Vector3.zero;
-        targetBox.transform.localRotation = Quaternion.identity;
-
-        isCarryingBox = true;
-
-        Debug.Log("Box attaccata con successo.");
+        transform.rotation = finalRotation;
     }
 
-
-    void ReleaseBox()
-    {
-        if (targetBox == null)
-        {
-            Debug.LogWarning("Tentativo di rilasciare una box nulla!");
-            return;
-        }
-
-        var rb = targetBox.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.isKinematic = false;
-            rb.useGravity = true;
-            rb.WakeUp(); // Forza l'aggiornamento immediato del Rigidbody
-        }
-
-        // Stacca la box e applica un leggero offset verso il basso
-        targetBox.transform.SetParent(null);
-        targetBox.transform.position += Vector3.down * 0.1f;
-
-        targetBox = null;
-        isCarryingBox = false;
-
-        Debug.Log("Box rilasciata con successo.");
-    }
-
-    IEnumerator LowerAllMasts()
-    {
-        foreach (var mast in forkliftController.masts)
-        {
-            while (mast.liftTransform.localPosition.y > 0)
-            {
-                mast.liftTransform.localPosition -= Vector3.up * mast.liftSpeed * Time.deltaTime;
-                yield return null;
-            }
-        }
-    }
-
-    bool CheckForkliftController()
-    {
-        if (forkliftController == null)
-        {
-            Debug.LogError("ForkliftController non assegnato!");
-            return false;
-        }
-        return true;
-    }
 }
