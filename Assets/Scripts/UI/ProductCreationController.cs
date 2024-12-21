@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UIElements;
-using Neo4j.Driver;
-using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public class ProductCreationController : MonoBehaviour
@@ -10,13 +9,13 @@ public class ProductCreationController : MonoBehaviour
     private DropdownField categoryDropdown;
     private Button generateQRButton, submitButton;
     private Label notificationLabel;
-    private IDriver driver;
+    private Neo4jHelper neo4jHelper;
     private UIDocument uiDocument;
     private bool isUIVisible = false;
 
     private async void Start()
     {
-        driver = GraphDatabase.Driver("bolt://localhost:7687", AuthTokens.Basic("neo4j", "password"));
+        neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
 
         var root = (uiDocument = GetComponent<UIDocument>()).rootVisualElement;
         productNameField = root.Q<TextField>("productNameField");
@@ -32,23 +31,18 @@ public class ProductCreationController : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.T))
-            isUIVisible = !isUIVisible;
+        if (Input.GetKeyDown(KeyCode.Alpha1) && !isUIVisible)
+        isUIVisible = true;
+        if (Input.GetKeyDown(KeyCode.Escape))
+            isUIVisible = false;
         uiDocument.rootVisualElement.style.display = isUIVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     private async Task PopulateCategoryDropdown()
     {
-        try
-        {
-            await using var session = driver.AsyncSession();
-            var categories = await session.ExecuteReadAsync(tx =>
-                tx.RunAsync("MATCH (s:Shelf) RETURN DISTINCT s.category AS category")
-                  .Result.ToListAsync(record => record["category"].As<string>()));
-            categoryDropdown.choices = categories;
-            if (categories.Count > 0) categoryDropdown.value = categories[0];
-        }
-        catch (Exception ex) { Debug.LogError($"Error populating dropdown: {ex.Message}"); }
+        var categories = await neo4jHelper.GetCategoriesAsync();
+        categoryDropdown.choices = categories;
+        if (categories.Count > 0) categoryDropdown.value = categories[0];
     }
 
     private async Task SubmitParcel()
@@ -64,10 +58,8 @@ public class ProductCreationController : MonoBehaviour
 
         try
         {
-            await using var session = driver.AsyncSession();
-            var exists = (await session.ExecuteReadAsync(tx =>
-                tx.RunAsync("MATCH (p:Product {productName: $productName}) RETURN p", new { productName })
-                  .Result.ToListAsync())).Count > 0;
+            var parameters = new Dictionary<string, object> { { "productName", productName } };
+            var exists = (await neo4jHelper.ExecuteReadListAsync("MATCH (p:Product {product_name: $productName}) RETURN p", parameters)).Count > 0;
 
             if (exists)
             {
@@ -75,17 +67,15 @@ public class ProductCreationController : MonoBehaviour
                 return;
             }
 
-            await session.ExecuteWriteAsync(tx =>
-                tx.RunAsync("CREATE (p:Product {product_name: $productName, category: $category})",
-                new { productName, category}));
+            parameters.Add("category", category);
+            await neo4jHelper.ExecuteWriteAsync("CREATE (p:Product {product_name: $productName, category: $category})", parameters);
 
             ShowNotification("Parcel successfully created!");
             productNameField.value = "";
         }
-        catch (Exception ex)
+        catch (Neo4jException ex)
         {
-            Debug.LogError($"Error creating parcel: {ex.Message}");
-            ShowNotification("An error occurred while creating the parcel.");
+            ShowNotification(ex.Message);
         }
     }
 
@@ -98,5 +88,5 @@ public class ProductCreationController : MonoBehaviour
 
     private void HideNotification() => notificationLabel.style.display = DisplayStyle.None;
 
-    private void OnDestroy() => driver?.Dispose();
+    private void OnDestroy() => neo4jHelper?.CloseConnection();
 }

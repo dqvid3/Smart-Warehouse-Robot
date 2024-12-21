@@ -17,8 +17,7 @@
     <!-- Label di riepilogo -->
     <ui:Label text="Riepilogo" style="font-size: 16px; -unity-font-style: bold; margin-bottom: 5px;" />
 
-    <!-- Box di testo per visualizzare le stringhe -->
-    <ui:TextField name="infoBox" multiline="true" style="flex-grow: 1; height: 100px; margin-bottom: 10px; border-width: 1px; border-color: rgb(100, 100, 100); padding: 5px;" />
+    <ui:ScrollView name="summaryList" style="flex-grow: 1; height: 100px; margin-bottom: 10px; border-width: 1px; border-color: rgb(100, 100, 100); padding: 5px;" />
 
     <!-- Pulsante di completamento -->
     <ui:Button name="completeButton" text="Completa" style="margin-top: 10px;" />
