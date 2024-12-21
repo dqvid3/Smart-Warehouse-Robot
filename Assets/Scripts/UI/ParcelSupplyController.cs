@@ -12,10 +12,9 @@ public class ParcelSupplyController : MonoBehaviour
     private Button insertButton, completeButton;
     private Label notificationLabel;
     private ScrollView summaryList;
+    private VisualElement summaryListContainer;
     private Neo4jHelper neo4jHelper;
     private UIDocument uiDocument;
-    private bool isUIVisible = false;
-
     private Dictionary<string, int> supplySummary = new();
 
     private async void Start()
@@ -31,6 +30,7 @@ public class ParcelSupplyController : MonoBehaviour
         completeButton = root.Q<Button>("completeButton");
         notificationLabel = root.Q<Label>("notificationLabel");
         summaryList = root.Q<ScrollView>("summaryList");
+        summaryListContainer = root.Q<VisualElement>("summaryListContainer");
         notificationLabel.style.display = DisplayStyle.None;
 
         categoryDropdown.RegisterValueChangedCallback(OnCategoryChanged);
@@ -45,15 +45,6 @@ public class ParcelSupplyController : MonoBehaviour
         };
 
         await PopulateCategoryDropdown();
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Alpha2) && !isUIVisible)
-            isUIVisible = true;
-        if (Input.GetKeyDown(KeyCode.Escape))
-            isUIVisible = false;
-        uiDocument.rootVisualElement.style.display = isUIVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     private async Task PopulateCategoryDropdown()
@@ -97,8 +88,12 @@ public class ParcelSupplyController : MonoBehaviour
     {
         string query = @"
             MATCH (shelf:Shelf {category: $category})-[:HAS_LAYER]->(layer:Layer)-[:HAS_SLOT]->(slot:Slot)
-            WHERE NOT (slot)-[:CONTAINS]->() AND NOT (slot)-[:INTENDED_FOR]->()
-            RETURN count(slot)";
+            WHERE NOT (slot)-[:CONTAINS]->()
+            WITH count(slot) AS emptySlots
+            OPTIONAL MATCH (p:Parcel)-[:LOCATED_IN]->(delivery:Area {type: 'Delivery'})
+            WHERE p.category = $category
+            WITH emptySlots, count(p) AS numParcelsInDelivery
+            RETURN emptySlots - numParcelsInDelivery AS availableSlots";
         var result = await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "category", category } });
         int availableSlots = result[0][0].As<int>();
         UpdateQuantity(availableSlots);
@@ -140,13 +135,44 @@ public class ParcelSupplyController : MonoBehaviour
         UpdateSummaryList();
     }
 
-    private void UpdateSummaryList()
+   private void UpdateSummaryList()
     {
-        summaryList.Clear();
+        summaryListContainer.Clear();
         foreach (var item in supplySummary)
         {
-            summaryList.Add(new Label($"{item.Key}: {item.Value}"));
+            // Crea un contenitore per la riga
+            var rowContainer = new VisualElement();
+            rowContainer.style.flexDirection = FlexDirection.Row;
+
+            // Crea la label per il nome del prodotto e la quantità
+            var itemLabel = new Label($"{item.Key}: {item.Value}");
+            itemLabel.style.flexGrow = 1;
+
+            // Crea il pulsante "Rimuovi"
+            var removeButton = new Button(() => RemoveFromSummary(item.Key, item.Value));
+            removeButton.text = "Rimuovi";
+
+            // Aggiunge label e pulsante al contenitore della riga
+            rowContainer.Add(itemLabel);
+            rowContainer.Add(removeButton);
+
+            // Aggiunge il contenitore della riga al contenitore principale del riepilogo
+            summaryListContainer.Add(rowContainer);
         }
+    }
+
+    private async void RemoveFromSummary(string productName, int quantityToRemove)
+    {
+        // Rimuove l'elemento dal dizionario
+        supplySummary.Remove(productName);
+
+        // Aggiorna la lista di riepilogo
+        UpdateSummaryList();
+
+        // Aggiorna la quantità disponibile
+        await UpdateQuantityDropdown(categoryDropdown.value);
+
+        insertButton.SetEnabled(true);
     }
 
     private async Task<List<Dictionary<string, string>>> CompleteSupply()
@@ -178,48 +204,23 @@ public class ParcelSupplyController : MonoBehaviour
                         { "timestamp", timestamp}
                     };
 
-                    // Find an empty slot for the category
-                    var result = await neo4jHelper.ExecuteReadListAsync(
-                        @"MATCH (shelf:Shelf {category: $category})-[:HAS_LAYER]->(layer:Layer)-[:HAS_SLOT]->(slot:Slot)
-                        WHERE NOT (slot)-[:CONTAINS]->() AND NOT (slot)-[:INTENDED_FOR]->()
-                        RETURN shelf, layer, slot
-                        LIMIT 1", parameters);
-
-                    if (result.Count > 0)
+                    // Create the parcel, link it to the the Delivery Area
+                    await neo4jHelper.ExecuteWriteAsync(
+                        @"MATCH (p:Product {product_name: $productName})
+                        MATCH (da:Area {type: 'Delivery'})
+                        CREATE (parcel:Parcel {product_name: p.product_name, category: p.category, timestamp: $timestamp})
+                        CREATE (parcel)-[:LOCATED_IN]->(da)",
+                    new Dictionary<string, object>
                     {
-                        var record = result[0];
-                        var shelfNode = record["shelf"].As<INode>();
-                        var layerNode = record["layer"].As<INode>();
-                        var slotNode = record["slot"].As<INode>();
-
-                        string shelfId = shelfNode.ElementId;
-                        string layerId = layerNode.ElementId;
-                        string slotId = slotNode.ElementId;
-
-                        // Create the parcel, link it to the slot and to the Delivery Area
-                        await neo4jHelper.ExecuteWriteAsync(
-                            @"MATCH (p:Product {product_name: $productName})
-                            MATCH (shelf:Shelf), (layer:Layer), (slot:Slot)
-                            WHERE elementId(shelf) = $shelfId AND elementId(layer) = $layerId AND elementId(slot) = $slotId
-                            MATCH (da:Area {type: 'Delivery'})
-                            CREATE (parcel:Parcel {product_name: p.product_name, category: p.category, timestamp: $timestamp})
-                            CREATE (parcel)-[:LOCATED_IN]->(da)
-                            CREATE (slot)-[:INTENDED_FOR]->(parcel)",
-                        new Dictionary<string, object>
-                        {
-                            { "productName", productName },
-                            { "shelfId", shelfId },
-                            { "layerId", layerId },
-                            { "slotId", slotId },
-                            { "timestamp", timestamp}
-                        });
-                        newParcels.Add(new Dictionary<string, string>
-                        {
-                            { "timestamp", timestamp },
-                            { "category", category },
-                            { "productName", productName }
-                        });
-                    }
+                        { "productName", productName },
+                        { "timestamp", timestamp}
+                    });
+                    newParcels.Add(new Dictionary<string, string>
+                    {
+                        { "timestamp", timestamp },
+                        { "category", category },
+                        { "productName", productName }
+                    });
                 }
             }
             ShowNotification("Supply completed successfully!");

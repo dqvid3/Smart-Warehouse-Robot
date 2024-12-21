@@ -13,7 +13,6 @@ public class OrderManagementController : MonoBehaviour
     private Label notificationLabel;
     private IDriver driver;
     private UIDocument uiDocument;
-    private bool isUIVisible = false;
 
     private async void Start()
     {
@@ -29,13 +28,6 @@ public class OrderManagementController : MonoBehaviour
         completeButton.clicked += async () => await CompleteOrder();
 
         await PopulatePrimaryList();
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.E))
-            isUIVisible = !isUIVisible;
-        uiDocument.rootVisualElement.style.display = isUIVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     private async Task PopulatePrimaryList()

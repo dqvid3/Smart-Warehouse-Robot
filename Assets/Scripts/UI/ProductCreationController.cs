@@ -11,7 +11,6 @@ public class ProductCreationController : MonoBehaviour
     private Label notificationLabel;
     private Neo4jHelper neo4jHelper;
     private UIDocument uiDocument;
-    private bool isUIVisible = false;
 
     private async void Start()
     {
@@ -27,15 +26,6 @@ public class ProductCreationController : MonoBehaviour
         submitButton.clicked += async () => await SubmitParcel();
 
         await PopulateCategoryDropdown();
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Alpha1) && !isUIVisible)
-        isUIVisible = true;
-        if (Input.GetKeyDown(KeyCode.Escape))
-            isUIVisible = false;
-        uiDocument.rootVisualElement.style.display = isUIVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     private async Task PopulateCategoryDropdown()
