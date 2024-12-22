@@ -6,7 +6,7 @@ using System.IO;
 
 public class QRCodeGenerator : MonoBehaviour
 {
-    public string qrCodeString;
+    public string qrCodeString = "example.com";
 
     void Start()
     {
