@@ -2,7 +2,6 @@ using UnityEngine;
 using ZXing;
 using ZXing.QrCode;
 using ZXing.Common;
-using System.IO;
 
 public class QRCodeGenerator : MonoBehaviour
 {
