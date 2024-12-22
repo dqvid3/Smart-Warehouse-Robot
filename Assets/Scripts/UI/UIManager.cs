@@ -26,6 +26,7 @@ public class UIManager : MonoBehaviour
             currentUI = 2;
             HideAllUI();
             parcelSupplyUI.rootVisualElement.style.display = DisplayStyle.Flex;
+            _ = parcelSupplyUI.GetComponent<ParcelSupplyController>().PopulateCategoryDropdown();
         }
         else if (Input.GetKeyDown(KeyCode.Alpha3) && currentUI != 3) // Usa un numero diverso per ogni UI
         {

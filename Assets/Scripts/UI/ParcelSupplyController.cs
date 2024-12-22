@@ -47,7 +47,7 @@ public class ParcelSupplyController : MonoBehaviour
         await PopulateCategoryDropdown();
     }
 
-    private async Task PopulateCategoryDropdown()
+    public async Task PopulateCategoryDropdown()
     {
         var categories = await neo4jHelper.GetCategoriesAsync();
         categoryDropdown.choices = categories;

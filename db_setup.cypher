@@ -1,10 +1,10 @@
-// Create areas (rimane invariato)
+// Create areas 
 CREATE (warehouse:Area {type: "Warehouse", center_x: 0, center_z: 0, length: 50, width: 50})
 CREATE (shipping:Area {type: "Shipping", center_x: -35, center_z: 0, length: 20, width: 50})
-CREATE (delivery:Area {type: "Delivery", center_x: 35, center_z: 0, length: 20, width: 50})
+CREATE (delivery:Area {type: "Delivery", center_x: 40, center_z: 0, length: 30, width: 50})
 CREATE (recharge:Area {type: "Recharge", center_x: 0, center_z: 30, length: 50, width: 10})
 
-// Create robots (rimane invariato)
+// Create robots
 CREATE (:Robot {x: 0, z: 0, state: "inactive", battery: 10})
 CREATE (:Robot {x: 0, z: 0, state: "inactive", battery: 100})
 
@@ -52,6 +52,6 @@ FOREACH (product_data IN [
   CREATE (p:Product {product_name: product_data.product_name, category: product_data.category})
 );
 
-// Link each robot to every area (rimane invariato)
+// Link each robot to every area 
 MATCH (r:Robot), (a:Area)
 MERGE (r)-[:OPERATES_IN]->(a);
