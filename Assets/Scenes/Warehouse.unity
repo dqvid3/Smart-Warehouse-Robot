@@ -381,7 +381,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8565166899542106098, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_Name
-      value: Shelf Variant (4)
+      value: Shelf (4)
       objectReference: {fileID: 0}
     - target: {fileID: 9049496670942020936, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_LocalPosition.x
@@ -580,7 +580,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8565166899542106098, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_Name
-      value: Shelf Variant (6)
+      value: Shelf (6)
       objectReference: {fileID: 0}
     - target: {fileID: 9049496670942020936, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_LocalPosition.x
@@ -799,7 +799,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8565166899542106098, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_Name
-      value: Shelf Variant (3)
+      value: Shelf (3)
       objectReference: {fileID: 0}
     - target: {fileID: 9049496670942020936, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_LocalPosition.x
@@ -861,7 +861,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8565166899542106098, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_Name
-      value: Shelf Variant (5)
+      value: Shelf (5)
       objectReference: {fileID: 0}
     - target: {fileID: 9049496670942020936, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_LocalPosition.x
@@ -954,7 +954,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8565166899542106098, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_Name
-      value: Shelf Variant (2)
+      value: Shelf (2)
       objectReference: {fileID: 0}
     - target: {fileID: 9049496670942020936, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_LocalScale.z
@@ -1305,7 +1305,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8565166899542106098, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_Name
-      value: Shelf Variant (7)
+      value: Shelf (7)
       objectReference: {fileID: 0}
     - target: {fileID: 9049496670942020936, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_LocalScale.x
@@ -1659,7 +1659,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8565166899542106098, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_Name
-      value: Shelf
+      value: Shelf (1)
       objectReference: {fileID: 0}
     - target: {fileID: 9049496670942020936, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1721,7 +1721,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8565166899542106098, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_Name
-      value: Shelf Variant (8)
+      value: Shelf (8)
       objectReference: {fileID: 0}
     - target: {fileID: 9049496670942020936, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_LocalScale.z
@@ -1799,7 +1799,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
     - target: {fileID: 8565166899542106098, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_Name
-      value: Shelf Variant (9)
+      value: Shelf (9)
       objectReference: {fileID: 0}
     - target: {fileID: 9049496670942020936, guid: 73a3b0447ee8c4285915cbf08c7ebe77, type: 3}
       propertyPath: m_LocalScale.z
