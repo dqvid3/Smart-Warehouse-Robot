@@ -2166,6 +2166,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ParcelOnSunoko
       objectReference: {fileID: 0}
+    - target: {fileID: 6956249777717959818, guid: 3d8b057fcbad2492aa5c3913e2c17962, type: 3}
+      propertyPath: qrCodeString
+      value: example.com
+      objectReference: {fileID: 0}
     - target: {fileID: 8140051443930205139, guid: 3d8b057fcbad2492aa5c3913e2c17962, type: 3}
       propertyPath: m_LocalPosition.x
       value: 29.748278
