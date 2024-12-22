@@ -23,16 +23,39 @@ public class ForkliftNavController : MonoBehaviour
 
     void Update()
     {
+        // Controlla il click del mouse sinistro
         if (Input.GetMouseButtonDown(0) && !isCarryingBox)
         {
+            // Lancia un Raycast dalla posizione del mouse
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, boxLayerMask) && hit.collider.CompareTag("Grabbable"))
+
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, boxLayerMask))
             {
-                targetBox = hit.collider.gameObject;
-                StartCoroutine(PickUpAndDeliver());
+                // Risali all'oggetto radice
+                targetBox = hit.collider.transform.root.gameObject;
+
+                Debug.Log($"Oggetto selezionato: {targetBox.name}");
+
+                // Controlla che l'oggetto radice abbia il tag corretto
+                if (targetBox.CompareTag("Grabbable"))
+                {
+                    Debug.Log($"Oggetto valido selezionato: {targetBox.name}");
+
+                    // Avvia la coroutine per prelevare e consegnare
+                    StartCoroutine(PickUpAndDeliver());
+                }
+                else
+                {
+                    Debug.LogWarning("L'oggetto selezionato non è valido!");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Nessun oggetto intercettato dal Raycast!");
             }
         }
     }
+
 
     public IEnumerator PickUpAndDeliver()
     {

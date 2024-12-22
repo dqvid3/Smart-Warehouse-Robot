@@ -1,18 +1,18 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\",
+  "WorkspaceRootPath": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\forkliftnavcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\forkliftnavcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\DeliveryToShelfController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|c:\\progettiunity\\smart-warehouse-robot\\assets\\scripts\\deliverytoshelfcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\deliverytoshelfcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\ForkliftNavController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|c:\\progettiunity\\smart-warehouse-robot\\assets\\scripts\\forkliftcommonfunctions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\forkliftcommonfunctions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftCommonFunctions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\ForkliftCommonFunctions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -21,52 +21,46 @@
       "VerticalTabListWidth": 256,
       "DocumentGroups": [
         {
-          "DockedWidth": 161,
-          "SelectedChildIndex": 0,
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "DeliveryToShelfController.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfController.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\DeliveryToShelfController.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfController.cs",
-              "RelativeToolTip": "Assets\\Scripts\\DeliveryToShelfController.cs",
-              "ViewState": "AgIAAOEAAAAAAAAAAAAuwPcAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-20T08:45:58.622Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Document",
               "DocumentIndex": 2,
               "Title": "ForkliftCommonFunctions.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftCommonFunctions.cs",
+              "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftCommonFunctions.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\ForkliftCommonFunctions.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftCommonFunctions.cs",
+              "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftCommonFunctions.cs",
               "RelativeToolTip": "Assets\\Scripts\\ForkliftCommonFunctions.cs",
-              "ViewState": "AgIAAHMAAAAAAAAAAAAmwIsAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAHAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-20T08:55:09.583Z",
+              "WhenOpened": "2024-12-22T18:58:11.872Z",
               "EditorCaption": ""
-            }
-          ]
-        },
-        {
-          "DockedWidth": 338,
-          "SelectedChildIndex": 0,
-          "Children": [
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ForkliftNavController.cs",
+              "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\ForkliftNavController.cs",
+              "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\ForkliftNavController.cs",
+              "ViewState": "AgIAABcAAAAAAAAAAAAAACgAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-12-22T18:57:43.294Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "ForkliftNavController.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\ForkliftNavController.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
-              "RelativeToolTip": "Assets\\Scripts\\ForkliftNavController.cs",
-              "ViewState": "AgIAADkAAAAAAAAAAAAmwEkAAABNAAAAAAAAAA==",
+              "Title": "DeliveryToShelfController.cs",
+              "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\DeliveryToShelfController.cs",
+              "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\DeliveryToShelfController.cs",
+              "ViewState": "AgIAAEAAAAAAAAAAAAAwwO8AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-20T08:47:13.226Z",
+              "WhenOpened": "2024-12-22T18:58:03.204Z",
               "EditorCaption": ""
             }
           ]

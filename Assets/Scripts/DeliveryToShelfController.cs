@@ -17,13 +17,14 @@ public class DeliveryToShelfController : MonoBehaviour
     private Vector3 originalPosition;
     public ForkliftNavController forkliftNavController;
 
+    // Controlla se la box è nella delivery area
     bool IsBoxInDeliveryArea(GameObject box)
     {
         float distanceToDelivery = Vector3.Distance(box.transform.position, deliveryPoint.position);
         Debug.Log($"Posizione della box: {box.transform.position}");
         Debug.Log($"Posizione del deliveryPoint: {deliveryPoint.position}");
         Debug.Log($"Distanza dalla Delivery Area: {distanceToDelivery}");
-        return distanceToDelivery <= 5.0f;
+        return distanceToDelivery <= 30.0f; // Raggio della delivery area
     }
 
     void Start()
@@ -41,35 +42,56 @@ public class DeliveryToShelfController : MonoBehaviour
 
     void Update()
     {
+        // Controlla il click del mouse sinistro
         if (Input.GetMouseButtonDown(0) && !isCarryingBox)
         {
+            // Lancia un Raycast dalla posizione del mouse
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, boxLayerMask) && hit.collider.CompareTag("Grabbable"))
+
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, boxLayerMask))
             {
-                targetBox = hit.collider.gameObject;
+                // Risali all'oggetto radice
+                targetBox = hit.collider.transform.root.gameObject;
 
-                if (IsBoxInDeliveryArea(targetBox))
+                Debug.Log($"Oggetto selezionato: {targetBox.name}");
+
+                // Controlla che l'oggetto radice abbia il tag corretto
+                if (targetBox.CompareTag("Grabbable"))
                 {
-                    Debug.Log("La box è nella Delivery Area, avvio trasporto allo scaffale.");
-
-                    if (forkliftNavController != null)
+                    // Verifica che la box si trovi nella delivery area
+                    if (IsBoxInDeliveryArea(targetBox))
                     {
-                        forkliftNavController.StopAllCoroutines();
-                        forkliftNavController.agent.ResetPath();
-                        forkliftNavController.enabled = false;
-                        Debug.Log("ForkliftNavController disattivato senza disabilitare il NavMeshAgent.");
+                        Debug.Log($"Oggetto {targetBox.name} valido e nella Delivery Area. Inizio il trasporto allo scaffale.");
+
+                        // Disattiva il controllo della navetta durante l'operazione
+                        if (forkliftNavController != null)
+                        {
+                            forkliftNavController.StopAllCoroutines();
+                            forkliftNavController.agent.ResetPath();
+                            forkliftNavController.enabled = false;
+                            Debug.Log("ForkliftNavController disattivato.");
+                        }
+                        else
+                        {
+                            Debug.LogError("ForkliftNavController non assegnato!");
+                        }
+
+                        // Avvia la coroutine per il trasporto
+                        StartCoroutine(PickUpFromDeliveryAndStore(3));
                     }
                     else
                     {
-                        Debug.LogError("forkliftNavController è null!");
+                        Debug.Log("La box NON è nella Delivery Area.");
                     }
-
-                    StartCoroutine(PickUpFromDeliveryAndStore(3));
                 }
                 else
                 {
-                    Debug.Log("La box NON è nella Delivery Area.");
+                    Debug.LogWarning("L'oggetto selezionato non è valido!");
                 }
+            }
+            else
+            {
+                Debug.LogWarning("Nessun oggetto intercettato dal Raycast!");
             }
         }
     }
@@ -96,14 +118,16 @@ public class DeliveryToShelfController : MonoBehaviour
             Debug.Log("NavMeshAgent riabilitato.");
         }
 
-        // 1. Vai alla zona di delivery
+        // Vai direttamente verso la box
+        Vector3 approachPoint = targetBox.transform.position;
         agent.ResetPath();
-        agent.SetDestination(deliveryPoint.position);
+        agent.SetDestination(approachPoint);
+        Debug.DrawLine(transform.position, approachPoint, Color.green, 5f); // Debug visivo
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
-        Debug.Log("Arrivato alla Delivery Area");
+        Debug.Log("Arrivato direttamente alla box");
 
-        // 2. Prendi la box
+        // Prendi la box
         yield return StartCoroutine(ApproachAndGrabBox());
 
         if (targetBox == null)
@@ -112,13 +136,11 @@ public class DeliveryToShelfController : MonoBehaviour
             yield break;
         }
 
-
-        // 3. Vai al livello specifico dello shelf ma fermati a 1.5 m di distanza
+        // Vai al livello specifico dello shelf ma fermati a 1.5 m di distanza
         Transform targetShelfLevel = shelfLevels[shelfLevelIndex];
-        Vector3 approachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetShelfLevel.position, 1.5f, 0.0f);
-        Vector3 positionPoint = ForkliftCommonFunctions.CalculateFromPoint(approachPoint, transform, 2.5f);
+        Vector3 approachToShelf = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetShelfLevel.position, 1.5f, 0.0f);
         agent.ResetPath();
-        agent.SetDestination(positionPoint);
+        agent.SetDestination(approachToShelf);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
         Debug.Log("Arrivato a 1.5m dallo scaffale");
@@ -128,23 +150,11 @@ public class DeliveryToShelfController : MonoBehaviour
         yield return StartCoroutine(SmoothRotateToDirection(targetForwardDir, 1f));
         Debug.Log("Rotazione completata, ora parallelo allo scaffale.");
 
-
-        // 4. Solleva l'elevatore fino al livello dello shelf
+        // Solleva l'elevatore fino al livello dello shelf
         yield return StartCoroutine(LiftToShelfLevel(targetShelfLevel.position.y));
 
-        positionPoint = ForkliftCommonFunctions.CalculateFromPoint(approachPoint, transform, 1.1f);
-        agent.ResetPath();
-        agent.SetDestination(positionPoint);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-
-        // 5. Rilascia la box
+        // Rilascia la box
         ForkliftCommonFunctions.ReleaseBox(ref targetBox, ref isCarryingBox, Vector3.down * 0.1f, true);
-
-        positionPoint = ForkliftCommonFunctions.CalculateFromPoint(approachPoint, transform, 2.5f);
-        agent.ResetPath();
-        agent.SetDestination(positionPoint);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-
 
         // Riattiva il ForkliftNavController
         forkliftNavController.enabled = true;
@@ -154,10 +164,10 @@ public class DeliveryToShelfController : MonoBehaviour
         }
         Debug.Log("ForkliftNavController riattivato.");
 
-        // 6. Abbassa tutti i masti
+        // Abbassa tutti i masti
         yield return StartCoroutine(ForkliftCommonFunctions.LowerAllMasts(forkliftController));
 
-        // 7. Torna alla posizione originale
+        // Torna alla posizione originale
         agent.ResetPath();
         agent.SetDestination(originalPosition);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
@@ -169,16 +179,28 @@ public class DeliveryToShelfController : MonoBehaviour
     {
         if (targetBox == null) yield break;
 
-        Vector3 approachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetBox.transform.position, 0.4f, 0.0f);
+        Vector3 approachPoint = targetBox.transform.position;
         agent.SetDestination(approachPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
-        // Attacca la box (senza mastIndex, con reset velocità, messaggio di successo)
+        // Attacca la box
         ForkliftCommonFunctions.AttachBox(ref targetBox, forkliftController.grabPoint, ref isCarryingBox, forkliftController);
 
-        Vector3 retreatPoint = transform.position - transform.forward * 1.0f;
-        agent.SetDestination(retreatPoint);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
+        Debug.Log($"Box {targetBox.name} presa con successo.");
+    }
+
+    IEnumerator SmoothRotateToDirection(Vector3 targetForward, float rotationSpeed = 1f)
+    {
+        Quaternion startRotation = transform.rotation;
+        Quaternion finalRotation = Quaternion.LookRotation(targetForward, Vector3.up);
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * rotationSpeed;
+            transform.rotation = Quaternion.Slerp(startRotation, finalRotation, t);
+            yield return null;
+        }
+        transform.rotation = finalRotation;
     }
 
     IEnumerator LiftToShelfLevel(float targetHeight)
@@ -213,35 +235,5 @@ public class DeliveryToShelfController : MonoBehaviour
                 break;
             }
         }
-
-        foreach (var mast in forkliftController.masts)
-        {
-            float minLiftHeight = mast.minLiftHeight;
-            if (mast.liftTransform.localPosition.y < minLiftHeight)
-            {
-                mast.liftTransform.localPosition = new Vector3(
-                    mast.liftTransform.localPosition.x,
-                    minLiftHeight,
-                    mast.liftTransform.localPosition.z
-                );
-                Debug.LogWarning($"Elevatore corretto alla minima altezza consentita per il mast.");
-            }
-        }
     }
-
-    IEnumerator SmoothRotateToDirection(Vector3 targetForward, float rotationSpeed = 1f)
-    {
-        Quaternion startRotation = transform.rotation;
-        Quaternion finalRotation = Quaternion.LookRotation(targetForward, Vector3.up);
-        float angle = Quaternion.Angle(startRotation, finalRotation);
-        float t = 0f;
-        while (t < 1f)
-        {
-            t += Time.deltaTime * rotationSpeed;
-            transform.rotation = Quaternion.Slerp(startRotation, finalRotation, t);
-            yield return null;
-        }
-        transform.rotation = finalRotation;
-    }
-
 }

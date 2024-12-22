@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using System.Collections;
 
@@ -41,37 +42,43 @@ public static class ForkliftCommonFunctions
     }
 
     public static void AttachBox(
-    ref GameObject targetBox,
-    Transform grabPoint,
-    ref bool isCarryingBox,
-    ForkliftController forkliftController
-)
-{
-    if (targetBox == null) return;
-
-    Rigidbody rb = targetBox.GetComponent<Rigidbody>();
-    if (rb != null)
+     ref GameObject targetBox,
+     Transform grabPoint,
+     ref bool isCarryingBox,
+     ForkliftController forkliftController
+ )
     {
-        rb.isKinematic = true;
-        rb.useGravity = false;         
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
+        if (targetBox == null)
+        {
+            Debug.LogWarning("Nessuna box selezionata per il grab!");
+            return;
+        }
+
+        // Configura il Rigidbody dell'intero oggetto
+        Rigidbody rb = targetBox.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true; // Disabilita la fisica
+            rb.useGravity = false;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+        else
+        {
+            Debug.LogWarning("Rigidbody mancante nella box, il grab potrebbe non funzionare correttamente.");
+        }
+
+        // Assegna il parent dell'intero oggetto al grab point
+        targetBox.transform.SetParent(grabPoint);
+        targetBox.transform.localPosition = Vector3.zero;
+        targetBox.transform.localRotation = Quaternion.identity;
+
+        isCarryingBox = true;
+        Debug.Log($"Oggetto {targetBox.name} attaccato al grab point.");
     }
 
-    // Attacco della box al grab point
-    targetBox.transform.SetParent(grabPoint);
-
-    // Posizione e rotazione locale azzerate per rendere la box parallela al reachlift
-    targetBox.transform.localPosition = Vector3.zero;
-    targetBox.transform.localRotation = Quaternion.identity; 
-
-    isCarryingBox = true; 
-
-    Debug.Log("Box attaccata con successo e allineata al reachlift.");
-}
 
 
-    // Funzione comune per il rilascio della box
     public static void ReleaseBox(
         ref GameObject targetBox,
         ref bool isCarryingBox,
@@ -85,6 +92,7 @@ public static class ForkliftCommonFunctions
             return;
         }
 
+        // Ripristina le proprietà fisiche dell'intero oggetto
         var rb = targetBox.GetComponent<Rigidbody>();
         if (rb != null)
         {
@@ -92,21 +100,22 @@ public static class ForkliftCommonFunctions
             rb.useGravity = true;
             if (wakeRigidbody)
             {
-                rb.WakeUp(); // Forza l'aggiornamento immediato del Rigidbody
+                rb.WakeUp();
             }
         }
 
         targetBox.transform.SetParent(null);
-        targetBox.transform.position += positionOffset;
+        targetBox.transform.position += positionOffset; // Applica l'offset di rilascio
         targetBox = null;
 
         isCarryingBox = false;
     }
 
+
     // Funzione comune per abbassare tutti i masti, usando i targetHeights forniti
     public static IEnumerator LowerAllMasts(ForkliftController forkliftController)
     {
-         float[] targetHeights = new float[] { 1.372069f, 1.525879e-07f, -7.629394e-08f };
+        float[] targetHeights = new float[] { 1.372069f, 1.525879e-07f, -7.629394e-08f };
 
         // Controlla che il numero di altezze specificate corrisponda al numero di masti
         if (targetHeights.Length != forkliftController.masts.Length)

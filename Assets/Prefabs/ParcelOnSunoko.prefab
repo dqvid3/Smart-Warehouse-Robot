@@ -9,9 +9,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8140051443930205139}
-  m_Layer: 0
+  - component: {fileID: -1131499620362188595}
+  - component: {fileID: -6542373863492378913}
+  m_Layer: 3
   m_Name: ParcelOnSunoko
-  m_TagString: Untagged
+  m_TagString: Grabbable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -25,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 6934787105212920705}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.33, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -33,6 +35,54 @@ Transform:
   - {fileID: 1174845639923692904}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!54 &-1131499620362188595
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6934787105212920705}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!65 &-6542373863492378913
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6934787105212920705}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.0926027, y: 1.136891, z: 1.0178515}
+  m_Center: {x: 0.00048530102, y: 0.56553525, z: 0.008925736}
 --- !u!1001 &5124064636368841366
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41,9 +91,41 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8140051443930205139}
     m_Modifications:
+    - target: {fileID: 1271610943006666570, guid: 772b9c78be86a47e8a9d0faa27481358, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2258290741819439699, guid: 772b9c78be86a47e8a9d0faa27481358, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2393851918805299646, guid: 772b9c78be86a47e8a9d0faa27481358, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3187793013725610471, guid: 772b9c78be86a47e8a9d0faa27481358, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4588743611448380755, guid: 772b9c78be86a47e8a9d0faa27481358, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4852823438427255230, guid: 772b9c78be86a47e8a9d0faa27481358, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 5144364542316421992, guid: 772b9c78be86a47e8a9d0faa27481358, type: 3}
       propertyPath: m_Name
       value: Parcel
+      objectReference: {fileID: 0}
+    - target: {fileID: 5144364542316421992, guid: 772b9c78be86a47e8a9d0faa27481358, type: 3}
+      propertyPath: m_Layer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6130287243020851106, guid: 772b9c78be86a47e8a9d0faa27481358, type: 3}
+      propertyPath: m_Layer
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6292010548485070846, guid: 772b9c78be86a47e8a9d0faa27481358, type: 3}
       propertyPath: m_LocalPosition.x
@@ -103,6 +185,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8140051443930205139}
     m_Modifications:
+    - target: {fileID: 3326151426173443175, guid: 42ee078960b644a5f9ed1e69d5bc229e, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3800697274889145171, guid: 42ee078960b644a5f9ed1e69d5bc229e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -146,6 +232,10 @@ PrefabInstance:
     - target: {fileID: 8041253230537007012, guid: 42ee078960b644a5f9ed1e69d5bc229e, type: 3}
       propertyPath: m_Name
       value: Sunoko
+      objectReference: {fileID: 0}
+    - target: {fileID: 8041253230537007012, guid: 42ee078960b644a5f9ed1e69d5bc229e, type: 3}
+      propertyPath: m_Layer
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
