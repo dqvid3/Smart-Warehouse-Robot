@@ -4,7 +4,7 @@ using System.Collections;
 
 public static class ForkliftCommonFunctions
 {
-    // Funzione comune per controllare se il ForkliftController √® assegnato
+    // Funzione comune per controllare se il ForkliftController Ë assegnato
     public static bool CheckForkliftController(ForkliftController forkliftController)
     {
         if (forkliftController == null)
@@ -92,7 +92,7 @@ public static class ForkliftCommonFunctions
             return;
         }
 
-        // Ripristina le propriet√† fisiche dell'intero oggetto
+        // Ripristina le propriet‡ fisiche dell'intero oggetto
         var rb = targetBox.GetComponent<Rigidbody>();
         if (rb != null)
         {

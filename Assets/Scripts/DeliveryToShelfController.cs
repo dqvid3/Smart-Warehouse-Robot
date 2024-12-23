@@ -17,19 +17,44 @@ public class DeliveryToShelfController : MonoBehaviour
     private Vector3 originalPosition;
     public ForkliftNavController forkliftNavController;
 
-    // Controlla se la box è nella delivery area
+    [Header("Approach Point Settings")]
+    public Vector3? predefinedApproachPoint = null; // Punto 3D specificato manualmente
+
+
     bool IsBoxInDeliveryArea(GameObject box)
     {
-        float distanceToDelivery = Vector3.Distance(box.transform.position, deliveryPoint.position);
-        Debug.Log($"Posizione della box: {box.transform.position}");
-        Debug.Log($"Posizione del deliveryPoint: {deliveryPoint.position}");
-        Debug.Log($"Distanza dalla Delivery Area: {distanceToDelivery}");
-        return distanceToDelivery <= 30.0f; // Raggio della delivery area
+        // Controlla lo stato della box
+        BoxState boxState = box.GetComponent<BoxState>();
+        if (boxState != null)
+        {
+            Debug.Log($"La box {box.name} ha isInDeliveryArea = {boxState.isInDeliveryArea}");
+            return boxState.isInDeliveryArea;
+        }
+
+        Debug.LogWarning($"La box {box.name} non ha un componente BoxState!");
+        return false;
     }
 
     void Start()
     {
         originalPosition = transform.position;
+
+        // Esempio di punto 3D a 1.5 metri dalla shelf (usando il primo shelf per esempio)
+        if (shelfLevels.Length > 0 && shelfLevels[0] != null)
+        {
+            Vector3 shelfPosition = shelfLevels[0].position;
+            Vector3 directionToShelf = (shelfPosition - transform.position).normalized;
+
+            // Punto a 1.5 metri dalla shelf lungo la direzione
+            predefinedApproachPoint = new Vector3(9.0f, 0.08f, -10.0f); // Esempio di coordinate X, Y, Z
+
+            Debug.Log($"Punto 3D predefinito impostato: {predefinedApproachPoint}");
+        }
+        else
+        {
+            Debug.LogWarning("Nessuno shelf configurato, impossibile calcolare il punto di approccio!");
+        }
+
         if (forkliftNavController == null)
         {
             Debug.LogError("ForkliftNavController non assegnato! Controlla nel Inspector.");
@@ -39,6 +64,7 @@ public class DeliveryToShelfController : MonoBehaviour
             Debug.Log($"ForkliftNavController assegnato: {forkliftNavController}");
         }
     }
+
 
     void Update()
     {
@@ -118,16 +144,7 @@ public class DeliveryToShelfController : MonoBehaviour
             Debug.Log("NavMeshAgent riabilitato.");
         }
 
-        // Vai direttamente verso la box
-        Vector3 approachPoint = targetBox.transform.position;
-        agent.ResetPath();
-        agent.SetDestination(approachPoint);
-        Debug.DrawLine(transform.position, approachPoint, Color.green, 5f); // Debug visivo
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-
-        Debug.Log("Arrivato direttamente alla box");
-
-        // Prendi la box
+        // 2. Prendi la box
         yield return StartCoroutine(ApproachAndGrabBox());
 
         if (targetBox == null)
@@ -136,25 +153,48 @@ public class DeliveryToShelfController : MonoBehaviour
             yield break;
         }
 
-        // Vai al livello specifico dello shelf ma fermati a 1.5 m di distanza
+        // 3. Determina il punto di approccio
         Transform targetShelfLevel = shelfLevels[shelfLevelIndex];
-        Vector3 approachToShelf = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetShelfLevel.position, 1.5f, 0.0f);
+        Vector3 approachPoint;
+
+        if (predefinedApproachPoint.HasValue)
+        {
+            approachPoint = predefinedApproachPoint.Value; // Usa il punto specificato
+            Debug.Log($"Usando il punto di approccio predefinito: {approachPoint}");
+        }
+        else
+        {
+            approachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetShelfLevel.position, 1.5f, 0.0f);
+            Debug.Log($"Calcolato il punto di approccio: {approachPoint}");
+        }
+
+        Vector3 positionPoint = ForkliftCommonFunctions.CalculateFromPoint(approachPoint, transform, 2.5f);
         agent.ResetPath();
-        agent.SetDestination(approachToShelf);
+        agent.SetDestination(positionPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
-        Debug.Log("Arrivato a 1.5m dallo scaffale");
+        Debug.Log("Arrivato a 1.5m dal punto di approccio");
 
         // Rotazione graduale per essere parallelo allo scaffale
         Vector3 targetForwardDir = Quaternion.Euler(0, 270, 0) * targetShelfLevel.forward;
         yield return StartCoroutine(SmoothRotateToDirection(targetForwardDir, 1f));
-        Debug.Log("Rotazione completata, ora parallelo allo scaffale.");
+        Debug.Log("Rotazione completata, ora parallelo al punto di approccio.");
 
-        // Solleva l'elevatore fino al livello dello shelf
+        // 4. Solleva l'elevatore fino al livello dello shelf
         yield return StartCoroutine(LiftToShelfLevel(targetShelfLevel.position.y));
 
-        // Rilascia la box
+        positionPoint = ForkliftCommonFunctions.CalculateFromPoint(approachPoint, transform, 1.1f);
+        agent.ResetPath();
+        agent.SetDestination(positionPoint);
+        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
+
+        // 5. Rilascia la box
         ForkliftCommonFunctions.ReleaseBox(ref targetBox, ref isCarryingBox, Vector3.down * 0.1f, true);
+
+        positionPoint = ForkliftCommonFunctions.CalculateFromPoint(approachPoint, transform, 2.5f);
+        agent.ResetPath();
+        agent.SetDestination(positionPoint);
+        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
         // Riattiva il ForkliftNavController
         forkliftNavController.enabled = true;
@@ -164,10 +204,10 @@ public class DeliveryToShelfController : MonoBehaviour
         }
         Debug.Log("ForkliftNavController riattivato.");
 
-        // Abbassa tutti i masti
+        // 6. Abbassa tutti i masti
         yield return StartCoroutine(ForkliftCommonFunctions.LowerAllMasts(forkliftController));
 
-        // Torna alla posizione originale
+        // 7. Torna alla posizione originale
         agent.ResetPath();
         agent.SetDestination(originalPosition);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);

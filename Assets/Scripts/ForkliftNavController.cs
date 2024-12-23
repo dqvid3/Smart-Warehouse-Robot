@@ -66,15 +66,20 @@ public class ForkliftNavController : MonoBehaviour
             yield break;
         }
 
-        // 1. Avvicinati alla box a 2.5 m di distanza
-        Vector3 distantApproachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetBox.transform.position, 2.5f, 0.0f);
+        // 1. Avvicinati alla box a 1.5 metri di distanza
+        Vector3 distantApproachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetBox.transform.position, 2f, 0.0f);
         agent.SetDestination(distantApproachPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        Debug.Log("Arrivato a 2.5m dalla box");
+        Debug.Log("Arrivato a 1.5m dalla box");
 
-        // 2. Solleva i mast in base all'altezza della box
+        // 2. Rotazione graduale per essere parallelo allo scaffale
+        Vector3 shelfForwardDir = new Vector3(0, 0, 1); // Supponendo che lo scaffale sia orientato lungo l'asse X
+        yield return StartCoroutine(SmoothRotateToDirection(shelfForwardDir, 1f));
+        Debug.Log("Rotazione completata, ora parallelo allo scaffale.");
+
+
+        // 3. Solleva i mast in base all'altezza della box
         yield return StartCoroutine(AdjustLiftHeightAndDetectBox());
-
         if (targetBox == null)
         {
             Debug.LogWarning("Nessuna box rilevata durante la salita!");
@@ -82,44 +87,61 @@ public class ForkliftNavController : MonoBehaviour
         }
         Debug.Log("Mast sollevati alla giusta altezza");
 
-        // 3. Avvicinati ulteriormente alla box
+        // 4. Avvicinati ulteriormente alla box per prenderla
         Vector3 closeApproachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetBox.transform.position, 1.1f, 0.0f);
         agent.ResetPath();
         agent.SetDestination(closeApproachPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        Debug.Log("Arrivato a 0.5m dalla box");
+        Debug.Log("Arrivato a 1.1m dalla box");
 
-        // 4. Prendi la box
+        // 5. Prendi la box
         ForkliftCommonFunctions.AttachBox(ref targetBox, forkliftController.grabPoint, ref isCarryingBox, forkliftController);
         Debug.Log("Box presa");
 
-        // 5. Arretra di 1 metro
+        // 6. Indietreggia di 1 metro
         Vector3 retreatPoint = transform.position - transform.forward * 1.0f;
         agent.ResetPath();
         agent.SetDestination(retreatPoint);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        Debug.Log("Arretrato di 1m");
+        Debug.Log("Indietreggiato di 1m");
 
-        // 6. Abbassa tutti i masti
+        // 7. Abbassa i mast
         yield return StartCoroutine(ForkliftCommonFunctions.LowerAllMasts(forkliftController));
-        Debug.Log("Masti abbassati");
+        Debug.Log("Mast abbassati");
 
-        // 7. Vai alla shipping area
+        // 8. Porta la box alla shipping area
         agent.ResetPath();
         agent.SetDestination(shippingPoint.position);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
         Debug.Log("Arrivato alla shipping area");
 
-        // 8. Rilascia la box
+        // 9. Rilascia la box
         ForkliftCommonFunctions.ReleaseBox(ref targetBox, ref isCarryingBox, Vector3.up * 0.2f, false);
         Debug.Log("Box rilasciata");
 
-        // 9. Torna alla posizione originale
+        // 10. Torna alla posizione originale
         agent.ResetPath();
         agent.SetDestination(originalPosition);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
         Debug.Log("Ritornato alla posizione originale");
     }
+
+
+    IEnumerator SmoothRotateToDirection(Vector3 targetForward, float rotationSpeed = 1f)
+    {
+        Quaternion startRotation = transform.rotation;
+        Quaternion finalRotation = Quaternion.LookRotation(targetForward, Vector3.up);
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * rotationSpeed;
+            transform.rotation = Quaternion.Slerp(startRotation, finalRotation, t);
+            yield return null;
+        }
+        transform.rotation = finalRotation;
+    }
+
+
 
 
     IEnumerator AdjustLiftHeightAndDetectBox()
