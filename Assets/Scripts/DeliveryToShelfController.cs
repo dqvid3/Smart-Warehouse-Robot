@@ -126,12 +126,6 @@ public class DeliveryToShelfController : MonoBehaviour
     {
         Debug.Log("Avviata coroutine PickUpFromDeliveryAndStore");
 
-        if (!ForkliftCommonFunctions.CheckForkliftController(forkliftController))
-        {
-            Debug.LogWarning("ForkliftController non assegnato!");
-            yield break;
-        }
-
         if (!agent.isOnNavMesh)
         {
             Debug.LogError("NavMeshAgent non è sulla NavMesh!");
@@ -164,7 +158,7 @@ public class DeliveryToShelfController : MonoBehaviour
         }
         else
         {
-            approachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetShelfLevel.position, 1.5f, 0.0f);
+            approachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetShelfLevel.position, 1.5f);
             Debug.Log($"Calcolato il punto di approccio: {approachPoint}");
         }
 
@@ -224,7 +218,7 @@ public class DeliveryToShelfController : MonoBehaviour
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
 
         // Attacca la box
-        ForkliftCommonFunctions.AttachBox(ref targetBox, forkliftController.grabPoint, ref isCarryingBox, forkliftController);
+        ForkliftCommonFunctions.AttachBox(ref targetBox, forkliftController.grabPoint, ref isCarryingBox);
 
         Debug.Log($"Box {targetBox.name} presa con successo.");
     }
@@ -245,8 +239,6 @@ public class DeliveryToShelfController : MonoBehaviour
 
     IEnumerator LiftToShelfLevel(float targetHeight)
     {
-        if (!ForkliftCommonFunctions.CheckForkliftController(forkliftController)) yield break;
-
         Transform grabPoint = forkliftController.grabPoint;
         if (grabPoint == null)
         {
@@ -256,14 +248,14 @@ public class DeliveryToShelfController : MonoBehaviour
 
         float currentHeight = grabPoint.position.y;
 
-        for (int i = 0; i < forkliftController.masts.Length; i++)
+        for (int i = 0; i < forkliftController.mastsLiftTransform.Length; i++)
         {
-            var mast = forkliftController.masts[i];
+            var mast = forkliftController.mastsLiftTransform[i];
 
-            while (currentHeight < targetHeight && mast.liftTransform.localPosition.y < mast.maxLiftHeight)
+            while (currentHeight < targetHeight && mast.localPosition.y < forkliftController.liftHeight)
             {
-                float step = mast.liftSpeed * Time.deltaTime;
-                mast.liftTransform.localPosition += Vector3.up * step;
+                float step = forkliftController.liftSpeed * Time.deltaTime;
+                mast.localPosition += Vector3.up * step;
                 currentHeight = grabPoint.position.y;
 
                 yield return null;

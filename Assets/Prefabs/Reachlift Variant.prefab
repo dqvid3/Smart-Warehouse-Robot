@@ -807,6 +807,10 @@ PrefabInstance:
       propertyPath: shippingPoint
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 3382456182264306211, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: forkliftController
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 3612795831773659098, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_LocalScale.z
       value: 0.7
@@ -892,6 +896,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7486483488993066797, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: forkliftController
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7486483488993066797, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: 'shelfLevels.Array.data[0]'
       value: 
       objectReference: {fileID: 0}
@@ -953,6 +961,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 551524546833197287, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+    - {fileID: 0}
     m_RemovedGameObjects:
     - {fileID: 70864744600013955, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
     - {fileID: 754564754051650108, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}

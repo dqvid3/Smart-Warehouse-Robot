@@ -1,14 +1,5 @@
 using UnityEngine;
 
-[System.Serializable]
-public class MastSettings
-{
-    public Transform liftTransform;
-    public float liftSpeed = 2f;
-    public float minLiftHeight = 0f;
-    public float maxLiftHeight = 5f;
-}
-
 public class ForkliftController : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -16,36 +7,14 @@ public class ForkliftController : MonoBehaviour
     public float rotationSpeed = 100f;
 
     [Header("Mast Settings")]
-    public MastSettings[] masts; // Array di masti con parametri personalizzabili
-
-    [Header("Wheel Settings")]
-    public Transform[] wheels; // Array dei Transform delle ruote
-    public float wheelRotationSpeed = 300f; // Velocità di rotazione delle ruote
+    public Transform[] mastsLiftTransform;
+    public float liftSpeed = 2f;
+    public float liftHeight = 2f;
 
     [Header("Grab Points")]
-    public Transform grabPoint;  // Punto di presa per i livelli più alti
-
+    public Transform grabPoint;  // Punto di presa per i livelli piï¿½ alti
 
     private int currentMastIndex = 0; // Indice del mast attualmente controllato
-
-    // Aggiungi un array per salvare le posizioni iniziali dei masti
-    private Vector3[] initialMastPositions;
-
-    void Start()
-    {
-        // Salva le posizioni iniziali dei masti
-        initialMastPositions = new Vector3[masts.Length];
-        for (int i = 0; i < masts.Length; i++)
-        {
-            initialMastPositions[i] = masts[i].liftTransform.localPosition;
-        }
-
-        // Controlla se il grab point è assegnato
-        if (grabPoint == null)
-        {
-            Debug.LogError("Grab point non assegnato! Assegna un grab point unico nell'Inspector.");
-        }
-    }
 
     void Update()
     {
@@ -58,60 +27,36 @@ public class ForkliftController : MonoBehaviour
     {
         float move = Input.GetAxis("Vertical");   // W/S per muoversi avanti/indietro
         float turn = Input.GetAxis("Horizontal"); // A/D per ruotare
-
-        if (Mathf.Abs(move) > 0.1f) // Se si sta muovendo avanti/indietro
-        {
-            transform.Translate(Vector3.forward * move * speed * Time.deltaTime);
-            RotateWheels(move);
-        }
-
-        transform.Rotate(Vector3.up * turn * rotationSpeed * Time.deltaTime);
+        transform.Translate(move * speed * Time.deltaTime * Vector3.forward);
+        transform.Rotate(turn * rotationSpeed * Time.deltaTime * Vector3.up);
     }
 
     void HandleLift()
     {
-        if (masts == null || masts.Length == 0) return;
-
-        MastSettings currentMast = masts[currentMastIndex];
-
-        if (currentMast.liftTransform != null)
+        Transform currentMast = mastsLiftTransform[currentMastIndex];
+        if (Input.GetKey(KeyCode.PageUp))
         {
-            if (Input.GetKey(KeyCode.PageUp))
-            {
-                MoveLift(currentMast, currentMast.liftSpeed * Time.deltaTime);
-            }
-            if (Input.GetKey(KeyCode.PageDown))
-            {
-                MoveLift(currentMast, -currentMast.liftSpeed * Time.deltaTime);
-            }
+            MoveLift(currentMast, liftSpeed * Time.deltaTime);
+        }
+        if (Input.GetKey(KeyCode.PageDown))
+        {
+            MoveLift(currentMast, -liftSpeed * Time.deltaTime);
         }
     }
 
-    void MoveLift(MastSettings mast, float amount)
+    void MoveLift(Transform mast, float amount)
     {
-        Vector3 liftPosition = mast.liftTransform.localPosition;
-        liftPosition.y = Mathf.Clamp(liftPosition.y + amount, mast.minLiftHeight, mast.maxLiftHeight);
-        mast.liftTransform.localPosition = liftPosition;
+        Vector3 liftPosition = mast.localPosition;
+        liftPosition.y = Mathf.Clamp(liftPosition.y + amount, 0, liftHeight);
+        mast.localPosition = liftPosition;
     }
 
     void SwitchMast()
     {
-        if (masts == null || masts.Length == 0) return;
-
         if (Input.GetKeyDown(KeyCode.Tab))
         {
-            currentMastIndex = (currentMastIndex + 1) % masts.Length;
+            currentMastIndex = (currentMastIndex + 1) % mastsLiftTransform.Length;
             Debug.Log("Switched to Mast: " + currentMastIndex);
-        }
-    }
-
-    void RotateWheels(float moveDirection)
-    {
-        if (wheels == null || wheels.Length == 0) return;
-
-        foreach (Transform wheel in wheels)
-        {
-            wheel.Rotate(Vector3.right * moveDirection * wheelRotationSpeed * Time.deltaTime);
         }
     }
 }
