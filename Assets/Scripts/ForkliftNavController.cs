@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-using Unity.VisualScripting;
 
 public class ForkliftNavController : MonoBehaviour
 {
@@ -9,116 +8,69 @@ public class ForkliftNavController : MonoBehaviour
     public NavMeshAgent agent;
     public Transform shippingPoint;
     public ForkliftController forkliftController;
-    public float liftHeightOffset = 0.5f;
-    public LayerMask boxLayerMask;
-
-    private GameObject targetBox;
-    private Vector3 originalPosition;
-
-    private bool isCarryingBox = false; // Stato per verificare se il reachlift ha una box
-
-    void Start()
-    {
-        originalPosition = transform.position;
-    }
+    [SerializeField] private LayerMask layerMask;
+    private bool isCarryingBox = false; 
+    private float approachDistance = 3.2f; // Distanza da mantenere per considerare le pale
+    private float takeBoxDistance = 1.7f;
 
     void Update()
     {
-        // Controlla il click del mouse sinistro
         if (Input.GetMouseButtonDown(0) && !isCarryingBox)
         {
-            // Lancia un Raycast dalla posizione del mouse
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-            if (Physics.Raycast(ray, out RaycastHit hit, boxLayerMask))
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f, layerMask))
             {
-                // Risali all'oggetto radice
-                targetBox = hit.collider.transform.root.gameObject;
-
-                Debug.Log($"Oggetto selezionato: {targetBox.name}");
-
-                // Controlla che l'oggetto radice abbia il tag corretto
-                if (targetBox.CompareTag("Grabbable"))
-                {
-                    Debug.Log($"Oggetto valido selezionato: {targetBox.name}");
-                    // Avvia la coroutine per prelevare e consegnare
-                    StartCoroutine(PickUpAndDeliver());
-                }
+                GameObject parcel = hit.collider.transform.root.gameObject;
+                StartCoroutine(PickParcel(parcel));
+                Debug.Log($"Pacco selezionato: {parcel.name}");
             }
         }
     }
 
-
-    public IEnumerator PickUpAndDeliver()
+    private IEnumerator PickParcel(GameObject parcel)
     {
-        // 1. Avvicinati alla box a 1.5 metri di distanza
-        float approachDistanceX = -3f;
-        Vector3 boxCenter = targetBox.transform.position;
-        Vector3 approachPosition = new Vector3(
-            boxCenter.x + approachDistanceX, // Fixed X distance from box center
-            transform.position.y,            // Maintain current Y
-            boxCenter.z                      // Align Z with box center
-        );
+        Vector3 pos = parcel.transform.position;
+        Vector3 approachPosition = new(pos.x, transform.position.y, pos.z);
+        Vector3 qrCodeDirection = new(1, 0, 0);
+        if (pos.y > 0) // il pacco è in uno scaffale
+            qrCodeDirection = new Vector3(0, 0, -1);
+        Debug.Log($"Posizione: {pos}, Approach: {approachPosition}, QRCode: {qrCodeDirection}");
+        approachPosition -= qrCodeDirection * approachDistance;
+        
+        // 1. Avvicinati alla box da lontano
         agent.SetDestination(approachPosition);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        Debug.Log("Arrivato a 2m dalla box");
         
-        // 2. Rotazione graduale per essere parallelo allo scaffale
-        Vector3 shelfForwardDir = new(1, 0, 0); // Supponendo che lo scaffale sia orientato lungo l'asse X
-        yield return StartCoroutine(SmoothRotateToDirection(shelfForwardDir));
-        Debug.Log("Rotazione completata, ora parallelo allo scaffale.");
-        // 4. Avvicinati ulteriormente alla box per prenderla
-        approachPosition.x -= approachDistanceX + 2f;
+        // 2. Ruota di fronte al box
+        yield return StartCoroutine(SmoothRotateToDirection(qrCodeDirection));
+        
+        // 3. Solleva un po' il mast
+        yield return StartCoroutine(forkliftController.LiftMast(pos.y + 0.05f)); 
+        
+        // 4. Vai avanti per prendere la box
+        approachPosition += qrCodeDirection * takeBoxDistance;   
         agent.SetDestination(approachPosition);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        agent.ResetPath();
         
-        // 5. Solleva i mast
-        yield return StartCoroutine(AdjustLiftHeightAndDetectBox());
-        Debug.Log("Mast sollevati alla giusta altezza");
-        /*
+        // 5. Solleva un po' la box
+        yield return StartCoroutine(forkliftController.LiftMast(pos.y + 0.05f));
+        parcel.transform.SetParent(forkliftController.grabPoint);
+        isCarryingBox = true; 
         
-        Vector3 closeApproachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetBox.transform.position, 1.1f, 0.0f);
-        agent.ResetPath();
-        agent.SetDestination(closeApproachPoint);
+        // 6. Torna indietro
+        approachPosition -= qrCodeDirection * takeBoxDistance;   
+        agent.SetDestination(approachPosition);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        Debug.Log("Arrivato a 1.1m dalla box");
-        */
-        // 5. Prendi la box
-        ForkliftCommonFunctions.AttachBox(ref targetBox, forkliftController.grabPoint, ref isCarryingBox);
-        Debug.Log("Box presa");
-        yield return StartCoroutine(LiftFirstMast());
-        /*
-        // 6. Indietreggia di 1 metro
-        Vector3 retreatPoint = transform.position - transform.forward * 1.0f;
-        agent.ResetPath();
-        agent.SetDestination(retreatPoint);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        Debug.Log("Indietreggiato di 1m");
-
+        
         // 7. Abbassa i mast
-        yield return StartCoroutine(ForkliftCommonFunctions.LowerAllMasts(forkliftController));
-        Debug.Log("Mast abbassati");
-
-        // 8. Porta la box alla shipping area
+        if (pos.y > 0) // il pacco è in uno scaffale
+            yield return StartCoroutine(forkliftController.LiftMast(0.1f));
         agent.ResetPath();
-        agent.SetDestination(shippingPoint.position);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        Debug.Log("Arrivato alla shipping area");
-
-        // 9. Rilascia la box
-        ForkliftCommonFunctions.ReleaseBox(ref targetBox, ref isCarryingBox, Vector3.up * 0.2f, false);
-        Debug.Log("Box rilasciata");
-
-        // 10. Torna alla posizione originale
-        agent.ResetPath();
-        agent.SetDestination(originalPosition);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        Debug.Log("Ritornato alla posizione originale");*/
+        
+        // logica per dirgli in quale scaffale metterlo oppure di portarlo al punto di spedizione
     }
 
-
-    IEnumerator SmoothRotateToDirection(Vector3 targetForward, float rotationSpeed = 1f)
+    private IEnumerator SmoothRotateToDirection(Vector3 targetForward, float rotationSpeed = 1f)
     {
         Quaternion startRotation = transform.rotation;
         Quaternion finalRotation = Quaternion.LookRotation(targetForward, Vector3.up);
@@ -131,63 +83,7 @@ public class ForkliftNavController : MonoBehaviour
         }
         transform.rotation = finalRotation;
     }
-
-    IEnumerator LiftFirstMast()
-    {
-        Transform firstMast = forkliftController.mastsLiftTransform[0];
-        float currentHeight = firstMast.localPosition.y;
-
-        while (currentHeight < forkliftController.liftHeight)
-        {
-            float step = forkliftController.liftSpeed * Time.deltaTime;
-            firstMast.localPosition += Vector3.up * step;
-            currentHeight += step;
-
-            yield return null;
-        }
-    }
-
-    IEnumerator AdjustLiftHeightAndDetectBox()
-    {
-        Transform grabPoint = forkliftController.grabPoint;
-
-        bool boxFound = false;
-
-        float boxBaseHeight = targetBox.transform.position.y;
-        float forkliftBaseHeight = forkliftController.transform.position.y;
-
-        float targetLiftHeight = boxBaseHeight - forkliftBaseHeight + liftHeightOffset;
-
-        for (int i = 0; i < forkliftController.mastsLiftTransform.Length; i++)
-        {
-            var mast = forkliftController.mastsLiftTransform[i];
-            float currentHeight = mast.localPosition.y;
-
-            while (currentHeight < forkliftController.liftHeight && grabPoint.position.y < boxBaseHeight)
-            {
-                float step = forkliftController.liftSpeed * Time.deltaTime;
-                mast.localPosition += Vector3.up * step;
-                currentHeight += step;
-
-                if (DetectBoxInFront(grabPoint, 1.5f))
-                {
-                    boxFound = true;
-                    Debug.Log($"Box rilevata durante la salita con il mast {i}!");
-                    break;
-                }
-
-                yield return null;
-            }
-
-            if (boxFound) break;
-        }
-
-        if (!boxFound)
-        {
-            Debug.LogWarning("Nessuna box trovata frontalmente durante la salita!");
-        }
-    }
-
+/*
     bool DetectBoxInFront(Transform grabPoint, float maxDistance)
     {
         if (grabPoint == null)
@@ -213,18 +109,5 @@ public class ForkliftNavController : MonoBehaviour
 
         return false;
     }
-
-    IEnumerator ApproachAndGrabBox()
-    {
-        Vector3 approachPoint = ForkliftCommonFunctions.CalculateApproachPoint(transform, targetBox.transform.position, 0.4f);
-        agent.SetDestination(approachPoint);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-
-        // Attach box
-        ForkliftCommonFunctions.AttachBox(ref targetBox, forkliftController.grabPoint, ref isCarryingBox);
-
-        Vector3 retreatPoint = transform.position - transform.forward * 1.0f;
-        agent.SetDestination(retreatPoint);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-    }
+    */
 }

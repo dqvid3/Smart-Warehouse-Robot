@@ -27,16 +27,15 @@ public static class ForkliftCommonFunctions
 
     public static void AttachBox(ref GameObject targetBox, Transform grabPoint, ref bool isCarryingBox)
     {
-        //Configura il Rigidbody dell'intero oggetto
-        Rigidbody rb = targetBox.GetComponent<Rigidbody>();
-        rb.isKinematic = true; // Disabilita la fisica
-        rb.useGravity = false;
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
+        /*Rigidbody[] childRigidbodies = targetBox.GetComponentsInChildren<Rigidbody>();
+        foreach (Rigidbody childRb in childRigidbodies)
+        {
+            childRb.isKinematic = true;
+        }*/
 
         // Assegna il parent dell'intero oggetto al grab point
         targetBox.transform.SetParent(grabPoint);
-        targetBox.transform.localPosition = new Vector3(0.1f, 0.1f, 0.1f);
+        targetBox.transform.localPosition = new Vector3(0, 0, 2.5f);
 
         isCarryingBox = true;
         Debug.Log($"Oggetto {targetBox.name} attaccato al grab point.");
@@ -76,7 +75,7 @@ public static class ForkliftCommonFunctions
         isCarryingBox = false;
     }
 
-
+/*
     // Funzione comune per abbassare tutti i masti, usando i targetHeights forniti
     public static IEnumerator LowerAllMasts(ForkliftController forkliftController)
     {
@@ -91,4 +90,5 @@ public static class ForkliftCommonFunctions
             }
         }
     }
+    */
 }

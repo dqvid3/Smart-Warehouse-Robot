@@ -542,7 +542,7 @@ GameObject:
   - component: {fileID: 384048105133929366}
   - component: {fileID: 6418260640431788991}
   - component: {fileID: 5024773058348274547}
-  - component: {fileID: 7448103569014102410}
+  - component: {fileID: 3664084938219871410}
   m_Layer: 0
   m_Name: Parcel
   m_TagString: Untagged
@@ -646,7 +646,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.0000002, y: 1, z: 1.0000002}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!54 &7448103569014102410
+--- !u!54 &3664084938219871410
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -654,9 +654,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5144364542316421992}
   serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 0.5
-  m_AngularDrag: 1
+  m_Mass: 5
+  m_Drag: 1
+  m_AngularDrag: 5
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}

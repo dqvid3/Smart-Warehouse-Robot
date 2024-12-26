@@ -175,7 +175,7 @@ public class DeliveryToShelfController : MonoBehaviour
         Debug.Log("Rotazione completata, ora parallelo al punto di approccio.");
 
         // 4. Solleva l'elevatore fino al livello dello shelf
-        yield return StartCoroutine(LiftToShelfLevel(targetShelfLevel.position.y));
+        //yield return StartCoroutine(LiftToShelfLevel(targetShelfLevel.position.y));
 
         positionPoint = ForkliftCommonFunctions.CalculateFromPoint(approachPoint, transform, 1.1f);
         agent.ResetPath();
@@ -199,7 +199,7 @@ public class DeliveryToShelfController : MonoBehaviour
         Debug.Log("ForkliftNavController riattivato.");
 
         // 6. Abbassa tutti i masti
-        yield return StartCoroutine(ForkliftCommonFunctions.LowerAllMasts(forkliftController));
+        //yield return StartCoroutine(ForkliftCommonFunctions.LowerAllMasts(forkliftController));
 
         // 7. Torna alla posizione originale
         agent.ResetPath();
@@ -236,7 +236,7 @@ public class DeliveryToShelfController : MonoBehaviour
         }
         transform.rotation = finalRotation;
     }
-
+/*
     IEnumerator LiftToShelfLevel(float targetHeight)
     {
         Transform grabPoint = forkliftController.grabPoint;
@@ -268,4 +268,5 @@ public class DeliveryToShelfController : MonoBehaviour
             }
         }
     }
+    */
 }
