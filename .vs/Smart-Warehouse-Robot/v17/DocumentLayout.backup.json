@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\ForkliftNavController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\DeliveryToShelfController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\ForkliftNavController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryAreaTrigger.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -30,7 +30,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
@@ -42,8 +42,7 @@
               "RelativeToolTip": "Assets\\Scripts\\BoxState.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-23T09:36:42.607Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-23T09:36:42.607Z"
             },
             {
               "$type": "Document",
@@ -55,12 +54,11 @@
               "RelativeToolTip": "Assets\\Scripts\\DeliveryAreaTrigger.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAACQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-23T09:35:33.064Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-23T09:35:33.064Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "ForkliftNavController.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\ForkliftNavController.cs",
@@ -73,13 +71,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "DeliveryToShelfController.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\DeliveryToShelfController.cs",
               "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfController.cs",
               "RelativeToolTip": "Assets\\Scripts\\DeliveryToShelfController.cs",
-              "ViewState": "AgIAABwAAAAAAAAAAAAAwDAAAABCAAAAAAAAAA==",
+              "ViewState": "AgIAACEAAAAAAAAAAAAAADAAAABCAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-12-22T18:58:03.204Z",
               "EditorCaption": ""
@@ -94,8 +92,7 @@
               "RelativeToolTip": "Assets\\Scripts\\ForkliftCommonFunctions.cs",
               "ViewState": "AgIAAFUAAAAAAAAAAAAQwJQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-22T18:58:11.872Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-22T18:58:11.872Z"
             }
           ]
         }
