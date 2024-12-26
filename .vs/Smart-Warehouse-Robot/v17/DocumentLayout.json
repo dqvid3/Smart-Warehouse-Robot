@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfControllerQRCodeReader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\DeliveryToShelfControllerQRCodeReader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftCommonFunctions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\ForkliftCommonFunctions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -31,6 +35,19 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "DeliveryToShelfControllerQRCodeReader.cs",
+              "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfControllerQRCodeReader.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\DeliveryToShelfControllerQRCodeReader.cs",
+              "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfControllerQRCodeReader.cs",
+              "RelativeToolTip": "Assets\\Scripts\\DeliveryToShelfControllerQRCodeReader.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-12-26T12:25:05.255Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "ForkliftCommonFunctions.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftCommonFunctions.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\ForkliftCommonFunctions.cs",
@@ -43,7 +60,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "QRCodeReader.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\QRCodeReader.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\QRCodeReader.cs",
@@ -51,12 +68,11 @@
               "RelativeToolTip": "Assets\\Scripts\\QRCodeReader.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-26T11:36:59.623Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-26T11:36:59.623Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "ForkliftController.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\ForkliftController.cs",
@@ -64,12 +80,11 @@
               "RelativeToolTip": "Assets\\Scripts\\ForkliftController.cs",
               "ViewState": "AgIAAJwAAAAAAAAAAAAAAFkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-26T11:34:10.435Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-26T11:34:10.435Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "DeliveryToShelfController.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\DeliveryToShelfController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\DeliveryToShelfController.cs",
@@ -77,8 +92,7 @@
               "RelativeToolTip": "Assets\\Scripts\\DeliveryToShelfController.cs",
               "ViewState": "AgIAAOYAAAAAAAAAAAAowAUBAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-26T11:31:43.389Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-26T11:31:43.389Z"
             }
           ]
         }
