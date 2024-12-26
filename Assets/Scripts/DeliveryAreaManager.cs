@@ -69,7 +69,7 @@ public class DeliveryAreaManager : MonoBehaviour
                     {
                         float x = deliveryAreaCenterX - deliveryAreaLength / 2 + spacingX * (col + 1);
                         float z = deliveryAreaCenterZ - deliveryAreaWidth / 2 + spacingZ * (row + 1);
-                        predefinedPositions.Add(new Vector3(x, 1f, z));
+                        predefinedPositions.Add(new Vector3(x, 0, z));
                     }
                 }
             }
@@ -96,7 +96,7 @@ public class DeliveryAreaManager : MonoBehaviour
                 string category = record["category"].As<string>();
                 string productName = record["productName"].As<string>();
 
-                string qrCodeString = $"{timestamp} {category} {productName}";
+                string qrCodeString = $"{timestamp}|{category}|{productName}";
                 SpawnParcel(qrCodeString);
             }
         }

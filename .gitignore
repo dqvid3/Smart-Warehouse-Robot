@@ -11,6 +11,7 @@
 # Visual Studio Code specific files
 .vscode/
 *.code-workspace
+*.htm
 
 # Visual Studio specific files
 .vs/

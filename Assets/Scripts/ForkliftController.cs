@@ -4,13 +4,9 @@ using UnityEngine;
 
 public class ForkliftController : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    public float speed = 5f;
-    public float rotationSpeed = 100f;
-
     [Header("Mast Settings")]
     public Rigidbody[] mastRigidbody; // Array of Rigidbodies for each mast
-    public float liftForce = 2f;
+    public float liftForce = 1f;
     public float maxLiftHeight = 2f;
 
     [Header("Grab Points")]
@@ -18,48 +14,6 @@ public class ForkliftController : MonoBehaviour
 
     private int currentMastIndex = 0; // Indice del mast attualmente controllato
     private float currentTotalLiftHeight = 0f; // Altezza totale corrente di sollevamento
-
-    void Update()
-    {
-        HandleMovement();
-        HandleLiftInput();
-        if (Input.GetKeyDown(KeyCode.Tab))
-            SwitchMast();
-    }
-
-    void FixedUpdate()
-    {
-        if (Input.GetKey(KeyCode.PageUp))
-        {
-            MoveLift(liftForce * Time.fixedDeltaTime);
-        }
-        if (Input.GetKey(KeyCode.PageDown))
-        {
-            MoveLift(-liftForce * Time.fixedDeltaTime);
-        }
-    }
-
-    private void HandleMovement()
-    {
-        float move = Input.GetAxis("Vertical");   // W/S per muoversi avanti/indietro
-        float turn = Input.GetAxis("Horizontal"); // A/D per ruotare
-        transform.Translate(move * speed * Time.deltaTime * Vector3.forward);
-        transform.Rotate(turn * rotationSpeed * Time.deltaTime * Vector3.up);
-    }
-
-    private void HandleLiftInput()
-    {
-        if (Input.GetKey(KeyCode.PageUp) || Input.GetKey(KeyCode.PageDown))
-        {
-            // Enable physics for the current mast when trying to move it
-            mastRigidbody[currentMastIndex].isKinematic = false;
-        }
-        else
-        {
-            // Disable physics when not actively moving
-            mastRigidbody[currentMastIndex].isKinematic = true;
-        }
-    }
 
     public void MoveLift(float amount)
     {
@@ -73,7 +27,6 @@ public class ForkliftController : MonoBehaviour
         float deltaHeight = newPosition.y - mastTransform.localPosition.y;
         currentTotalLiftHeight += deltaHeight;
         currentTotalLiftHeight = Mathf.Clamp(currentTotalLiftHeight, 0, maxLiftHeight * mastRigidbody.Length);
-
         mastTransform.localPosition = newPosition;
 
         // Calculate the target world position based on the local position
@@ -83,7 +36,7 @@ public class ForkliftController : MonoBehaviour
         currentMast.MovePosition(targetWorldPosition);
     }
 
-    public IEnumerator LiftMast(float targetHeight)
+    public IEnumerator LiftMastToHeight(float targetHeight)
     {
         // Calcola la differenza di altezza
         float heightDifference = targetHeight - currentTotalLiftHeight;
@@ -165,8 +118,6 @@ public class ForkliftController : MonoBehaviour
     {
         // Disable physics on the current mast before switching
         mastRigidbody[currentMastIndex].isKinematic = true;
-
         currentMastIndex = (currentMastIndex + 1) % mastRigidbody.Length;
-        Debug.Log("Switched to Mast: " + currentMastIndex);
     }
 }
