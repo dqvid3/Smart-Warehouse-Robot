@@ -17,10 +17,8 @@ public class ForkliftNavController : MonoBehaviour
     private float takeBoxDistance = 1.2f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
-    private float checkInterval = 5f; // Time in seconds between checks for new parcels
+    private float checkInterval = 1f; // Time in seconds between checks for new parcels
     private float lastCheckTime = 0f;
-
-    // Reference to the point where the parcel will be attached
     public Transform grabPoint;
 
     void Start()
@@ -31,8 +29,8 @@ public class ForkliftNavController : MonoBehaviour
 
     void Update()
     {
-        // Automated behavior to check for parcels
-        if (Time.time - lastCheckTime > checkInterval)
+        // Automated behavior to check for parcels only if not carrying a box
+        if (!isCarryingBox && Time.time - lastCheckTime > checkInterval)
         {
             lastCheckTime = Time.time;
             CheckForParcels();
@@ -51,11 +49,8 @@ public class ForkliftNavController : MonoBehaviour
 
     private IEnumerator PickParcelFromDelivery(Vector3 parcelPosition)
     {
-        isCarryingBox = true; // Prevent picking up multiple parcels
-
-        // Define the direction of the QR code relative to the parcel
-        Vector3 qrCodeDirection = Vector3.left; 
-        // Calculate the approach position
+        isCarryingBox = true;
+        Vector3 qrCodeDirection = Vector3.left;
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
 
@@ -66,12 +61,6 @@ public class ForkliftNavController : MonoBehaviour
 
         // Read the QR code
         string qrCode = qrReader.ReadQRCode();
-        if (string.IsNullOrEmpty(qrCode))
-        {
-            Debug.LogError("Failed to read QR code.");
-            isCarryingBox = false;
-            yield break;
-        }
         // Extract timestamp and category from the QR code
         string timestamp = qrCode.Split('|')[0];
         string category = qrCode.Split('|')[1];
@@ -85,14 +74,10 @@ public class ForkliftNavController : MonoBehaviour
             yield break;
         }
 
-        // Lift the mast to the height of the parcel
         yield return LiftMastToHeight(parcelPosition.y);
-        // Move forward to pick up the parcel
         yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
-        // Lift the mast slightly to secure the parcel
         yield return LiftMastToHeight(parcelPosition.y + 0.1f);
-        // Visually attach the parcel
-        AttachParcel(parcel);
+        parcel.transform.SetParent(grabPoint);
 
         // Change the QR code direction for the shelf approach
         qrCodeDirection = Vector3.forward;
@@ -117,7 +102,7 @@ public class ForkliftNavController : MonoBehaviour
         // Lower the mast slightly to release the parcel
         yield return LiftMastToHeight(shelfHeight - 0.1f);
         // Visually detach the parcel
-        DetachParcel(parcel);
+        parcel.transform.SetParent(null);
         // Update the parcel's location in the database
         Task.Run(() => UpdateParcelLocation(timestamp, result[0][3].As<long>()));
         // Move backward away from the shelf
@@ -127,7 +112,6 @@ public class ForkliftNavController : MonoBehaviour
 
         // Update parcel position status after successful placement
         Task.Run(() => UpdateParcelPositionStatus(parcelPosition, false));
-
         isCarryingBox = false; // Ready to pick up another parcel
     }
 
@@ -168,16 +152,6 @@ public class ForkliftNavController : MonoBehaviour
             transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
             yield return new WaitForFixedUpdate();
         }
-    }
-
-    private void AttachParcel(GameObject parcel)
-    {
-        parcel.transform.SetParent(grabPoint);
-    }
-
-    private void DetachParcel(GameObject parcel)
-    {
-        parcel.transform.SetParent(null);
     }
 
     private async Task<IList<IRecord>> GetAvailableSlot(string category)
