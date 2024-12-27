@@ -4,6 +4,22 @@ CREATE (shipping:Area {type: "Shipping", center_x: -35, center_z: 0, length: 20,
 CREATE (delivery:Area {type: "Delivery", center_x: 40, center_z: 0, length: 30, width: 50})
 CREATE (recharge:Area {type: "Recharge", center_x: 0, center_z: 30, length: 50, width: 10})
 
+// Create positions relative to the delivery area
+FOREACH (pos_data IN [
+  {z: 4},
+  {z: 2},
+  {z: 0},
+  {z: -2},
+  {z: -4}
+] |
+  CREATE (pos:Position {
+    x: delivery.center_x - 4.225 * delivery.length/10, 
+    z: delivery.center_z + pos_data.z * delivery.width/10,
+    y: 1.12
+  })
+  CREATE (delivery)-[:HAS_POSITION]->(pos)
+)
+
 // Create robots
 CREATE (:Robot {x: 0, z: 0, state: "inactive", battery: 10})
 CREATE (:Robot {x: 0, z: 0, state: "inactive", battery: 100})
