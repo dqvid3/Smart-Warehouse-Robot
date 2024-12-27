@@ -6,7 +6,7 @@ public class ForkliftController : MonoBehaviour
 {
     [Header("Mast Settings")]
     public Rigidbody[] mastRigidbody; // Array of Rigidbodies for each mast
-    public float liftForce = 1f;
+    public float liftForce = .5f;
     public float maxLiftHeight = 2f;
 
     [Header("Grab Points")]

@@ -18,7 +18,6 @@ public class QRCodeReader : MonoBehaviour
         // Decodifica il QR code usando ZXing
         IBarcodeReader barcodeReader = new BarcodeReader();
         var result = barcodeReader.Decode(cameraTexture.GetPixels32(), cameraTexture.width, cameraTexture.height);
-        Debug.Log(result.Text);
         // Rilascia la texture per evitare memory leak
         Destroy(cameraTexture);
 

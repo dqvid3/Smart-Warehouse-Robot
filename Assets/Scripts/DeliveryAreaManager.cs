@@ -114,7 +114,7 @@ public class DeliveryAreaManager : MonoBehaviour
             string category = parcelData["category"];
             string productName = parcelData["productName"];
 
-            string qrCodeString = $"{timestamp} {category} {productName}";
+            string qrCodeString = $"{timestamp}|{category}|{productName}";
             SpawnParcel(qrCodeString);
         }
     }
