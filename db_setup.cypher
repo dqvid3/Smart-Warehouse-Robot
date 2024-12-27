@@ -15,8 +15,7 @@ FOREACH (pos_data IN [
   CREATE (pos:Position {
     x: delivery.center_x - 4.225 * delivery.length/10, 
     z: delivery.center_z + pos_data.z * delivery.width/10,
-    y: 1.12,
-    hasParcel: false
+    y: 1.12
   })
   CREATE (delivery)-[:HAS_POSITION]->(pos)
 )
@@ -51,7 +50,7 @@ FOREACH (shelf IN [
     )
   )
   CREATE (s)-[:LOCATED_IN]->(warehouse)
-)
+);
 
 // Create products
 FOREACH (product_data IN [
@@ -67,8 +66,8 @@ FOREACH (product_data IN [
   {category: "Groceries", product_name: "Cereal"}
 ] |
   CREATE (p:Product {product_name: product_data.product_name, category: product_data.category})
-)
+);
 
 // Link each robot to every area 
 MATCH (r:Robot), (a:Area)
-MERGE (r)-[:OPERATES_IN]->(a)
+MERGE (r)-[:OPERATES_IN]->(a);
