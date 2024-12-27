@@ -9,14 +9,16 @@ public class ForkliftNavController : MonoBehaviour
 {
     [Header("NavMesh Settings")]
     public NavMeshAgent agent;
-    public Transform shippingPoint;
+    public Transform shippingPoint; // Not used currently, but could be used for future features
     public ForkliftController forkliftController;
-    [SerializeField] private LayerMask layerMask;
+    [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels (currently not used)
     private bool isCarryingBox = false;
     private float approachDistance = 3.2f;
     private float takeBoxDistance = 1.2f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
+    private float checkInterval = 5f; // Time in seconds between checks for new parcels
+    private float lastCheckTime = 0f;
 
     void Start()
     {
@@ -26,64 +28,95 @@ public class ForkliftNavController : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0) && !isCarryingBox)
+        // Automated behavior to check for parcels
+        if (Time.time - lastCheckTime > checkInterval)
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit, 100f, layerMask))
-            {
-                GameObject parcel = hit.collider.transform.root.gameObject;
-                StartCoroutine(PickParcel(parcel));
-            }
+            lastCheckTime = Time.time;
+            CheckForParcels();
         }
     }
 
-    private IEnumerator PickParcel(GameObject parcel)
+    private async void CheckForParcels()
     {
-        Vector3 parcelPosition = parcel.transform.position;
-        Vector3 qrCodeDirection = parcelPosition.y < 0.5f ? Vector3.left : Vector3.forward;
+        Vector3? parcelPosition = await GetParcelPosition();
+        if (parcelPosition != null)
+        {
+            Debug.Log("Parcel found at: " + parcelPosition);
+            StartCoroutine(PickParcelFromDelivery(parcelPosition.Value));
+        }
+    }
+
+    private IEnumerator PickParcelFromDelivery(Vector3 parcelPosition)
+    {
+        isCarryingBox = true; // Prevent picking up multiple parcels
+
+        // Define the direction of the QR code relative to the parcel
+        Vector3 qrCodeDirection = Vector3.left; 
+        // Calculate the approach position
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
 
+        // Move to the approach position
         yield return MoveToPosition(approachPosition);
+        // Rotate to face the parcel
         yield return SmoothRotateToDirection(-qrCodeDirection);
 
-        string qrCode = null;
-        if (parcelPosition.y < 0.5f) // Se il pacco è a terra, leggi il QR code
+        // Read the QR code
+        string qrCode = qrReader.ReadQRCode();
+        if (string.IsNullOrEmpty(qrCode))
         {
-            qrCode = qrReader.ReadQRCode();
+            Debug.LogError("Failed to read QR code.");
+            isCarryingBox = false;
+            yield break;
         }
+        // Extract timestamp and category from the QR code
+        string timestamp = qrCode.Split('|')[0];
+        string category = qrCode.Split('|')[1];
 
-        yield return LiftMastToHeight(parcelPosition.y); // Solleva il mast per prendere il pacco
-        yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance); // Vai avanti
-        yield return LiftMastToHeight(parcelPosition.y + 0.1f); // Alza un po' le mast
-        AttachParcel(parcel);
+        // Lift the mast to the height of the parcel
+        yield return LiftMastToHeight(parcelPosition.y);
+        // Move forward to pick up the parcel
+        yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
+        // Lift the mast slightly to secure the parcel
+        yield return LiftMastToHeight(parcelPosition.y + 0.1f);
+        // Visually attach the parcel (you'll need to implement this based on your game objects)
+        // AttachParcel(parcel);
 
-        if (parcelPosition.y < 0.5f) // Se il pacco è a terra, portalo a uno scaffale
-        {
-            string timestamp = qrCode.Split('|')[0];
-            string category = qrCode.Split('|')[1];
-            qrCodeDirection = Vector3.forward;
-            yield return LiftMastToHeight(parcelPosition.y + 1); // Alza un po' le mast
-            var result = Task.Run(() => GetAvailableSlot(category)).Result;
-            Vector3 slotPosition = GetSlotPosition(result[0]);
-            float shelfHeight = slotPosition.y;
-            slotPosition.y = transform.position.y;
-            approachPosition = slotPosition + qrCodeDirection * approachDistance;
-            yield return MoveToPosition(approachPosition);
-            yield return SmoothRotateToDirection(-qrCodeDirection);
-            yield return LiftMastToHeight(shelfHeight);
-            yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
-            yield return LiftMastToHeight(shelfHeight - 0.1f);
-            DetachParcel(parcel);
-            Task.Run(() => UpdateParcelLocation(timestamp, result[0][3].As<long>()));
-            yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
-            yield return LiftMastToHeight(0);
-        }
-        else
-        {
-            yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
-            yield return LiftMastToHeight(0);
-        }
+        // Change the QR code direction for the shelf approach
+        qrCodeDirection = Vector3.forward;
+        // Lift the mast further for safe transport
+        yield return LiftMastToHeight(parcelPosition.y + 1);
+        // Get an available slot from the database based on the parcel's category
+        IList<IRecord> result = Task.Run(() => GetAvailableSlot(category)).Result;
+        // Get the position of the slot
+        Vector3 slotPosition = GetSlotPosition(result[0]);
+        float shelfHeight = slotPosition.y;
+        slotPosition.y = transform.position.y;
+        // Calculate the approach position for the shelf
+        approachPosition = slotPosition + qrCodeDirection * approachDistance;
+        // Move to the approach position for the shelf
+        yield return MoveToPosition(approachPosition);
+        // Rotate to face the shelf
+        yield return SmoothRotateToDirection(-qrCodeDirection);
+        // Lift the mast to the height of the shelf layer
+        yield return LiftMastToHeight(shelfHeight);
+        // Move forward to place the parcel
+        yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
+        // Lower the mast slightly to release the parcel
+        yield return LiftMastToHeight(shelfHeight - 0.1f);
+        // Visually detach the parcel
+        // DetachParcel(parcel);
+        // Update the parcel's location in the database
+        Task.Run(() => UpdateParcelLocation(timestamp, result[0][3].As<long>()));
+        // Move backward away from the shelf
+        yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
+        // Lower the mast to the default position
+        yield return LiftMastToHeight(0);
+
+        // Update parcel position status after successful placement
+        Task.Run(() => UpdateParcelPositionStatus(parcelPosition, false));
+
+        isCarryingBox = false; // Ready to pick up another parcel
     }
 
     private IEnumerator MoveToPosition(Vector3 position)
@@ -127,14 +160,16 @@ public class ForkliftNavController : MonoBehaviour
 
     private void AttachParcel(GameObject parcel)
     {
-        parcel.transform.SetParent(forkliftController.grabPoint);
-        isCarryingBox = true;
+        // Placeholder for attaching the parcel visually
+        // Example: parcel.transform.SetParent(forkliftController.grabPoint);
+        // You'll need to implement this based on your game objects
     }
 
     private void DetachParcel(GameObject parcel)
     {
-        parcel.transform.SetParent(null);
-        isCarryingBox = false;
+        // Placeholder for detaching the parcel visually
+        // Example: parcel.transform.SetParent(null);
+        // You'll need to implement this based on your game objects
     }
 
     private async Task<IList<IRecord>> GetAvailableSlot(string category)
@@ -167,5 +202,35 @@ public class ForkliftNavController : MonoBehaviour
         float y = record[1].As<float>();
         float z = record[2].As<float>();
         return new Vector3(x, y, z);
+    }
+
+    private async Task<Vector3?> GetParcelPosition()
+    {
+        string query = @"
+        MATCH (d:Area {type: 'Delivery'})-[:HAS_POSITION]->(p:Position {hasParcel: true})
+        RETURN p.x AS x, p.y AS y, p.z AS z
+        LIMIT 1";
+        IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
+        if (result.Count > 0)
+        {
+            IRecord record = result[0];
+            return new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
+        }
+        return null;
+    }
+
+    private async Task UpdateParcelPositionStatus(Vector3 position, bool hasParcel)
+    {
+        string query = @"
+        MATCH (p:Position {x: $x, y: $y, z: $z})
+        SET p.hasParcel = $hasParcel";
+        var parameters = new Dictionary<string, object>
+        {
+            { "x", position.x },
+            { "y", position.y },
+            { "z", position.z },
+            { "hasParcel", hasParcel }
+        };
+        await neo4jHelper.ExecuteWriteAsync(query, parameters);
     }
 }
