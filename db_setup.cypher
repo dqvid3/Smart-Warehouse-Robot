@@ -15,7 +15,8 @@ FOREACH (pos_data IN [
   CREATE (pos:Position {
     x: delivery.center_x - 4.225 * delivery.length/10, 
     z: delivery.center_z + pos_data.z * delivery.width/10,
-    y: 1.12
+    y: 1.12,
+    hasParcel: false
   })
   CREATE (delivery)-[:HAS_POSITION]->(pos)
 )

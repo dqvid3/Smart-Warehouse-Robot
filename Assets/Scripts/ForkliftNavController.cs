@@ -11,7 +11,7 @@ public class ForkliftNavController : MonoBehaviour
     public NavMeshAgent agent;
     public Transform shippingPoint; // Not used currently, but could be used for future features
     public ForkliftController forkliftController;
-    [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels (currently not used)
+    [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels
     private bool isCarryingBox = false;
     private float approachDistance = 3.2f;
     private float takeBoxDistance = 1.2f;
@@ -19,6 +19,9 @@ public class ForkliftNavController : MonoBehaviour
     private QRCodeReader qrReader;
     private float checkInterval = 5f; // Time in seconds between checks for new parcels
     private float lastCheckTime = 0f;
+
+    // Reference to the point where the parcel will be attached
+    public Transform grabPoint;
 
     void Start()
     {
@@ -73,14 +76,23 @@ public class ForkliftNavController : MonoBehaviour
         string timestamp = qrCode.Split('|')[0];
         string category = qrCode.Split('|')[1];
 
+        // Find the parcel GameObject based on its position
+        GameObject parcel = FindParcelAtPosition(parcelPosition);
+        if (parcel == null)
+        {
+            Debug.LogError("Could not find parcel at position: " + parcelPosition);
+            isCarryingBox = false;
+            yield break;
+        }
+
         // Lift the mast to the height of the parcel
         yield return LiftMastToHeight(parcelPosition.y);
         // Move forward to pick up the parcel
         yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
         // Lift the mast slightly to secure the parcel
         yield return LiftMastToHeight(parcelPosition.y + 0.1f);
-        // Visually attach the parcel (you'll need to implement this based on your game objects)
-        // AttachParcel(parcel);
+        // Visually attach the parcel
+        AttachParcel(parcel);
 
         // Change the QR code direction for the shelf approach
         qrCodeDirection = Vector3.forward;
@@ -105,7 +117,7 @@ public class ForkliftNavController : MonoBehaviour
         // Lower the mast slightly to release the parcel
         yield return LiftMastToHeight(shelfHeight - 0.1f);
         // Visually detach the parcel
-        // DetachParcel(parcel);
+        DetachParcel(parcel);
         // Update the parcel's location in the database
         Task.Run(() => UpdateParcelLocation(timestamp, result[0][3].As<long>()));
         // Move backward away from the shelf
@@ -160,16 +172,12 @@ public class ForkliftNavController : MonoBehaviour
 
     private void AttachParcel(GameObject parcel)
     {
-        // Placeholder for attaching the parcel visually
-        // Example: parcel.transform.SetParent(forkliftController.grabPoint);
-        // You'll need to implement this based on your game objects
+        parcel.transform.SetParent(grabPoint);
     }
 
     private void DetachParcel(GameObject parcel)
     {
-        // Placeholder for detaching the parcel visually
-        // Example: parcel.transform.SetParent(null);
-        // You'll need to implement this based on your game objects
+        parcel.transform.SetParent(null);
     }
 
     private async Task<IList<IRecord>> GetAvailableSlot(string category)
@@ -232,5 +240,17 @@ public class ForkliftNavController : MonoBehaviour
             { "hasParcel", hasParcel }
         };
         await neo4jHelper.ExecuteWriteAsync(query, parameters);
+    }
+
+    private GameObject FindParcelAtPosition(Vector3 position)
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(position, 0.5f, layerMask);
+
+        foreach (var hitCollider in hitColliders)
+        {
+            return hitCollider.gameObject;
+        }
+
+        return null;
     }
 }
