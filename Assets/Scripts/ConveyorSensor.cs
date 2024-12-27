@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Threading.Tasks;
 using Neo4j.Driver;
 using System.Collections.Generic;
+using System; // Per Math.Round se necessario
+
 
 public class ConveyorSensor : MonoBehaviour
 {
@@ -43,19 +45,23 @@ public class ConveyorSensor : MonoBehaviour
         try
         {
             string query = @"
-                MATCH (p:Position {x: $x, z: $z})
-                SET p.hasParcel = true
-                RETURN p";
+                            MATCH (p:Position)
+                            WHERE abs(p.x - $x) < 0.0001 AND abs(p.z - $z) < 0.0001
+                            SET p.hasParcel = true
+                        ";
 
+
+            // Assicuriamoci di passare i valori “float” come parametri
             var parameters = new Dictionary<string, object>
             {
-                { "x", x },
-                { "z", z }
+                { "x", x},
+                { "z", z}
             };
 
+            // Esegui la query
             await neo4jHelper.ExecuteWriteAsync(query, parameters);
-            Debug.Log($"Aggiornamento completato per la posizione: x={x}, z={z}");
 
+            Debug.Log($"Aggiornamento completato per la posizione: x={x}, z={z}");
         }
         catch (System.Exception ex)
         {
