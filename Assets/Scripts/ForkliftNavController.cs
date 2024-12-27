@@ -18,73 +18,29 @@ public class ForkliftNavController : MonoBehaviour
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
 
-    [Header("Sensor Settings")]
-    public GameObject sensor;
-    private Collider sensorCollider;
-
     void Start()
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
         qrReader = GetComponent<QRCodeReader>();
-
-        if (sensor == null)
-        {
-            Debug.LogError("Sensore non collegato! Assicurati di collegarlo nello script.");
-        }
-        else
-        {
-            sensorCollider = sensor.GetComponent<Collider>();
-            if (sensorCollider == null || !sensorCollider.isTrigger)
-            {
-                Debug.LogError("Il sensore deve avere un Collider con Is Trigger abilitato.");
-            }
-        }
     }
 
     void Update()
     {
-        if (sensorCollider != null && !isCarryingBox)
+        if (Input.GetMouseButtonDown(0) && !isCarryingBox)
         {
-            Collider[] detectedObjects = Physics.OverlapBox(sensorCollider.bounds.center, sensorCollider.bounds.extents, Quaternion.identity, layerMask);
-            Debug.Log($"Oggetti rilevati: {detectedObjects.Length}");
-
-            foreach (var obj in detectedObjects)
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f, layerMask))
             {
-                Debug.Log($"Oggetto rilevato: {obj.name}");
-
-                if ((layerMask & (1 << obj.gameObject.layer)) != 0)
-                {
-                    GameObject parcel = obj.gameObject;
-
-                    if (parcel != null)
-                    {
-                        Debug.Log($"Pacco trovato: {parcel.name}");
-
-                        // Inizia il processo per prendere il pacco
-                        StartCoroutine(PickParcel(parcel));
-                        break;
-                    }
-                    else
-                    {
-                        Debug.LogWarning("Il pacco è null");
-                    }
-                }
-                else
-                {
-                    Debug.Log($"Oggetto non corrisponde al layer: {obj.name}");
-                }
+                GameObject parcel = hit.collider.transform.root.gameObject;
+                StartCoroutine(PickParcel(parcel));
             }
-        }
-        else
-        {
-            Debug.Log("Sensore non valido o si sta già trasportando una scatola");
         }
     }
 
     private IEnumerator PickParcel(GameObject parcel)
     {
         Vector3 parcelPosition = parcel.transform.position;
-        Vector3 qrCodeDirection = Vector3.forward;
+        Vector3 qrCodeDirection = parcelPosition.y < 0.5f ? Vector3.left : Vector3.forward;
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
 
