@@ -563,8 +563,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.43959093, y: 0.5044369, z: 0.30238003}
-  m_Center: {x: 0.004071474, y: 0.36692634, z: 0.0036808476}
+  m_Size: {x: 0.028905392, y: 0.5044369, z: 0.30238003}
+  m_Center: {x: -0.2012713, y: 0.36692634, z: 0.003680855}
 --- !u!114 &2663067034504409562
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -578,3 +578,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   position: {fileID: 976281213515744045}
+  piano: {fileID: 1721013639042545708}

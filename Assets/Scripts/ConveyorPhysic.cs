@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class ConveyorPhysic : MonoBehaviour
 {
-    [SerializeField] float speed;
-    [SerializeField] float meshSpeed = 2f;
+    [SerializeField] public float speed;
+    [SerializeField] public float meshSpeed = 2f;
     Rigidbody m_Rigidbody;
     Material material;
 
