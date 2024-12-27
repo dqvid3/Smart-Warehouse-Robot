@@ -1,9 +1,9 @@
 ﻿using UnityEngine;
-using UnityEngine.AI;
 using System.Collections;
 using Neo4j.Driver;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine.AI;
 
 public class ForkliftNavController : MonoBehaviour
 {
@@ -18,23 +18,84 @@ public class ForkliftNavController : MonoBehaviour
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
 
+    [Header("Sensor Settings")]
+    public GameObject sensor;
+    private Collider sensorCollider;
+
     void Start()
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
         qrReader = GetComponent<QRCodeReader>();
+
+        if (sensor == null)
+        {
+            Debug.LogError("Sensore non collegato! Assicurati di collegarlo nello script.");
+        }
+        else
+        {
+            sensorCollider = sensor.GetComponent<Collider>();
+            if (sensorCollider == null || !sensorCollider.isTrigger)
+            {
+                Debug.LogError("Il sensore deve avere un Collider con Is Trigger abilitato.");
+            }
+        }
     }
+
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0) && !isCarryingBox)
+        if (sensorCollider != null && !isCarryingBox)
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit, 100f, layerMask))
+            Collider[] detectedObjects = Physics.OverlapBox(sensorCollider.bounds.center, sensorCollider.bounds.extents, Quaternion.identity, layerMask);
+            Debug.Log($"Oggetti rilevati: {detectedObjects.Length}");
+
+            foreach (var obj in detectedObjects)
             {
-                GameObject parcel = hit.collider.transform.root.gameObject;
-                StartCoroutine(PickParcel(parcel));
+                Debug.Log($"Oggetto rilevato: {obj.name}");
+
+                if ((layerMask & (1 << obj.gameObject.layer)) != 0)
+                {
+                    GameObject parcel = obj.gameObject;
+
+                    if (parcel != null)
+                    {
+                        Debug.Log($"Pacco trovato: {parcel.name}");
+
+                        // Inizia il processo per prendere il pacco
+                        StartCoroutine(PickParcel(parcel));
+                        break;
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Il pacco è null");
+                    }
+                }
+                else
+                {
+                    Debug.Log($"Oggetto non corrisponde al layer: {obj.name}");
+                }
             }
         }
+        else
+        {
+            Debug.Log("Sensore non valido o si sta già trasportando una scatola");
+        }
+    }
+
+    private async Task UpdateParcelArrival(string timestamp, string category)
+    {
+        string query = @"
+        MATCH (p:Parcel {timestamp: $timestamp})
+        SET p.status = 'Arrived', p.category = $category
+        RETURN p";
+
+        var parameters = new Dictionary<string, object>
+        {
+            { "timestamp", timestamp },
+            { "category", category }
+        };
+
+        await neo4jHelper.ExecuteWriteAsync(query, parameters);
     }
 
     private IEnumerator PickParcel(GameObject parcel)
@@ -46,44 +107,10 @@ public class ForkliftNavController : MonoBehaviour
 
         yield return MoveToPosition(approachPosition);
         yield return SmoothRotateToDirection(-qrCodeDirection);
-
-        string qrCode = null;
-        if (parcelPosition.y < 0.5f) // Se il pacco è a terra, leggi il QR code
-        {
-            qrCode = qrReader.ReadQRCode();
-        }
-
-        yield return LiftMastToHeight(parcelPosition.y); // Solleva il mast per prendere il pacco
-        yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance); // Vai avanti
-        yield return LiftMastToHeight(parcelPosition.y + 0.1f); // Alza un po' le mast
+        yield return LiftMastToHeight(parcelPosition.y);
+        yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
+        yield return LiftMastToHeight(parcelPosition.y + 0.1f);
         AttachParcel(parcel);
-
-        if (parcelPosition.y < 0.5f) // Se il pacco è a terra, portalo a uno scaffale
-        {
-            string timestamp = qrCode.Split('|')[0];
-            string category = qrCode.Split('|')[1];
-            qrCodeDirection = Vector3.forward;
-            yield return LiftMastToHeight(parcelPosition.y + 1); // Alza un po' le mast
-            var result = Task.Run(() => GetAvailableSlot(category)).Result;
-            Vector3 slotPosition = GetSlotPosition(result[0]);
-            float shelfHeight = slotPosition.y;
-            slotPosition.y = transform.position.y;
-            approachPosition = slotPosition + qrCodeDirection * approachDistance;
-            yield return MoveToPosition(approachPosition);
-            yield return SmoothRotateToDirection(-qrCodeDirection);
-            yield return LiftMastToHeight(shelfHeight);
-            yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
-            yield return LiftMastToHeight(shelfHeight - 0.1f);
-            DetachParcel(parcel);
-            Task.Run(() => UpdateParcelLocation(timestamp, result[0][3].As<long>()));
-            yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
-            yield return LiftMastToHeight(0);
-        }
-        else
-        {
-            yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
-            yield return LiftMastToHeight(0);
-        }
     }
 
     private IEnumerator MoveToPosition(Vector3 position)
@@ -112,60 +139,9 @@ public class ForkliftNavController : MonoBehaviour
         yield return forkliftController.LiftMastToHeight(height);
     }
 
-    private IEnumerator MoveBackwards(Vector3 direction, float distance)
-    {
-        float speed = agent.speed;
-        Vector3 startPosition = transform.position;
-        Vector3 targetPosition = startPosition - direction * distance;
-
-        while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
-        {
-            transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
-            yield return new WaitForFixedUpdate();
-        }
-    }
-
     private void AttachParcel(GameObject parcel)
     {
         parcel.transform.SetParent(forkliftController.grabPoint);
         isCarryingBox = true;
-    }
-
-    private void DetachParcel(GameObject parcel)
-    {
-        parcel.transform.SetParent(null);
-        isCarryingBox = false;
-    }
-
-    private async Task<IList<IRecord>> GetAvailableSlot(string category)
-    {
-        string query = @"
-        MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
-        WHERE NOT (slot)-[:CONTAINS]->(:Parcel)
-        RETURN s.x + slot.z AS x, l.y AS y, s.z AS z, ID(slot) AS slotId
-        LIMIT 1";
-        return await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "category", category } });
-    }
-
-    private async Task UpdateParcelLocation(string parcelTimestamp, long slotId)
-    {
-        string query = @"
-        MATCH (p:Parcel {timestamp: $parcelTimestamp})-[r:LOCATED_IN]->(d:Area {type: 'Delivery'})
-        DELETE r
-        WITH p
-        MATCH (s:Slot), (p:Parcel {timestamp: $parcelTimestamp})
-        WHERE ID(s) = $slotId
-        CREATE (s)-[:CONTAINS]->(p)";
-        var parameters = new Dictionary<string, object> { { "parcelTimestamp", parcelTimestamp }, { "slotId", slotId } };
-
-        await neo4jHelper.ExecuteWriteAsync(query, parameters);
-    }
-
-    private Vector3 GetSlotPosition(IRecord record)
-    {
-        float x = record[0].As<float>();
-        float y = record[1].As<float>();
-        float z = record[2].As<float>();
-        return new Vector3(x, y, z);
     }
 }

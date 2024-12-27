@@ -19,7 +19,7 @@ public class DeliveryAreaManager : MonoBehaviour
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
         await GetDeliveryAreaDimensions();
-        await GeneratePredefinedPositions();
+        await GeneratePredefinedPositions(36.8f, 1.259f, 0);
         await CheckAndSpawnParcels();
     }
 
@@ -43,42 +43,24 @@ public class DeliveryAreaManager : MonoBehaviour
         }
     }
 
-    private async Task GeneratePredefinedPositions()
+    private async Task GeneratePredefinedPositions(float x, float y, float z)
     {
         try
         {
-            // Get the total number of slots
-            var totalSlotsResult = await neo4jHelper.ExecuteReadAsync(@"
-                MATCH (s:Slot)
-                RETURN count(s) AS totalSlots
-            ");
-            int totalSlots = totalSlotsResult["totalSlots"].As<int>();
+            // Rimuovi tutte le posizioni precedenti, se esistono
+            predefinedPositions.Clear();
 
-            // Calculate spacing based on delivery area dimensions and number of slots
-            float spacingX = deliveryAreaLength / (Mathf.Ceil(Mathf.Sqrt(totalSlots)) + 1);
-            float spacingZ = deliveryAreaWidth / (Mathf.Ceil(Mathf.Sqrt(totalSlots)) + 1);
+            // Aggiungi una sola posizione basata sugli argomenti forniti
+            predefinedPositions.Add(new Vector3(x, y, z));
 
-            int slotsPerRow = Mathf.CeilToInt(Mathf.Sqrt(totalSlots));
-            int numRows = Mathf.CeilToInt((float)totalSlots / slotsPerRow);
-
-            for (int row = 0; row < numRows; row++)
-            {
-                for (int col = 0; col < slotsPerRow; col++)
-                {
-                    if (predefinedPositions.Count < totalSlots)
-                    {
-                        float x = deliveryAreaCenterX - deliveryAreaLength / 2 + spacingX * (col + 1);
-                        float z = deliveryAreaCenterZ - deliveryAreaWidth / 2 + spacingZ * (row + 1);
-                        predefinedPositions.Add(new Vector3(x, 0, z));
-                    }
-                }
-            }
+            Debug.Log($"Posizione predefinita aggiunta: ({x}, {y}, {z})");
         }
         catch (Exception ex)
         {
-            Debug.LogError($"Error generating predefined positions: {ex.Message}");
+            Debug.LogError($"Error generating predefined position: {ex.Message}");
         }
     }
+
 
     private async Task CheckAndSpawnParcels()
     {
