@@ -56,7 +56,7 @@ public class ForkliftNavController : MonoBehaviour
     private async void CheckForParcels()
     {
         Vector3? parcelPosition = await GetParcelPosition();
-        if (parcelPosition != null)
+        if (parcelPosition != Vector3.zero)
             StartCoroutine(PickParcelFromDelivery(parcelPosition.Value));
     }
 
