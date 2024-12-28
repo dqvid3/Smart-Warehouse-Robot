@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 
 public class ForkliftNavController : MonoBehaviour
 {
-    [Header("NavMesh Settings")]
-    public NavMeshAgent agent;
-    public Transform shippingPoint; // Not used currently, but could be used for future features
-    public ForkliftController forkliftController;
     [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels
+    [SerializeField] private Transform grabPoint;
+    private NavMeshAgent agent;
+    private ForkliftController forkliftController;
     private bool isCarryingBox = false;
     private float approachDistance = 3.2f;
     private float takeBoxDistance = 1.2f;
@@ -19,12 +18,13 @@ public class ForkliftNavController : MonoBehaviour
     private QRCodeReader qrReader;
     private float checkInterval = 2; // Time in seconds between checks for new parcels
     private float lastCheckTime = 0f;
-    public Transform grabPoint;
 
     void Start()
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
         qrReader = GetComponent<QRCodeReader>();
+        agent = GetComponent<NavMeshAgent>();
+        forkliftController = GetComponent<ForkliftController>();
     }
 
     void Update()
