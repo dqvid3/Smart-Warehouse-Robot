@@ -18,6 +18,7 @@ public class ForkliftNavController : MonoBehaviour
     private QRCodeReader qrReader;
     private float checkInterval = 2; // Time in seconds between checks for new parcels
     private float lastCheckTime = 0f;
+    private Vector3 defaultPosition = Vector3.zero;
 
     void Start()
     {
@@ -28,13 +29,28 @@ public class ForkliftNavController : MonoBehaviour
     }
 
     void Update()
-    {
+    {   
         // Automated behavior to check for parcels only if not carrying a box
         if (!isCarryingBox && Time.time - lastCheckTime > checkInterval)
         {
             lastCheckTime = Time.time;
             CheckForParcels();
         }
+        /*
+        if (Input.GetMouseButtonDown(0)){ // Left mouse button
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, layerMask))
+        {
+            // Ensure the object hit is a parcel
+            GameObject clickedParcel = hit.collider.gameObject.transform.root.gameObject;
+            if (clickedParcel != null)
+            {
+                // Get the position of the clicked parcel
+                Vector3 parcelPosition = clickedParcel.transform.position;
+                StartCoroutine(PickParcelFromShelf(parcelPosition));
+            }
+        }
+        }*/
     }
 
     private async void CheckForParcels()
@@ -63,7 +79,7 @@ public class ForkliftNavController : MonoBehaviour
         string category = qrCode.Split('|')[1];
 
         // Find the parcel GameObject based on its position
-        GameObject parcel = GetParcel(parcelPosition.y+1);
+        GameObject parcel = GetParcel(parcelPosition.y + 1);
         yield return LiftMastToHeight(parcelPosition.y);
         yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
         yield return LiftMastToHeight(parcelPosition.y + 0.1f);
@@ -99,6 +115,34 @@ public class ForkliftNavController : MonoBehaviour
         // Lower the mast to the default position
         yield return LiftMastToHeight(0);
         isCarryingBox = false; // Ready to pick up another parcel
+        yield return MoveToPosition(defaultPosition);
+    }
+
+    private IEnumerator PickParcelFromShelf(Vector3 parcelPosition)
+    {
+        Vector3 qrCodeDirection = Vector3.forward;
+        Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
+        approachPosition.y = transform.position.y;
+
+        // Move to the approach position
+        yield return MoveToPosition(approachPosition);
+        // Rotate to face the parcel
+        yield return SmoothRotateToDirection(-qrCodeDirection);
+
+        // Find the parcel GameObject based on its position
+        GameObject parcel = GetParcel(parcelPosition.y + 1);
+        yield return LiftMastToHeight(parcelPosition.y);
+        yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
+        yield return LiftMastToHeight(parcelPosition.y + 0.05f);
+        parcel.transform.SetParent(grabPoint);
+        yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
+        yield return LiftMastToHeight(1);
+        Vector3 randomShippingPosition = Task.Run(() => GetRandomShippingPosition()).Result;
+        yield return MoveToPosition(randomShippingPosition);
+        yield return LiftMastToHeight(0);
+        parcel.transform.SetParent(null);
+        yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
+        yield return MoveToPosition(defaultPosition);
     }
 
     private IEnumerator MoveToPosition(Vector3 position)
@@ -172,7 +216,7 @@ public class ForkliftNavController : MonoBehaviour
         return new Vector3(x, y, z);
     }
 
-    private async Task<Vector3?> GetParcelPosition()
+    private async Task<Vector3> GetParcelPosition()
     {
         string query = @"
         MATCH (d:Area {type: 'Delivery'})-[:HAS_POSITION]->(p:Position {hasParcel: true})
@@ -184,7 +228,23 @@ public class ForkliftNavController : MonoBehaviour
             IRecord record = result[0];
             return new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
         }
-        return null;
+        return Vector3.zero;
+    }
+
+     private async Task<Vector3> GetRandomShippingPosition()
+    {
+        string query = @"
+        MATCH (shipping:Area {type: 'Shipping'})
+        WITH shipping, shipping.center_x AS cx, shipping.center_z AS cz, shipping.length AS len, shipping.width AS wid
+        RETURN cx + (rand() - 0.5) * len AS x, cz + (rand() - 0.5) * wid AS z";
+        IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
+        if (result.Count > 0)
+        {
+            float x = result[0]["x"].As<float>();
+            float z = result[0]["z"].As<float>();
+            return new Vector3(x, 0, z); 
+        }
+        return Vector3.zero;    
     }
 
     private GameObject GetParcel(float height)
@@ -196,7 +256,8 @@ public class ForkliftNavController : MonoBehaviour
         // Definisci la lunghezza massima del raggio
         float maxDistance = 2f;
         rayOrigin.y = height;
-        if (Physics.Raycast(rayOrigin, rayDirection, out RaycastHit hit, maxDistance, layerMask)){
+        if (Physics.Raycast(rayOrigin, rayDirection, out RaycastHit hit, maxDistance, layerMask))
+        {
             return hit.collider.gameObject.transform.root.gameObject;
         }
         return null;
