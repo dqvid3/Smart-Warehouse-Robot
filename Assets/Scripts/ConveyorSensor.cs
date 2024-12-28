@@ -1,8 +1,5 @@
 using UnityEngine;
 using System.Threading.Tasks;
-using Neo4j.Driver;
-using System.Collections.Generic;
-using System; // Per Math.Round se necessario
 
 
 public class ConveyorSensor : MonoBehaviour
@@ -10,68 +7,36 @@ public class ConveyorSensor : MonoBehaviour
     public Transform position;
     public GameObject piano;
     private Neo4jHelper neo4jHelper;
+    private bool hasTriggered = false;
+    private ConveyorPhysic conveyorPhysic;
 
     void Start()
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
+        conveyorPhysic = piano.GetComponent<ConveyorPhysic>();
     }
 
     void OnTriggerEnter(Collider other)
     {
-            Vector3 detectedPosition = position.position;
-            float x = detectedPosition.x;
-            float z = detectedPosition.z;
-
-            Debug.Log($"Box rilevato alla posizione: x = {x}, z = {z}");
-            // Esegui la query per aggiornare hasParcel a true
-            Task.Run(() => UpdatePositionInDatabase(x, z));
-
-        var pianoScript = piano.GetComponent<ConveyorPhysic>();
-            if (pianoScript != null)
-            {
-                // Aggiorna le variabili pubbliche dello script
-                pianoScript.speed = 0;
-                pianoScript.meshSpeed = 0;
-            }
-            else
-            {
-                Debug.LogError("Lo script 'ConveyorPhysic' non è stato trovato sul GameObject 'piano'.");
-            }           
-
+        if (hasTriggered) return;
+        _ = neo4jHelper.UpdateParcelPositionStatusAsync(position.position.z, true);
+        conveyorPhysic.speed = 0;
+        conveyorPhysic.meshSpeed = 0;
+        hasTriggered = true;
     }
 
-    private async Task UpdatePositionInDatabase(float x, float z)
+    void OnTriggerExit(Collider other)
     {
-        try
-        {
-            string query = @"
-                            MATCH (p:Position)
-                            WHERE abs(p.x - $x) < 0.0001 AND abs(p.z - $z) < 0.0001
-                            SET p.hasParcel = true
-                        ";
-
-
-            // Assicuriamoci di passare i valori “float” come parametri
-            var parameters = new Dictionary<string, object>
-            {
-                { "x", x},
-                { "z", z}
-            };
-
-            // Esegui la query
-            await neo4jHelper.ExecuteWriteAsync(query, parameters);
-
-            Debug.Log($"Aggiornamento completato per la posizione: x={x}, z={z}");
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"Errore durante l'aggiornamento della posizione in Neo4j: {ex.Message}");
-        }
+        if (!hasTriggered) return;
+        Debug.Log("ciao");
+        _ = neo4jHelper.UpdateParcelPositionStatusAsync(position.position.z, false);
+        conveyorPhysic.speed = 2;
+        conveyorPhysic.meshSpeed = 1;
+        hasTriggered = false;
     }
 
     void OnDestroy()
     {
-        // Chiudi la connessione con Neo4j
         neo4jHelper?.CloseConnection();
     }
 }

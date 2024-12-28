@@ -17,7 +17,7 @@ public class ForkliftNavController : MonoBehaviour
     private float takeBoxDistance = 1.2f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
-    private float checkInterval = 1f; // Time in seconds between checks for new parcels
+    private float checkInterval = 2; // Time in seconds between checks for new parcels
     private float lastCheckTime = 0f;
     public Transform grabPoint;
 
@@ -41,10 +41,7 @@ public class ForkliftNavController : MonoBehaviour
     {
         Vector3? parcelPosition = await GetParcelPosition();
         if (parcelPosition != null)
-        {
-            Debug.Log("Parcel found at: " + parcelPosition);
             StartCoroutine(PickParcelFromDelivery(parcelPosition.Value));
-        }
     }
 
     private IEnumerator PickParcelFromDelivery(Vector3 parcelPosition)
@@ -66,19 +63,11 @@ public class ForkliftNavController : MonoBehaviour
         string category = qrCode.Split('|')[1];
 
         // Find the parcel GameObject based on its position
-        GameObject parcel = FindParcelAtPosition(parcelPosition);
-        if (parcel == null)
-        {
-            Debug.LogError("Could not find parcel at position: " + parcelPosition);
-            isCarryingBox = false;
-            yield break;
-        }
-
+        GameObject parcel = GetParcel(parcelPosition.y+1);
         yield return LiftMastToHeight(parcelPosition.y);
         yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
         yield return LiftMastToHeight(parcelPosition.y + 0.1f);
         parcel.transform.SetParent(grabPoint);
-
         // Change the QR code direction for the shelf approach
         qrCodeDirection = Vector3.forward;
         // Lift the mast further for safe transport
@@ -104,14 +93,11 @@ public class ForkliftNavController : MonoBehaviour
         // Visually detach the parcel
         parcel.transform.SetParent(null);
         // Update the parcel's location in the database
-        Task.Run(() => UpdateParcelLocation(timestamp, result[0][3].As<long>()));
+        _ = UpdateParcelLocation(timestamp, result[0][3].As<long>());
         // Move backward away from the shelf
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
         // Lower the mast to the default position
         yield return LiftMastToHeight(0);
-
-        // Update parcel position status after successful placement
-        Task.Run(() => UpdateParcelPositionStatus(parcelPosition, false));
         isCarryingBox = false; // Ready to pick up another parcel
     }
 
@@ -201,30 +187,18 @@ public class ForkliftNavController : MonoBehaviour
         return null;
     }
 
-    private async Task UpdateParcelPositionStatus(Vector3 position, bool hasParcel)
+    private GameObject GetParcel(float height)
     {
-        string query = @"
-        MATCH (p:Position {x: $x, y: $y, z: $z})
-        SET p.hasParcel = $hasParcel";
-        var parameters = new Dictionary<string, object>
-        {
-            { "x", position.x },
-            { "y", position.y },
-            { "z", position.z },
-            { "hasParcel", hasParcel }
-        };
-        await neo4jHelper.ExecuteWriteAsync(query, parameters);
-    }
-
-    private GameObject FindParcelAtPosition(Vector3 position)
-    {
-        Collider[] hitColliders = Physics.OverlapSphere(position, 0.5f, layerMask);
-
-        foreach (var hitCollider in hitColliders)
-        {
-            return hitCollider.gameObject;
+        // Definisci l'origine del raggio (ad esempio, la posizione del forklift + un offset in avanti)
+        Vector3 rayOrigin = transform.position + transform.forward * 1.5f;
+        // Definisci la direzione del raggio (avanti rispetto al forklift)
+        Vector3 rayDirection = transform.forward;
+        // Definisci la lunghezza massima del raggio
+        float maxDistance = 2f;
+        rayOrigin.y = height;
+        if (Physics.Raycast(rayOrigin, rayDirection, out RaycastHit hit, maxDistance, layerMask)){
+            return hit.collider.gameObject.transform.root.gameObject;
         }
-
         return null;
     }
 }

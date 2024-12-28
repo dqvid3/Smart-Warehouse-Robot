@@ -15,7 +15,7 @@ FOREACH (pos_data IN [
   CREATE (pos:Position {
     x: round(toFloat(delivery.center_x - 4.225 * delivery.length/10) * 1000.0) / 1000.0, 
     z: round(toFloat(delivery.center_z + pos_data.z * delivery.width/10) * 1000.0) / 1000.0,
-    y: 1.120, // Puoi anche arrotondare questo se necessario
+    y: 0.995, 
     hasParcel: false
   })
   CREATE (delivery)-[:HAS_POSITION]->(pos)

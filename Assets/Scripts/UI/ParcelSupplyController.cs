@@ -7,7 +7,6 @@ using System;
 
 public class ParcelSupplyController : MonoBehaviour
 {
-    private DeliveryAreaManager deliveryAreaManager;
     private DropdownField categoryDropdown, quantityDropdown, productDropdown;
     private Button insertButton, completeButton;
     private Label notificationLabel;
@@ -19,7 +18,6 @@ public class ParcelSupplyController : MonoBehaviour
 
     private async void Start()
     {
-        deliveryAreaManager = FindFirstObjectByType<DeliveryAreaManager>();
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
 
         var root = (uiDocument = GetComponent<UIDocument>()).rootVisualElement;
@@ -38,10 +36,6 @@ public class ParcelSupplyController : MonoBehaviour
         completeButton.clicked += async () =>
         {
             List<Dictionary<string, string>> newParcels = await CompleteSupply();
-            if (newParcels.Count > 0)
-            {
-                deliveryAreaManager.SpawnNewParcels(newParcels);
-            }
         };
 
         await PopulateCategoryDropdown();

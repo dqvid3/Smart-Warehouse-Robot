@@ -847,6 +847,7 @@ MonoBehaviour:
   layerMask:
     serializedVersion: 2
     m_Bits: 8
+  grabPoint: {fileID: 5857175735631257086}
 --- !u!114 &7486483488993066797
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -885,8 +886,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e98e94fb8e30c64197525d806d964d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 5
-  rotationSpeed: 100
   mastRigidbody:
   - {fileID: 2573618804811806177}
   - {fileID: 8876522029298363485}

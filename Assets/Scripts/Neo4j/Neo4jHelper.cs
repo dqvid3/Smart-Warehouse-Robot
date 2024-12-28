@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UnityEngine;
 
 public class Neo4jHelper
 {
@@ -93,5 +94,16 @@ public class Neo4jHelper
         {
             throw new Neo4jException($"Error retrieving categories: {ex.Message}");
         }
+    }
+
+    public async Task UpdateParcelPositionStatusAsync(float z, bool hasParcel)
+    {
+        string query = @"
+        MATCH (p:Position)
+        WHERE abs(p.z - $z) < 0.1
+        SET p.hasParcel = $hasParcel";
+        var parameters = new Dictionary<string, object> {{ "z", z }, { "hasParcel", hasParcel }};
+
+        await ExecuteWriteAsync(query, parameters);
     }
 }
