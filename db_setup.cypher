@@ -46,7 +46,7 @@ FOREACH (shelf IN [
     CREATE (s)-[:HAS_LAYER]->(layer)
     // Create slots for the layer (with relative z positions)
     FOREACH (slot_z IN [6.7, 4.7, 2.9, 0.9, -0.9, -2.9, -4.7, -6.7] |
-      CREATE (slot:Slot {z: slot_z})
+      CREATE (slot:Slot {x: slot_z})
       CREATE (layer)-[:HAS_SLOT]->(slot)
     )
   )

@@ -145,7 +145,7 @@ public class ForkliftNavController : MonoBehaviour
         string query = @"
         MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
         WHERE NOT (slot)-[:CONTAINS]->(:Parcel)
-        RETURN s.x + slot.z AS x, l.y AS y, s.z AS z, ID(slot) AS slotId
+        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z, ID(slot) AS slotId
         LIMIT 1";
         return await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "category", category } });
     }

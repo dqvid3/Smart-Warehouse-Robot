@@ -10,8 +10,8 @@ public class DeliveryAreaManager : MonoBehaviour
     public GameObject parcelPrefab;
     private Neo4jHelper neo4jHelper;
     private List<Vector3> predefinedPositions = new();
-    private HashSet<string> spawnedParcels = new HashSet<string>(); // Keep track of spawned parcels
-    private HashSet<Vector3> occupiedPositions = new HashSet<Vector3>(); // Track occupied positions locally
+    private HashSet<string> spawnedParcels = new(); // Keep track of spawned parcels
+    private HashSet<Vector3> occupiedPositions = new(); // Track occupied positions locally
     private float checkInterval = 5f; // Check for new parcels every 5 seconds
     private float lastCheckTime = 0f;
 
@@ -36,10 +36,9 @@ public class DeliveryAreaManager : MonoBehaviour
         {
             predefinedPositions.Clear();
             var positions = await neo4jHelper.ExecuteReadListAsync(@"
-                MATCH (a:Area {type: 'Delivery'})-[:HAS_POSITION]->(p:Position)
-                WHERE p.hasParcel = false
-                RETURN p.x AS x, p.y AS y, p.z AS z
-            ");
+            MATCH (a:Area {type: 'Delivery'})-[:HAS_POSITION]->(p:Position)
+            WHERE p.hasParcel = false
+            RETURN p.x AS x, p.y AS y, p.z AS z");
 
             foreach (var pos in positions)
             {
@@ -67,9 +66,8 @@ public class DeliveryAreaManager : MonoBehaviour
             await GetPredefinedPositions();
 
             var parcelsInDelivery = await neo4jHelper.ExecuteReadListAsync(@"
-                MATCH (p:Parcel)-[:LOCATED_IN]->(a:Area {type: 'Delivery'})
-                RETURN p.timestamp AS timestamp, p.category AS category, p.product_name AS productName
-            ");
+            MATCH (p:Parcel)-[:LOCATED_IN]->(a:Area {type: 'Delivery'})
+            RETURN p.timestamp AS timestamp, p.category AS category, p.product_name AS productName");
             HashSet<string> currentParcels = new HashSet<string>(parcelsInDelivery.Select(record => record["timestamp"].As<string>()));
 
             // Remove delivered parcels
