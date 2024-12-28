@@ -1927,6 +1927,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1229491687}
+  - component: {fileID: 1229491688}
   m_Layer: 0
   m_Name: Warehouse
   m_TagString: Untagged
@@ -1951,6 +1952,19 @@ Transform:
   - {fileID: 1087594570}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1229491688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1229491686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ea9329dbbcfc4dc1942bef123a040a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  parcelPrefab: {fileID: 6934787105212920705, guid: 3d8b057fcbad2492aa5c3913e2c17962, type: 3}
 --- !u!1001 &1391540557
 PrefabInstance:
   m_ObjectHideFlags: 0
