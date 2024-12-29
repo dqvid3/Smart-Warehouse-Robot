@@ -4,6 +4,7 @@ using System.Collections;
 using Neo4j.Driver;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System;
 
 public class ForkliftNavController : MonoBehaviour
 {
@@ -20,6 +21,9 @@ public class ForkliftNavController : MonoBehaviour
     private float lastCheckTime = 0f;
     private Vector3 defaultPosition = Vector3.zero;
 
+    // Evento per notificare il completamento del compito
+    public event Action OnTaskCompleted;
+
     void Start()
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
@@ -29,38 +33,10 @@ public class ForkliftNavController : MonoBehaviour
     }
 
     void Update()
-    {   
-        // Automated behavior to check for parcels only if not carrying a box
-        if (!isCarryingBox && Time.time - lastCheckTime > checkInterval)
-        {
-            lastCheckTime = Time.time;
-            CheckForParcels();
-        }
-        /*
-        if (Input.GetMouseButtonDown(0)){ // Left mouse button
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, layerMask))
-        {
-            // Ensure the object hit is a parcel
-            GameObject clickedParcel = hit.collider.gameObject.transform.root.gameObject;
-            if (clickedParcel != null)
-            {
-                // Get the position of the clicked parcel
-                Vector3 parcelPosition = clickedParcel.transform.position;
-                StartCoroutine(PickParcelFromShelf(parcelPosition));
-            }
-        }
-        }*/
-    }
-
-    private async void CheckForParcels()
     {
-        Vector3? parcelPosition = await GetParcelPosition();
-        if (parcelPosition != Vector3.zero)
-            StartCoroutine(PickParcelFromDelivery(parcelPosition.Value));
     }
 
-    private IEnumerator PickParcelFromDelivery(Vector3 parcelPosition)
+    public IEnumerator PickParcelFromDelivery(Vector3 parcelPosition)
     {
         isCarryingBox = true;
         Vector3 qrCodeDirection = Vector3.left;
@@ -68,28 +44,44 @@ public class ForkliftNavController : MonoBehaviour
         approachPosition.y = transform.position.y;
 
         // Move to the approach position
-        yield return MoveToPosition(approachPosition);
+        yield return StartCoroutine(MoveToPosition(approachPosition));
         // Rotate to face the parcel
-        yield return SmoothRotateToDirection(-qrCodeDirection);
+        yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
 
         // Read the QR code
         string qrCode = qrReader.ReadQRCode();
         // Extract timestamp and category from the QR code
-        string timestamp = qrCode.Split('|')[0];
-        string category = qrCode.Split('|')[1];
+        string[] qrParts = qrCode.Split('|');
+        if (qrParts.Length < 2)
+        {
+            Debug.LogWarning("Invalid QR code format.");
+            yield break;
+        }
+        string timestamp = qrParts[0];
+        string category = qrParts[1];
 
         // Find the parcel GameObject based on its position
         GameObject parcel = GetParcel(parcelPosition.y + 1);
-        yield return LiftMastToHeight(parcelPosition.y);
-        yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
-        yield return LiftMastToHeight(parcelPosition.y + 0.1f);
+        if (parcel == null)
+        {
+            Debug.LogWarning("Parcel not found.");
+            yield break;
+        }
+        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
+        yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
+        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 0.1f));
         parcel.transform.SetParent(grabPoint);
         // Change the QR code direction for the shelf approach
         qrCodeDirection = Vector3.forward;
         // Lift the mast further for safe transport
-        yield return LiftMastToHeight(parcelPosition.y + 1);
+        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
         // Get an available slot from the database based on the parcel's category
         IList<IRecord> result = Task.Run(() => GetAvailableSlot(category)).Result;
+        if (result.Count == 0)
+        {
+            Debug.LogWarning($"No available slot found for category {category}");
+            yield break;
+        }
         // Get the position of the slot
         Vector3 slotPosition = GetSlotPosition(result[0]);
         float shelfHeight = slotPosition.y;
@@ -97,28 +89,31 @@ public class ForkliftNavController : MonoBehaviour
         // Calculate the approach position for the shelf
         approachPosition = slotPosition + qrCodeDirection * approachDistance;
         // Move to the approach position for the shelf
-        yield return MoveToPosition(approachPosition);
+        yield return StartCoroutine(MoveToPosition(approachPosition));
         // Rotate to face the shelf
-        yield return SmoothRotateToDirection(-qrCodeDirection);
+        yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
         // Lift the mast to the height of the shelf layer
-        yield return LiftMastToHeight(shelfHeight);
+        yield return StartCoroutine(LiftMastToHeight(shelfHeight));
         // Move forward to place the parcel
-        yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
+        yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
         // Lower the mast slightly to release the parcel
-        yield return LiftMastToHeight(shelfHeight - 0.1f);
+        yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.1f));
         // Visually detach the parcel
         parcel.transform.SetParent(null);
         // Update the parcel's location in the database
-        _ = UpdateParcelLocation(timestamp, result[0][3].As<long>());
+        _ = UpdateParcelLocation(timestamp, result[0]["slotId"].As<long>());
         // Move backward away from the shelf
-        yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
+        yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
         // Lower the mast to the default position
-        yield return LiftMastToHeight(0);
+        yield return StartCoroutine(LiftMastToHeight(0));
         isCarryingBox = false; // Ready to pick up another parcel
-        yield return MoveToPosition(defaultPosition);
+        yield return StartCoroutine(MoveToPosition(defaultPosition));
+
+        // Notifica il completamento del compito
+        OnTaskCompleted?.Invoke();
     }
 
-    private IEnumerator PickParcelFromShelf(Vector3 parcelPosition)
+    public IEnumerator PickParcelFromShelf(Vector3 parcelPosition)
     {
         Vector3 qrCodeDirection = Vector3.forward;
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
@@ -145,7 +140,7 @@ public class ForkliftNavController : MonoBehaviour
         yield return MoveToPosition(defaultPosition);
     }
 
-    private IEnumerator MoveToPosition(Vector3 position)
+    public IEnumerator MoveToPosition(Vector3 position)
     {
         agent.SetDestination(position);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
@@ -216,20 +211,6 @@ public class ForkliftNavController : MonoBehaviour
         return new Vector3(x, y, z);
     }
 
-    private async Task<Vector3> GetParcelPosition()
-    {
-        string query = @"
-        MATCH (d:Area {type: 'Delivery'})-[:HAS_POSITION]->(p:Position {hasParcel: true})
-        RETURN p.x AS x, p.y AS y, p.z AS z
-        LIMIT 1";
-        IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
-        if (result.Count > 0)
-        {
-            IRecord record = result[0];
-            return new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
-        }
-        return Vector3.zero;
-    }
 
      private async Task<Vector3> GetRandomShippingPosition()
     {
