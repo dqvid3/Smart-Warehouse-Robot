@@ -48,6 +48,12 @@ public class ForkliftNavController : MonoBehaviour
         // Rotate to face the parcel
         yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
 
+        if (qrReader == null)
+        {
+            Debug.LogError("QRCodeReader non assegnato nel ForkliftNavController!");
+            yield break;
+        }
+
         // Read the QR code
         string qrCode = qrReader.ReadQRCode();
         // Extract timestamp and category from the QR code

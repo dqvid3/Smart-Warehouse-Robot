@@ -848,6 +848,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   grabPoint: {fileID: 5857175735631257086}
+  RechargePosition: {fileID: 8078697472073711468}
 --- !u!114 &2724239733223145866
 MonoBehaviour:
   m_ObjectHideFlags: 0
