@@ -30,6 +30,7 @@ public class ForkliftNavController : MonoBehaviour
         qrReader = GetComponent<QRCodeReader>();
         agent = GetComponent<NavMeshAgent>();
         forkliftController = GetComponent<ForkliftController>();
+        defaultPosition = transform.position;
     }
 
     void Update()

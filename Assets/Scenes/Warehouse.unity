@@ -119,6 +119,17 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!114 &8829896 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 401018539474953004, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+  m_PrefabInstance: {fileID: 1575026058}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3146031c212b6145a3d0054f19d8d52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &165778112
 GameObject:
   m_ObjectHideFlags: 0
@@ -2209,6 +2220,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 853919627439056054, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: renderTexture
+      value: 
+      objectReference: {fileID: 8400000, guid: b9f37700aebaecf49b59b5d2a3a6baf0, type: 2}
     - target: {fileID: 968098723222251434, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 6
@@ -2390,6 +2405,7 @@ MonoBehaviour:
   robots:
   - {fileID: 1490135891}
   - {fileID: 1221965577}
+  - {fileID: 8829896}
 --- !u!1001 &1722420249
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2714,6 +2730,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 853919627439056054, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: renderTexture
+      value: 
+      objectReference: {fileID: 8400000, guid: 7152e11bbc6fe6342a05b4285c1399f7, type: 2}
     - target: {fileID: 968098723222251434, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 6

@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Threading.Tasks;
 using Neo4j.Driver;
 using System;
+using System.Collections;
 
 public class RobotManager : MonoBehaviour
 {
@@ -19,7 +20,6 @@ public class RobotManager : MonoBehaviour
         Debug.Log("RobotManager avviato.");
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
     }
-
 
     private void Update()
     {
@@ -76,14 +76,23 @@ public class RobotManager : MonoBehaviour
         availableRobot.currentState = Robot.RobotState.TrasportoPacco;
 
         Debug.Log($"Assegnando compito al Robot {availableRobot.id}...");
-        StartCoroutine(availableRobot.forkliftNavController.PickParcelFromDelivery(parcelPosition));
+        StartCoroutine(HandleRobotTask(availableRobot, parcelPosition));
 
         // Aggiorna il database per indicare che il pacco non è più nella delivery area
         UpdateParcelStatus(parcelPosition.z, false);
 
         // Rimuove il pacco assegnato dall'elenco
         assignedParcels.Add(parcelPosition);
-        // Non chiamare NotifyTaskCompletion qui
+    }
+
+    // Coroutine per gestire il compito del robot
+    private IEnumerator HandleRobotTask(Robot robot, Vector3 parcelPosition)
+    {
+        yield return StartCoroutine(robot.forkliftNavController.PickParcelFromDelivery(parcelPosition));
+
+        // Una volta completato il task, aggiorna lo stato del robot
+        robot.currentState = Robot.RobotState.InAttesa;
+        NotifyTaskCompletion(robot.id, "Trasporto Pacco");
     }
 
     // Trova un robot disponibile
