@@ -12,13 +12,10 @@ public class ForkliftNavController : MonoBehaviour
     [SerializeField] private Transform grabPoint;
     private NavMeshAgent agent;
     private ForkliftController forkliftController;
-    private bool isCarryingBox = false;
     private float approachDistance = 3.2f;
     private float takeBoxDistance = 1.2f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
-    private float checkInterval = 2; // Time in seconds between checks for new parcels
-    private float lastCheckTime = 0f;
     private Vector3 defaultPosition = Vector3.zero;
 
     // Evento per notificare il completamento del compito
@@ -37,9 +34,8 @@ public class ForkliftNavController : MonoBehaviour
     {
     }
 
-    public IEnumerator PickParcelFromDelivery(Vector3 parcelPosition)
+    public IEnumerator PickParcelFromDelivery(Vector3 parcelPosition, Action<GameObject, string, string> onCategoryRetrieved)
     {
-        isCarryingBox = true;
         Vector3 qrCodeDirection = Vector3.left;
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
@@ -57,15 +53,16 @@ public class ForkliftNavController : MonoBehaviour
 
         // Read the QR code
         string qrCode = qrReader.ReadQRCode();
-        // Extract timestamp and category from the QR code
         string[] qrParts = qrCode.Split('|');
         if (qrParts.Length < 2)
         {
             Debug.LogWarning("Invalid QR code format.");
             yield break;
         }
-        string timestamp = qrParts[0];
+
+        string idParcel = qrParts[0];
         string category = qrParts[1];
+        Debug.Log($"Categoria letta: {category}");
 
         // Find the parcel GameObject based on its position
         GameObject parcel = GetParcel(parcelPosition.y + 1);
@@ -74,31 +71,33 @@ public class ForkliftNavController : MonoBehaviour
             Debug.LogWarning("Parcel not found.");
             yield break;
         }
+
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 0.05f));
         parcel.transform.SetParent(grabPoint);
+
         // Change the QR code direction for the shelf approach
         qrCodeDirection = Vector3.forward;
-        // Lift the mast further for safe transport
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
-        // Get an available slot from the database based on the parcel's category
-        IList<IRecord> result = Task.Run(() => GetAvailableSlot(category)).Result;
-        if (result.Count == 0)
-        {
-            Debug.LogWarning($"No available slot found for category {category}");
-            yield break;
-        }
-        // Get the position of the slot
-        Vector3 slotPosition = GetSlotPosition(result[0]);
-        float shelfHeight = slotPosition.y;
-        slotPosition.y = transform.position.y;
-        // Calculate the approach position for the shelf
-        approachPosition = slotPosition + qrCodeDirection * approachDistance;
-        // Move to the approach position for the shelf
+
+        // Pass the category to the RobotManager
+        onCategoryRetrieved?.Invoke(parcel, category, idParcel);
+    }
+
+    public IEnumerator StoreParcel(Vector3 slotPosition, GameObject parcel, long slotId, string idParcel)
+    {
+        Vector3 qrCodeDirection = Vector3.forward;
+        Vector3 approachPosition = slotPosition + qrCodeDirection * approachDistance;
+        approachPosition.y = transform.position.y;
+
+        // Move to the approach position
         yield return StartCoroutine(MoveToPosition(approachPosition));
-        // Rotate to face the shelf
+        // Rotate to face the slot
         yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
+
+        float shelfHeight = slotPosition.y;
+
         // Lift the mast to the height of the shelf layer
         yield return StartCoroutine(LiftMastToHeight(shelfHeight + 0.05f));
         // Move forward to place the parcel
@@ -107,14 +106,17 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
         // Visually detach the parcel
         parcel.transform.SetParent(null);
+
         // Update the parcel's location in the database
-        _ = UpdateParcelLocation(timestamp, result[0]["slotId"].As<long>());
+        _ = UpdateParcelLocation(idParcel, slotId);
+
+
         // Move backward away from the shelf
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
         // Lower the mast to the default position
         yield return StartCoroutine(LiftMastToHeight(0));
-        isCarryingBox = false; // Ready to pick up another parcel
-        yield return StartCoroutine(MoveToPosition(defaultPosition));
+
+        yield return StartCoroutine(MoveToPosition(defaultPosition)); // Replace with default position
 
         // Notifica il completamento del compito
         OnTaskCompleted?.Invoke();
@@ -199,16 +201,25 @@ public class ForkliftNavController : MonoBehaviour
     private async Task UpdateParcelLocation(string parcelTimestamp, long slotId)
     {
         string query = @"
-        MATCH (p:Parcel {timestamp: $parcelTimestamp})-[r:LOCATED_IN]->(d:Area {type: 'Delivery'})
-        DELETE r
-        WITH p
-        MATCH (s:Slot), (p:Parcel {timestamp: $parcelTimestamp})
-        WHERE ID(s) = $slotId
-        CREATE (s)-[:CONTAINS]->(p)";
+    MATCH (p:Parcel {timestamp: $parcelTimestamp})-[r:LOCATED_IN]->(d:Area {type: 'Delivery'})
+    DELETE r
+    WITH p
+    MATCH (s:Slot), (p:Parcel {timestamp: $parcelTimestamp})
+    WHERE ID(s) = $slotId
+    CREATE (s)-[:CONTAINS]->(p)";
         var parameters = new Dictionary<string, object> { { "parcelTimestamp", parcelTimestamp }, { "slotId", slotId } };
 
-        await neo4jHelper.ExecuteWriteAsync(query, parameters);
+        try
+        {
+            await neo4jHelper.ExecuteWriteAsync(query, parameters);
+            Debug.Log($"UpdateParcelLocation completed successfully for Parcel ID: {parcelTimestamp}, Slot ID: {slotId}");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error updating parcel location: {ex.Message}");
+        }
     }
+
 
     private Vector3 GetSlotPosition(IRecord record)
     {
