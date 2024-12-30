@@ -1397,6 +1397,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 853919627439056054, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: renderTexture
+      value: 
+      objectReference: {fileID: 8400000, guid: 978ec5b9085ee4ec6a3f1e7a1512d0b6, type: 2}
     - target: {fileID: 968098723222251434, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 6
@@ -2256,6 +2260,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 4543207436636131819, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: m_TargetTexture
+      value: 
+      objectReference: {fileID: 8400000, guid: b9f37700aebaecf49b59b5d2a3a6baf0, type: 2}
     - target: {fileID: 4871426386004985433, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 6
@@ -2766,6 +2774,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 4543207436636131819, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: m_TargetTexture
+      value: 
+      objectReference: {fileID: 8400000, guid: 7152e11bbc6fe6342a05b4285c1399f7, type: 2}
     - target: {fileID: 4871426386004985433, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 6
