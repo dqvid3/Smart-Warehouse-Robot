@@ -76,7 +76,7 @@ public class ForkliftNavController : MonoBehaviour
         }
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
-        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 0.1f));
+        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 0.05f));
         parcel.transform.SetParent(grabPoint);
         // Change the QR code direction for the shelf approach
         qrCodeDirection = Vector3.forward;
@@ -100,11 +100,11 @@ public class ForkliftNavController : MonoBehaviour
         // Rotate to face the shelf
         yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
         // Lift the mast to the height of the shelf layer
-        yield return StartCoroutine(LiftMastToHeight(shelfHeight));
+        yield return StartCoroutine(LiftMastToHeight(shelfHeight + 0.05f));
         // Move forward to place the parcel
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
         // Lower the mast slightly to release the parcel
-        yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.1f));
+        yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
         // Visually detach the parcel
         parcel.transform.SetParent(null);
         // Update the parcel's location in the database
