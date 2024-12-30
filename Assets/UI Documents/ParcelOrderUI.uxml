@@ -1,23 +1,25 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
   <ui:VisualElement style="flex-grow: 1; padding: 10px;">
-    <ui:Label text="Ordina" style="font-size: 20px; -unity-font-style: bold; margin-bottom: 10px;" />
+    <ui:Label text="Gestione Ordini" style="font-size: 20px; -unity-font-style: bold; margin-bottom: 10px;" />
 
-    <!-- Primo box con bottone e dropdown per ogni stringa -->
-    <ui:Label text="Oggetti Disponibili" style="font-size: 16px; -unity-font-style: bold; margin-bottom: 5px;" />
-    <ui:ScrollView name="primaryScrollView" style="flex-grow: 1; height: 100px; margin-bottom: 10px; border-width: 1px; border-color: rgb(100, 100, 100); padding: 5px;">
-      <ui:VisualElement name="primaryList">
-        <!-- Placeholder per le stringhe, ognuna con bottone e dropdown -->
-      </ui:VisualElement>
+    <!-- Dropdown per le categorie e quantità -->
+    <ui:VisualElement style="flex-direction: row; margin-bottom: 10px;">
+      <ui:DropdownField name="categoryDropdown" label="Categoria" choices="Categoria1,Categoria2,Categoria3" value="Categoria1" style="flex-grow: 1; margin-right: 10px;" />
+      <ui:DropdownField name="quantityDropdown" label="Quantità" choices="1,2,3,4,5" value="1" style="flex-grow: 1;" />
+    </ui:VisualElement>
+
+    <!-- Dropdown per i nomi dei prodotti e pulsante di insert -->
+    <ui:VisualElement style="flex-direction: row; margin-bottom: 10px;">
+      <ui:DropdownField name="productDropdown" label="Nome Prodotto" choices="Prodotto1,Prodotto2,Prodotto3" value="Prodotto1" style="flex-grow: 1; margin-right: 10px;" />
+      <ui:Button name="insertButton" text="Inserisci" style="flex-grow: 1;" />
+    </ui:VisualElement>
+
+    <!-- Label di riepilogo -->
+    <ui:Label text="Riepilogo" style="font-size: 16px; -unity-font-style: bold; margin-bottom: 5px;" />
+
+    <ui:ScrollView name="summaryList" style="flex-grow: 1; height: 100px; margin-bottom: 10px; border-width: 1px; border-color: rgb(100, 100, 100); padding: 5px;">
+        <ui:VisualElement name="summaryListContainer" style="flex-direction: column;" />
     </ui:ScrollView>
-
-    <!-- Secondo box con tre bottoni per ogni stringa -->
-    <ui:Label text="Carrello" style="font-size: 16px; -unity-font-style: bold; margin-bottom: 5px;" />
-    <ui:ScrollView name="secondaryScrollView" style="flex-grow: 1; height: 100px; margin-bottom: 10px; border-width: 1px; border-color: rgb(100, 100, 100); padding: 5px;">
-      <ui:VisualElement name="secondaryList">
-        <!-- Placeholder per le stringhe, ognuna con tre bottoni -->
-      </ui:VisualElement>
-    </ui:ScrollView>
-
     <!-- Pulsante di completamento -->
     <ui:Button name="completeButton" text="Completa" style="margin-top: 10px;" />
 

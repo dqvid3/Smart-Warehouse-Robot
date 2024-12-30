@@ -102,7 +102,7 @@ public class Neo4jHelper
         MATCH (p:Position)
         WHERE abs(p.z - $z) < 0.1
         SET p.hasParcel = $hasParcel";
-        var parameters = new Dictionary<string, object> {{ "z", z }, { "hasParcel", hasParcel }};
+        var parameters = new Dictionary<string, object> { { "z", z }, { "hasParcel", hasParcel } };
 
         await ExecuteWriteAsync(query, parameters);
     }

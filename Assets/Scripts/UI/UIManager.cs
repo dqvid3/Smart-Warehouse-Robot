@@ -33,6 +33,7 @@ public class UIManager : MonoBehaviour
             currentUI = 3;
             HideAllUI();
             parcelOrderUI.rootVisualElement.style.display = DisplayStyle.Flex;
+            _ = parcelOrderUI.GetComponent<ParcelOrderController>().PopulateCategoryDropdown();
         }
         else if (Input.GetKeyDown(KeyCode.Escape))
         {

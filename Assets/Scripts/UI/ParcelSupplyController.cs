@@ -33,10 +33,7 @@ public class ParcelSupplyController : MonoBehaviour
 
         categoryDropdown.RegisterValueChangedCallback(OnCategoryChanged);
         insertButton.clicked += AddToSummary;
-        completeButton.clicked += async () =>
-        {
-            List<Dictionary<string, string>> newParcels = await CompleteSupply();
-        };
+        completeButton.clicked += CompleteSupply;
 
         await PopulateCategoryDropdown();
     }
@@ -57,19 +54,16 @@ public class ParcelSupplyController : MonoBehaviour
     {
         string selectedCategory = evt.newValue;
         await PopulateProductDropdown(selectedCategory);
-        await UpdateQuantityDropdown(categoryDropdown.value);
-        if (productDropdown.choices.Count > 0)
-        {
-            insertButton.SetEnabled(true);
-            productDropdown.SetEnabled(true);
-            productDropdown.value = productDropdown.choices[0];
-        }
-        else
-        {
-            insertButton.SetEnabled(false);
-            productDropdown.SetEnabled(false);
-            productDropdown.value = "Prodotti non esistenti";
-        }
+        await UpdateQuantityDropdown(selectedCategory);
+
+        // Verifica se ci sono prodotti o quantità disponibili
+        bool hasProducts = productDropdown.choices.Count > 0;
+        bool hasAvailableQuantity = quantityDropdown.choices.Count > 0;
+
+        // Abilita/disabilita il pulsante di inserimento in base alla disponibilità
+        insertButton.SetEnabled(hasProducts && hasAvailableQuantity);
+        productDropdown.SetEnabled(hasProducts);
+        productDropdown.value = hasProducts ? productDropdown.choices[0] : "No Products";
     }
 
     private async Task PopulateProductDropdown(string category)
@@ -90,7 +84,27 @@ public class ParcelSupplyController : MonoBehaviour
             RETURN emptySlots - numParcelsInDelivery AS availableSlots";
         var result = await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "category", category } });
         int availableSlots = result[0][0].As<int>();
+
+        foreach (var item in supplySummary)
+        {
+            string productName = item.Key;
+            int quantity = item.Value;
+            string productCategory = await GetProductCategory(productName);
+
+            if (productCategory == category)
+            {
+                availableSlots -= quantity;
+            }
+        }
+
         UpdateQuantity(availableSlots);
+    }
+
+    private async Task<string> GetProductCategory(string productName)
+    {
+        string query = @"MATCH (p:Product {product_name: $productName}) RETURN p.category AS category";
+        var result = await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "productName", productName } });
+        return result.Count > 0 ? result[0][0].As<string>() : null;
     }
 
     private void UpdateQuantity(int qty)
@@ -101,7 +115,19 @@ public class ParcelSupplyController : MonoBehaviour
             quantities.Add(i.ToString());
         }
         quantityDropdown.choices = quantities;
-        quantityDropdown.value = quantities.Count > 0 ? quantities[0] : "";
+
+        if (qty == 0)
+        {
+            quantityDropdown.SetEnabled(false);
+            quantityDropdown.value = "";
+            insertButton.SetEnabled(false); // Disabilita il pulsante se non ci sono quantità disponibili
+        }
+        else
+        {
+            quantityDropdown.SetEnabled(true);
+            quantityDropdown.value = quantities.Count > 0 ? quantities[0] : "";
+            insertButton.SetEnabled(true); // Abilita il pulsante se ci sono quantità disponibili
+        }
     }
 
     private void AddToSummary()
@@ -115,7 +141,7 @@ public class ParcelSupplyController : MonoBehaviour
         int quantity = int.Parse(quantityDropdown.value);
         int maxqty = int.Parse(quantityDropdown.choices[quantityDropdown.choices.Count - 1]);
         if (maxqty - quantity == 0)
-            insertButton.SetEnabled(false);
+            insertButton.SetEnabled(false); // Disabilita il pulsante se non ci sono più quantità disponibili
 
         if (supplySummary.ContainsKey(selectedProduct))
         {
@@ -129,53 +155,40 @@ public class ParcelSupplyController : MonoBehaviour
         UpdateSummaryList();
     }
 
-   private void UpdateSummaryList()
+    private void UpdateSummaryList()
     {
         summaryListContainer.Clear();
         foreach (var item in supplySummary)
         {
-            // Crea un contenitore per la riga
-            var rowContainer = new VisualElement();
-            rowContainer.style.flexDirection = FlexDirection.Row;
-
-            // Crea la label per il nome del prodotto e la quantità
-            var itemLabel = new Label($"{item.Key}: {item.Value}");
-            itemLabel.style.flexGrow = 1;
-
-            // Crea il pulsante "Rimuovi"
-            var removeButton = new Button(() => RemoveFromSummary(item.Key, item.Value));
-            removeButton.text = "Rimuovi";
-
-            // Aggiunge label e pulsante al contenitore della riga
+            var rowContainer = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+            var itemLabel = new Label($"{item.Key}: {item.Value}") { style = { flexGrow = 1 } };
+            var removeButton = new Button(() => RemoveFromSummary(item.Key, item.Value)) { text = "Rimuovi" };
             rowContainer.Add(itemLabel);
             rowContainer.Add(removeButton);
-
-            // Aggiunge il contenitore della riga al contenitore principale del riepilogo
             summaryListContainer.Add(rowContainer);
         }
     }
 
     private async void RemoveFromSummary(string productName, int quantityToRemove)
     {
-        // Rimuove l'elemento dal dizionario
         supplySummary.Remove(productName);
-
-        // Aggiorna la lista di riepilogo
         UpdateSummaryList();
-
-        // Aggiorna la quantità disponibile
         await UpdateQuantityDropdown(categoryDropdown.value);
 
-        insertButton.SetEnabled(true);
+        // Verifica se ci sono prodotti o quantità disponibili
+        bool hasProducts = productDropdown.choices.Count > 0;
+        bool hasAvailableQuantity = quantityDropdown.choices.Count > 0;
+
+        // Abilita/disabilita il pulsante di inserimento in base alla disponibilità
+        insertButton.SetEnabled(hasProducts && hasAvailableQuantity);
     }
 
-    private async Task<List<Dictionary<string, string>>> CompleteSupply()
+    private async void CompleteSupply()
     {
-        List<Dictionary<string, string>> newParcels = new List<Dictionary<string, string>>();
         if (supplySummary.Count == 0)
         {
             ShowNotification("No items in the supply list.");
-            return newParcels;
+            return;
         }
 
         try
@@ -188,33 +201,17 @@ public class ParcelSupplyController : MonoBehaviour
 
                 for (int i = 0; i < quantity; i++)
                 {
-                    // Generate unique timestamp
                     string timestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
-
-                    var parameters = new Dictionary<string, object>
-                    {
-                        { "productName", productName },
-                        { "category", category },
-                        { "timestamp", timestamp}
-                    };
-
-                    // Create the parcel, link it to the the Delivery Area
                     await neo4jHelper.ExecuteWriteAsync(
                         @"MATCH (p:Product {product_name: $productName})
                         MATCH (da:Area {type: 'Delivery'})
                         CREATE (parcel:Parcel {product_name: p.product_name, category: p.category, timestamp: $timestamp})
                         CREATE (parcel)-[:LOCATED_IN]->(da)",
-                    new Dictionary<string, object>
-                    {
-                        { "productName", productName },
-                        { "timestamp", timestamp}
-                    });
-                    newParcels.Add(new Dictionary<string, string>
-                    {
-                        { "timestamp", timestamp },
-                        { "category", category },
-                        { "productName", productName }
-                    });
+                        new Dictionary<string, object>
+                        {
+                            { "productName", productName },
+                            { "timestamp", timestamp }
+                        });
                 }
             }
             ShowNotification("Supply completed successfully!");
@@ -226,7 +223,6 @@ public class ParcelSupplyController : MonoBehaviour
         {
             ShowNotification(ex.Message);
         }
-        return newParcels;
     }
 
     private void ShowNotification(string message)
