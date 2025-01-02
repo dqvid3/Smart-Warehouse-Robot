@@ -81,7 +81,7 @@ public class ForkliftNavController : MonoBehaviour
         qrCodeDirection = Vector3.forward;
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
 
-        // Pass the category to the RobotManager
+        // Pass the category to the robot
         onCategoryRetrieved?.Invoke(parcel, category, idParcel);
     }
 
@@ -116,7 +116,7 @@ public class ForkliftNavController : MonoBehaviour
         // Lower the mast to the default position
         yield return StartCoroutine(LiftMastToHeight(0));
 
-        yield return StartCoroutine(MoveToPosition(defaultPosition)); // Replace with default position
+        yield return StartCoroutine(MoveToOriginPosition());
 
         // Notifica il completamento del compito
         OnTaskCompleted?.Invoke();
@@ -146,7 +146,16 @@ public class ForkliftNavController : MonoBehaviour
         yield return LiftMastToHeight(0);
         parcel.transform.SetParent(null);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
-        yield return MoveToPosition(defaultPosition);
+        yield return MoveToOriginPosition();
+    }
+
+    public IEnumerator MoveToOriginPosition()
+    {
+        agent.SetDestination(defaultPosition);
+        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
+        agent.ResetPath();
+        Vector3 targetForward = Vector3.back; // Ruota di 180° rispetto all'asse Y
+        yield return StartCoroutine(SmoothRotateToDirection(targetForward, 1f)); // Rotazione graduale
     }
 
     public IEnumerator MoveToPosition(Vector3 position)
@@ -188,15 +197,6 @@ public class ForkliftNavController : MonoBehaviour
         }
     }
 
-    private async Task<IList<IRecord>> GetAvailableSlot(string category)
-    {
-        string query = @"
-        MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
-        WHERE NOT (slot)-[:CONTAINS]->(:Parcel)
-        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z, ID(slot) AS slotId
-        LIMIT 1";
-        return await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "category", category } });
-    }
 
     private async Task UpdateParcelLocation(string parcelTimestamp, long slotId)
     {
@@ -218,15 +218,6 @@ public class ForkliftNavController : MonoBehaviour
         {
             Debug.LogError($"Error updating parcel location: {ex.Message}");
         }
-    }
-
-
-    private Vector3 GetSlotPosition(IRecord record)
-    {
-        float x = record[0].As<float>();
-        float y = record[1].As<float>();
-        float z = record[2].As<float>();
-        return new Vector3(x, y, z);
     }
 
 
