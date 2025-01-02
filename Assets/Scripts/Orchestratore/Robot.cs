@@ -9,6 +9,9 @@ public class Robot : MonoBehaviour
     public int id;
     public float batteryLevel = 100f;
     public string currentTask = "None";
+    private string previousTask = "None"; // Memorizza il task precedente
+    private Vector3 previousPosition; // Posizione relativa al task precedente
+    private RobotState previousState = RobotState.Idle; // Stato precedente
     public bool isActive = true;
     public DatabaseManager databaseManager;
     public ForkliftNavController forkliftNavController;
@@ -25,23 +28,52 @@ public class Robot : MonoBehaviour
     }
 
     public RobotState currentState = RobotState.Idle;  // Stato iniziale del robot
-    private RobotState previousState = RobotState.Idle; // Per tracciare lo stato precedente
-
 
     private void Start()
     {
         currentState = RobotState.Idle;
+        originPosition = transform.position;
     }
+
+    private float batteryDrainInterval = 5f; // Intervallo in secondi per il drenaggio della batteria
+    private float batteryDrainTimer = 0f;    // Timer per il drenaggio della batteria
 
     private void Update()
     {
+        // Riduzione del livello di batteria ogni 2 secondi, solo se non si trova nella originPosition
+        if (Vector3.Distance(transform.position, originPosition) > 0.1f) // Verifica che il robot non sia nella originPosition
+        {
+            batteryDrainTimer += Time.deltaTime;
+            if (batteryDrainTimer >= batteryDrainInterval)
+            {
+                batteryDrainTimer = 0f; // Resetta il timer
+                if (batteryLevel > 0) // Assicura che la batteria non scenda sotto 0
+                {
+                    batteryLevel -= 1f;
+                    Debug.Log($"Robot {id}: Livello batteria attuale: {batteryLevel}%");
+                }
+            }
+        }
+
+        // Controllo del livello di batteria e cambio stato a RechargeState se necessario
+        if (batteryLevel < 5 && currentState != RobotState.RechargeState)
+        {
+                // Salva il task corrente e lo stato prima di passare alla ricarica
+                previousTask = currentTask;
+                previousState = currentState;
+                previousPosition = position;
+                currentState = RobotState.RechargeState;  
+        }
+
         // Controlla se lo stato è cambiato
         if (currentState != previousState)
         {
             OnStateChanged();
-            previousState = currentState; // Aggiorna lo stato precedente
+            previousState = currentState;
         }
     }
+
+
 
     private void OnStateChanged()
     {
@@ -97,38 +129,6 @@ public class Robot : MonoBehaviour
         robotManager.NotifyTaskCompletion(id);
     }
 
-    public string GetCurrentState() => currentState.ToString();
-
-    public string GetCurrentTask() => currentTask != null ? currentTask : "No Task";
-
-    public async void ActivateRobot()
-    {
-        if (batteryLevel > 10)
-        {
-            isActive = true;
-            currentState = RobotState.Idle;
-            await UpdateStateInDatabase();
-            Debug.Log($"Robot {id} attivato!");
-        }
-        else
-        {
-            currentState = RobotState.RechargeState;
-            isActive = false;
-            await UpdateStateInDatabase();
-            Debug.Log($"Robot {id}: batteria quasi scarica.");
-            StartCoroutine(ChargingRoutine());
-        }
-    }
-
-    public async void DeactivateRobot()
-    {
-        isActive = false;
-        currentState = RobotState.Idle;
-        currentTask = "None";
-        await UpdateStateInDatabase();
-        Debug.Log($"Robot {id} disattivato!");
-    }
-
     private IEnumerator ChargingRoutine()
     {
         float chargingTime = 10f;
@@ -146,8 +146,14 @@ public class Robot : MonoBehaviour
 
         batteryLevel = 100f;
         isActive = true;
-        currentState = RobotState.Idle;
-        Debug.Log($"Robot {id} ha completato la ricarica.");
+
+        // Riprendi il task precedente
+        currentState = previousState;
+        position = previousPosition;
+        currentTask = previousTask;
+
+        Debug.Log($"Robot {id} ha completato la ricarica e riprende il task: {currentTask}");
+        OnStateChanged();
     }
 
 

@@ -16,7 +16,7 @@ public class ForkliftNavController : MonoBehaviour
     private float takeBoxDistance = 1.2f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
-    private Vector3 defaultPosition = Vector3.zero;
+    private Vector3 defaultPosition;
 
     // Evento per notificare il completamento del compito
     public event Action OnTaskCompleted;
@@ -62,7 +62,6 @@ public class ForkliftNavController : MonoBehaviour
 
         string idParcel = qrParts[0];
         string category = qrParts[1];
-        Debug.Log($"Categoria letta: {category}");
 
         // Find the parcel GameObject based on its position
         GameObject parcel = GetParcel(parcelPosition.y + 1);
@@ -74,11 +73,10 @@ public class ForkliftNavController : MonoBehaviour
 
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
-        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 0.05f));
+        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 0.1f));
         parcel.transform.SetParent(grabPoint);
 
-        // Change the QR code direction for the shelf approach
-        qrCodeDirection = Vector3.forward;
+
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
 
         // Pass the category to the robot
@@ -99,11 +97,11 @@ public class ForkliftNavController : MonoBehaviour
         float shelfHeight = slotPosition.y;
 
         // Lift the mast to the height of the shelf layer
-        yield return StartCoroutine(LiftMastToHeight(shelfHeight + 0.05f));
+        yield return StartCoroutine(LiftMastToHeight(shelfHeight));
         // Move forward to place the parcel
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
         // Lower the mast slightly to release the parcel
-        yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
+        yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.1f));
         // Visually detach the parcel
         parcel.transform.SetParent(null);
 
