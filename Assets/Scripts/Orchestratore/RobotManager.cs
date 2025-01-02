@@ -3,18 +3,19 @@ using UnityEngine;
 using System.Threading.Tasks;
 using Neo4j.Driver;
 using System;
-using System.Collections;
 using static Robot;
 using System.Linq;
-using System.Net;
 
 public class RobotManager : MonoBehaviour
 {   
     public List<Robot> robots = new List<Robot>(); // Lista di robot registrati
     public DatabaseManager databaseManager;
-    private HashSet<Vector3> assignedParcels = new HashSet<Vector3>(); // Per tracciare i pacchi assegnati
-    private Queue<TaskAssignment> pendingTasks = new Queue<TaskAssignment>(); // Coda dei compiti
-    public HashSet<Vector3> assignedPositions = new HashSet<Vector3>(); // Per tracciare le posizioni assegnate
+    
+    private Dictionary<Vector3, int> assignedParcels = new Dictionary<Vector3, int>(); // Per tracciare i pacchi assegnati
+    private Dictionary<Vector3, int> assignedPositions = new Dictionary<Vector3, int>(); // Per tracciare le posizioni assegnate
+
+
+    private Queue<Vector3> pendingStoreTasks = new Queue<Vector3>(); // Coda dei compiti
     private Neo4jHelper neo4jHelper; // Helper per il database
 
     private float checkInterval = 2f; // Intervallo tra le query
@@ -34,6 +35,11 @@ public class RobotManager : MonoBehaviour
         {
             lastCheckTime = Time.time;
             CheckForParcelsInDeliveryArea();
+            if (pendingStoreTasks.Count > 0)
+            {
+                var nextTask = pendingStoreTasks.Dequeue();
+                AssignStoreTask(nextTask);
+            }
         }
     }
 
@@ -54,7 +60,7 @@ public class RobotManager : MonoBehaviour
                 Vector3 parcelPosition = new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
 
                 // Verifica se il pacco è già stato assegnato
-                if (assignedParcels.Contains(parcelPosition)) continue;
+                if (assignedParcels.ContainsKey(parcelPosition)) continue;
 
                 Debug.Log($"Parcel detected at position {parcelPosition}");
 
@@ -74,21 +80,30 @@ public class RobotManager : MonoBehaviour
         Robot availableRobot = FindAvailableRobot();
         if (availableRobot == null)
         {
-            Debug.LogWarning("Nessun robot disponibile. Compito aggiunto in coda.");
-            pendingTasks.Enqueue(new TaskAssignment(parcelPosition));
+            // Controlla se il task è già presente nella coda
+            if (!pendingStoreTasks.Any(task => task == parcelPosition))
+            {
+                Debug.LogWarning("Nessun robot disponibile. Compito aggiunto in coda.");
+                pendingStoreTasks.Enqueue(parcelPosition);
+            }
+            else
+            {
+                Debug.Log($"Il task per la posizione {parcelPosition} è già presente nella coda.");
+            }
             return;
         }
 
         Debug.Log($"Assegnando compito al Robot {availableRobot.id}...");
-        
+
         availableRobot.position = parcelPosition;
         availableRobot.currentState = RobotState.StoreState;
-        // Rimuove il pacco assegnato dall'elenco
-        assignedParcels.Add(parcelPosition);
+
+        assignedParcels[parcelPosition] = availableRobot.id;
     }
 
 
-    public async Task<(Vector3 slotPosition, long slotId)> GetAvailableSlot(string category)
+
+    public async Task<(Vector3 slotPosition, long slotId)> GetAvailableSlot(int robotId, string category)
     {
         string query = @"
         MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
@@ -113,10 +128,10 @@ public class RobotManager : MonoBehaviour
 
             Vector3 slotPosition = new Vector3(x, y, z);
 
-            if (!assignedPositions.Contains(slotPosition))
+            if (!assignedPositions.ContainsKey(slotPosition))
             {
                 Debug.Log($"Slot trovato: Posizione ({slotPosition.x}, {slotPosition.y}, {slotPosition.z}), Slot ID: {slotId}");
-                assignedPositions.Add(slotPosition); // Segna lo slot come assegnato
+                assignedPositions[slotPosition] = robotId; // Segna lo slot come assegnato
                 return (slotPosition, slotId);
             }
         }
@@ -148,30 +163,27 @@ public class RobotManager : MonoBehaviour
         return bestRobot;
     }
 
-    private async void UpdateParcelStatus(float z, bool hasParcel)
+    public async void UpdateParcelStatus(float z, bool hasParcel)
     {
         await neo4jHelper.UpdateParcelPositionStatusAsync(z, hasParcel);
     }
 
-    public void NotifyTaskCompletion(int robotId) //TODO: rimuovere parcel da assignedParcels e position da occupiedposition
+    public void NotifyTaskCompletion(int robotId)
     {
         Debug.Log($"Robot {robotId} ha completato il task.");
-        Debug.Log($"Pending tasks remaining: {pendingTasks.Count}");
 
-        if (pendingTasks.Count > 0)
+        // Rimuovi le coppie chiave-valore dai dizionari che hanno il robotId come valore
+        var parcelsToRemove = assignedParcels.Where(pair => pair.Value == robotId).ToList();
+        foreach (var pair in parcelsToRemove)
         {
-            var nextTask = pendingTasks.Dequeue();
-            AssignStoreTask(nextTask.ParcelPosition);
+            assignedParcels.Remove(pair.Key);
+        }
+
+        var positionsToRemove = assignedPositions.Where(pair => pair.Value == robotId).ToList();
+        foreach (var pair in positionsToRemove)
+        {
+            assignedPositions.Remove(pair.Key);
         }
     }
-}
 
-public class TaskAssignment
-{
-    public Vector3 ParcelPosition { get; private set; }
-
-    public TaskAssignment(Vector3 parcelPosition)
-    {
-        ParcelPosition = parcelPosition;
-    }
 }

@@ -210,7 +210,7 @@ public class ForkliftNavController : MonoBehaviour
         try
         {
             await neo4jHelper.ExecuteWriteAsync(query, parameters);
-            Debug.Log($"UpdateParcelLocation completed successfully for Parcel ID: {parcelTimestamp}, Slot ID: {slotId}");
+            //Debug.Log($"UpdateParcelLocation completed successfully for Parcel ID: {parcelTimestamp}, Slot ID: {slotId}");
         }
         catch (Exception ex)
         {

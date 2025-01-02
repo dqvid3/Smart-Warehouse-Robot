@@ -112,7 +112,9 @@ public class Robot : MonoBehaviour
 
     private IEnumerator FindSlotAndStore(GameObject parcel, string category, Vector3 parcelPosition, string idParcel)
     {
-        var (slotPosition, slotId) = Task.Run(() => robotManager.GetAvailableSlot(category)).Result;
+        var (slotPosition, slotId) = Task.Run(() => robotManager.GetAvailableSlot(id, category)).Result;
+
+        //robotManager.UpdateParcelStatus(parcelPosition.z, false);
 
         if (slotId == -1)
         {
@@ -153,7 +155,6 @@ public class Robot : MonoBehaviour
         currentTask = previousTask;
 
         Debug.Log($"Robot {id} ha completato la ricarica e riprende il task: {currentTask}");
-        OnStateChanged();
     }
 
 
