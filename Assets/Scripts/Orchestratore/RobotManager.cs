@@ -17,16 +17,18 @@ public class RobotManager : MonoBehaviour
 
     private Queue<Vector3> pendingStoreTasks = new Queue<Vector3>(); // Coda dei compiti di store
     private Queue<Vector3> pendingShippingTasks = new Queue<Vector3>(); // Coda dei compiti di shipping
+    private List<Vector3> conveyorShipping;
     private Neo4jHelper neo4jHelper; // Helper per il database
 
     private float checkInterval = 2f; // Intervallo tra le query
     private float lastCheckTime = 0f;
 
-    private void Start()
+    private async void Start()
     {
         string robotList = string.Join(", ", robots.Select(r => $"ID: {r.id}, Stato: {r.currentState}").ToArray());
         Debug.Log($"RobotManager avviato.\nRobot collegati: [{robotList}]");
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
+        conveyorShipping = await GetConveyorPositionsInShipping();
     }
 
 
@@ -197,6 +199,27 @@ public class RobotManager : MonoBehaviour
         assignedParcels[parcelPosition] = availableRobot.id;
     }
 
+    private int currentConveyorIndex = 0;
+
+    public Vector3 askConveyorPosition()
+    {
+        // Controlla se la lista è vuota
+        if (conveyorShipping == null || conveyorShipping.Count == 0)
+        {
+            Debug.LogWarning("Conveyor positions list is empty!");
+            return Vector3.zero; // Ritorna una posizione nulla se la lista è vuota
+        }
+
+        // Ottieni la posizione corrente
+        Vector3 selectedPosition = conveyorShipping[currentConveyorIndex];
+
+        // Aggiorna l'indice per il prossimo valore (ciclico)
+        currentConveyorIndex = (currentConveyorIndex + 1) % conveyorShipping.Count;
+
+        return selectedPosition;
+    }
+
+
     public async Task<(Vector3 slotPosition, long slotId)> GetAvailableSlot(int robotId, string category)
     {
         string query = @"
@@ -288,5 +311,36 @@ DETACH DELETE p
             assignedPositions.Remove(pair.Key);
         }
     }
+
+    private async Task<List<Vector3>> GetConveyorPositionsInShipping()
+    {
+        string query = @"
+    MATCH (shipping:Area {type: 'Shipping'})-[:HAS_POSITION]->(pos:Position)
+    RETURN pos.x AS x, pos.y AS y, pos.z AS z
+    ";
+
+        var conveyorPositions = new List<Vector3>();
+
+        try
+        {
+            IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
+
+            foreach (var record in result)
+            {
+                float x = record["x"].As<float>();
+                float y = record["y"].As<float>();
+                float z = record["z"].As<float>();
+
+                conveyorPositions.Add(new Vector3(x, y, z));
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error fetching conveyor positions: {ex.Message}");
+        }
+
+        return conveyorPositions;
+    }
+
 
 }

@@ -137,7 +137,7 @@ public class ForkliftNavController : MonoBehaviour
         OnTaskCompleted?.Invoke();
     }
 
-    public IEnumerator PickParcelFromShelf(Vector3 parcelPosition)
+    public IEnumerator PickParcelFromShelf(Vector3 parcelPosition, Vector3 conveyorDestination)
     {
         Vector3 qrCodeDirection = Vector3.forward;
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
@@ -156,9 +156,11 @@ public class ForkliftNavController : MonoBehaviour
         parcel.transform.SetParent(grabPoint);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
         yield return LiftMastToHeight(1);
-        Vector3 randomShippingPosition = Task.Run(() => GetRandomShippingPosition()).Result;
-        yield return MoveToPosition(randomShippingPosition);
-        yield return LiftMastToHeight(0);
+
+        yield return MoveToPosition(conveyorDestination);
+        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
+        yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
+        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y - 0.1f)); 
         parcel.transform.SetParent(null);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
         yield return MoveToOriginPosition();
@@ -233,23 +235,6 @@ public class ForkliftNavController : MonoBehaviour
         {
             Debug.LogError($"Error updating parcel location: {ex.Message}");
         }
-    }
-
-
-     private async Task<Vector3> GetRandomShippingPosition()
-    {
-        string query = @"
-        MATCH (shipping:Area {type: 'Shipping'})
-        WITH shipping, shipping.center_x AS cx, shipping.center_z AS cz, shipping.length AS len, shipping.width AS wid
-        RETURN cx + (rand() - 0.5) * len AS x, cz + (rand() - 0.5) * wid AS z";
-        IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
-        if (result.Count > 0)
-        {
-            float x = result[0]["x"].As<float>();
-            float z = result[0]["z"].As<float>();
-            return new Vector3(x, 0, z); 
-        }
-        return Vector3.zero;    
     }
 
     private GameObject GetParcel(float height)

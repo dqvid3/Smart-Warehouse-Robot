@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Threading.Tasks;
 using Neo4j.Driver;
 using UnityEngine.AI;
+using UnityEngine.Apple;
 
 public class Robot : MonoBehaviour
 {
@@ -136,7 +137,8 @@ public class Robot : MonoBehaviour
     private IEnumerator HandleShippingTask()
     {
         _ = UpdateStateInDatabase();
-        yield return StartCoroutine(forkliftNavController.PickParcelFromShelf(position));
+        Vector3 destination = robotManager.askConveyorPosition(); 
+        yield return StartCoroutine(forkliftNavController.PickParcelFromShelf(position, destination));
         currentState = RobotState.Idle;
         _ =  robotManager.removeParcelFromShelf(position);
         robotManager.NotifyTaskCompletion(id);
