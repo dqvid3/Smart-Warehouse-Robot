@@ -1,6 +1,6 @@
 // Create areas 
 CREATE (warehouse:Area {type: "Warehouse", center_x: 0, center_z: 0, length: 50, width: 50})
-CREATE (shipping:Area {type: "Shipping", center_x: -35, center_z: 0, length: 20, width: 50})
+CREATE (shipping:Area {type: "Shipping", center_x: -40, center_z: 0, length: 30, width: 50})
 CREATE (delivery:Area {type: "Delivery", center_x: 40, center_z: 0, length: 30, width: 50})
 CREATE (recharge:Area {type: "Recharge", center_x: 0, center_z: 30, length: 50, width: 10})
 
@@ -19,6 +19,19 @@ FOREACH (pos_data IN [
     hasParcel: false
   })
   CREATE (delivery)-[:HAS_POSITION]->(pos)
+)
+
+FOREACH (pos_data IN [
+  {z: 0},
+  {z: 3},
+  {z: -3}
+] |
+  CREATE (pos:Position {
+    x: round(toFloat(shipping.center_x + 3.775 * shipping.length/10 + shipping.length/10 * -0.5) * 1000.0) / 1000.0, 
+    z: round(toFloat(shipping.center_z + pos_data.z * shipping.width/10) * 1000.0) / 1000.0,
+    y: 0.995
+  })
+  CREATE (shipping)-[:HAS_POSITION]->(pos)
 )
 
 // Create robots
