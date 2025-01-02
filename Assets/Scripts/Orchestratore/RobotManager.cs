@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using static Robot;
 using System.Linq;
+using System.Net;
 
 public class RobotManager : MonoBehaviour
 {   
@@ -13,7 +14,7 @@ public class RobotManager : MonoBehaviour
     public DatabaseManager databaseManager;
     private HashSet<Vector3> assignedParcels = new HashSet<Vector3>(); // Per tracciare i pacchi assegnati
     private Queue<TaskAssignment> pendingTasks = new Queue<TaskAssignment>(); // Coda dei compiti
-    public List<Vector3> slotPositions = new List<Vector3>(); // Per tracciare le posizioni assegnate
+    public HashSet<Vector3> assignedPositions = new HashSet<Vector3>(); // Per tracciare le posizioni assegnate
     private Neo4jHelper neo4jHelper; // Helper per il database
 
     private float checkInterval = 2f; // Intervallo tra le query
@@ -90,16 +91,21 @@ public class RobotManager : MonoBehaviour
     public async Task<(Vector3 slotPosition, long slotId)> GetAvailableSlot(string category)
     {
         string query = @"
-    MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
-    WHERE NOT (slot)-[:CONTAINS]->(:Parcel)
-    RETURN s.x + slot.x AS x, l.y AS y, s.z AS z, ID(slot) AS slotId
-    LIMIT 1";
+        MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
+        WHERE NOT (slot)-[:CONTAINS]->(:Parcel)
+        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z, ID(slot) AS slotId";
 
         IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "category", category } });
 
-        if (result.Count > 0)
+        if (result.Count == 0)
         {
-            var slotData = result[0];
+            Debug.LogWarning("Nessuno slot disponibile per la categoria specificata.");
+            return (Vector3.zero, -1); // Restituisce valori predefiniti se nessuno slot è disponibile
+        }
+
+        for (int i = 0; i < result.Count; i++)
+        {
+            var slotData = result[i];
             float x = slotData["x"].As<float>();
             float y = slotData["y"].As<float>();
             float z = slotData["z"].As<float>();
@@ -107,16 +113,18 @@ public class RobotManager : MonoBehaviour
 
             Vector3 slotPosition = new Vector3(x, y, z);
 
-            Debug.Log($"Slot trovato: Posizione ({slotPosition.x}, {slotPosition.y}, {slotPosition.z}), Slot ID: {slotId}");
+            if (!assignedPositions.Contains(slotPosition))
+            {
+                Debug.Log($"Slot trovato: Posizione ({slotPosition.x}, {slotPosition.y}, {slotPosition.z}), Slot ID: {slotId}");
+                assignedPositions.Add(slotPosition); // Segna lo slot come assegnato
+                return (slotPosition, slotId);
+            }
+        }
 
-            return (slotPosition, slotId);
-        }
-        else
-        {
-            Debug.LogWarning("Nessuno slot disponibile per la categoria specificata.");
-            return (Vector3.zero, -1); // Restituisce valori predefiniti se nessuno slot è disponibile
-        }
+        Debug.LogWarning("Tutti gli slot disponibili sono già assegnati.");
+        return (Vector3.zero, -1);
     }
+
 
 
 
@@ -145,7 +153,7 @@ public class RobotManager : MonoBehaviour
         await neo4jHelper.UpdateParcelPositionStatusAsync(z, hasParcel);
     }
 
-    public void NotifyTaskCompletion(int robotId)
+    public void NotifyTaskCompletion(int robotId) //TODO: rimuovere parcel da assignedParcels e position da occupiedposition
     {
         Debug.Log($"Robot {robotId} ha completato il task.");
         Debug.Log($"Pending tasks remaining: {pendingTasks.Count}");

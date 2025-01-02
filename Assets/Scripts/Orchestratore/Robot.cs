@@ -50,7 +50,7 @@ public class Robot : MonoBehaviour
                 if (batteryLevel > 0) // Assicura che la batteria non scenda sotto 0
                 {
                     batteryLevel -= 1f;
-                    Debug.Log($"Robot {id}: Livello batteria attuale: {batteryLevel}%");
+                    //Debug.Log($"Robot {id}: Livello batteria attuale: {batteryLevel}%");
                 }
             }
         }

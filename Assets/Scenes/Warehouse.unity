@@ -675,7 +675,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2799310585514608951, guid: 29bd7037813bc4a4583a8530e19aa871, type: 3}
       propertyPath: selectedSpeed
-      value: 1.9
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6485296786500323936, guid: 29bd7037813bc4a4583a8530e19aa871, type: 3}
       propertyPath: m_Name
@@ -749,7 +749,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2799310585514608951, guid: 29bd7037813bc4a4583a8530e19aa871, type: 3}
       propertyPath: selectedSpeed
-      value: 2.05
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6485296786500323936, guid: 29bd7037813bc4a4583a8530e19aa871, type: 3}
       propertyPath: m_Name
@@ -1507,7 +1507,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2799310585514608951, guid: 29bd7037813bc4a4583a8530e19aa871, type: 3}
       propertyPath: selectedSpeed
-      value: 1.95
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6485296786500323936, guid: 29bd7037813bc4a4583a8530e19aa871, type: 3}
       propertyPath: m_Name
@@ -3015,7 +3015,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2799310585514608951, guid: 29bd7037813bc4a4583a8530e19aa871, type: 3}
       propertyPath: selectedSpeed
-      value: 2.1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6485296786500323936, guid: 29bd7037813bc4a4583a8530e19aa871, type: 3}
       propertyPath: m_Name
@@ -3554,7 +3554,6 @@ MonoBehaviour:
   - {fileID: 1221965577}
   - {fileID: 8829896}
   databaseManager: {fileID: 0}
-  slotPositions: []
 --- !u!1001 &1722420249
 PrefabInstance:
   m_ObjectHideFlags: 0
