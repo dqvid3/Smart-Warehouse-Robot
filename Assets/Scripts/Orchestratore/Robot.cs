@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using System.Threading.Tasks;
 using Neo4j.Driver;
+using UnityEngine.AI;
 
 public class Robot : MonoBehaviour
 {
@@ -15,13 +16,15 @@ public class Robot : MonoBehaviour
     public bool isActive = true;
     public DatabaseManager databaseManager;
     public ForkliftNavController forkliftNavController;
+    public NavMeshAgent navMeshAgent;
     public RobotManager robotManager;
     public Vector3 position;
     private Vector3 originPosition = Vector3.zero;
 
     public enum RobotState
     {
-        Idle,         // Robot inattivo, in attesa di compiti
+        Idle, // Robot inattivo, in attesa di compiti
+        Wait, // Robot fermo, in attesa
         RechargeState,// Robot è in fase di ricarica
         StoreState,   // Robot sta portando un pacco nello scaffale
         ShippingState // Robot sta portando un pacco nell'area di spedizione
@@ -50,7 +53,6 @@ public class Robot : MonoBehaviour
                 if (batteryLevel > 0) // Assicura che la batteria non scenda sotto 0
                 {
                     batteryLevel -= 1f;
-                    //Debug.Log($"Robot {id}: Livello batteria attuale: {batteryLevel}%");
                 }
             }
         }
@@ -73,8 +75,6 @@ public class Robot : MonoBehaviour
         }
     }
 
-
-
     private void OnStateChanged()
     {
         switch (currentState)
@@ -82,7 +82,15 @@ public class Robot : MonoBehaviour
             case RobotState.Idle:
                 currentTask = "None";
                 _ = UpdateStateInDatabase();
-                Debug.Log($"Robot {id} è ora in attesa.");
+                Debug.Log($"Robot {id} è in attesa di task.");
+                break;
+
+            case RobotState.Wait:
+                WaitingRoutine();
+                break;
+
+            case RobotState.RechargeState:
+                StartCoroutine(ChargingRoutine());
                 break;
 
             case RobotState.StoreState:
@@ -91,44 +99,70 @@ public class Robot : MonoBehaviour
                 StartCoroutine(HandleStoreTask());
                 break;
 
-            case RobotState.RechargeState:
-                StartCoroutine(ChargingRoutine());
-                break;
-
             case RobotState.ShippingState:
-                Debug.Log($"Robot {id}: Inizia la consegna del pacco.");
+                currentTask = $"Robot {id}: Inizia la consegna del pacco.";
+                Debug.Log(currentTask);
+                StartCoroutine(HandleShippingTask());
                 break;
         }
     }
-
     private IEnumerator HandleStoreTask()
     {
         _ = UpdateStateInDatabase();
+
+        bool taskSuccess = false;
+
+        // Prova a eseguire il compito
         yield return StartCoroutine(forkliftNavController.PickParcelFromDelivery(position, (parcel, category, idParcel) =>
         {
-            StartCoroutine(FindSlotAndStore(parcel, category, position, idParcel));
+            if (parcel != null && !string.IsNullOrEmpty(category) && !string.IsNullOrEmpty(idParcel))
+            {
+                StartCoroutine(FindSlotAndStore(parcel, category, position, idParcel));
+                taskSuccess = true;
+            }
         }));
+
+        // Controlla il risultato
+        if (!taskSuccess)
+        {
+            Debug.LogWarning($"Robot {id}: Fallimento nel prelevare il pacco. Torno alla posizione originale.");
+            yield return StartCoroutine(forkliftNavController.MoveToOriginPosition());
+            currentState = RobotState.Idle;
+            _ = UpdateStateInDatabase();
+        }
     }
+
+
+    private IEnumerator HandleShippingTask()
+    {
+        _ = UpdateStateInDatabase();
+        yield return StartCoroutine(forkliftNavController.PickParcelFromShelf(position));
+        currentState = RobotState.Idle;
+        _ =  robotManager.removeParcelFromShelf(position);
+        robotManager.NotifyTaskCompletion(id);
+    }
+
 
     private IEnumerator FindSlotAndStore(GameObject parcel, string category, Vector3 parcelPosition, string idParcel)
     {
         var (slotPosition, slotId) = Task.Run(() => robotManager.GetAvailableSlot(id, category)).Result;
 
-        //robotManager.UpdateParcelStatus(parcelPosition.z, false);
-
         if (slotId == -1)
         {
-            Debug.LogWarning($"Nessuno slot disponibile per la categoria {category}");
             yield break;
         }
 
         currentTask = "Stoccaggio pacco nello scaffale";
         _ = UpdateStateInDatabase();
-        Debug.Log($"Robot {id}: Stocking the parcel");
         yield return StartCoroutine(forkliftNavController.StoreParcel(slotPosition, parcel, slotId, idParcel));
 
         currentState = RobotState.Idle;
         robotManager.NotifyTaskCompletion(id);
+    }
+
+    private void WaitingRoutine()
+    {
+        navMeshAgent.speed = 0;
     }
 
     private IEnumerator ChargingRoutine()
@@ -155,31 +189,6 @@ public class Robot : MonoBehaviour
         currentTask = previousTask;
 
         Debug.Log($"Robot {id} ha completato la ricarica e riprende il task: {currentTask}");
-    }
-
-
-    public IEnumerator DeliverParcel(Vector3 parcelPosition, Vector3 shippingPosition)
-    {
-        if (isActive)
-        {
-            currentState = RobotState.ShippingState;
-            currentTask = "Trasporto pacco verso la spedizione";
-            _ = UpdateStateInDatabase();
-            Debug.Log($"Robot {id} sta trasportando il pacco verso la zona di spedizione.");
-
-            // Richiama il controller per la consegna
-            yield return forkliftNavController.PickParcelFromShelf(parcelPosition);
-            yield return forkliftNavController.MoveToPosition(shippingPosition);
-
-            currentTask = "None";
-            currentState = RobotState.Idle;
-            _ = UpdateStateInDatabase();
-            Debug.Log($"Robot {id} ha completato la consegna del pacco.");
-        }
-        else
-        {
-            Debug.Log($"Robot {id} inattivo, impossibile effettuare la consegna.");
-        }
     }
 
     private async Task UpdateStateInDatabase()

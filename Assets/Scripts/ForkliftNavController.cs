@@ -51,12 +51,31 @@ public class ForkliftNavController : MonoBehaviour
             yield break;
         }
 
-        // Read the QR code
-        string qrCode = qrReader.ReadQRCode();
+        // Leggi il QR code con tentativi ripetuti
+        string qrCode = null;
+        int maxAttempts = 5; // Numero massimo di tentativi
+        int attempts = 0;
+        while (string.IsNullOrEmpty(qrCode) && attempts < maxAttempts)
+        {
+            qrCode = qrReader.ReadQRCode();
+            if (string.IsNullOrEmpty(qrCode))
+            {
+                attempts++;
+                Debug.LogWarning($"Tentativo {attempts}: QR code non trovato. Ritento in 5 secondi...");
+                yield return new WaitForSeconds(5); // Attendi 5 secondi prima di ritentare
+            }
+        }
+
+        if (string.IsNullOrEmpty(qrCode))
+        {
+            Debug.LogError("QR code non trovato dopo diversi tentativi.");
+            yield break;
+        }
+
         string[] qrParts = qrCode.Split('|');
         if (qrParts.Length < 2)
         {
-            Debug.LogWarning("Invalid QR code format.");
+            Debug.LogWarning("Formato QR code non valido.");
             yield break;
         }
 
@@ -67,7 +86,7 @@ public class ForkliftNavController : MonoBehaviour
         GameObject parcel = GetParcel(parcelPosition.y + 1);
         if (parcel == null)
         {
-            Debug.LogWarning("Parcel not found.");
+            Debug.LogWarning("Parcel non trovato.");
             yield break;
         }
 
@@ -76,12 +95,12 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 0.1f));
         parcel.transform.SetParent(grabPoint);
 
-
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
 
         // Pass the category to the robot
         onCategoryRetrieved?.Invoke(parcel, category, idParcel);
     }
+
 
     public IEnumerator StoreParcel(Vector3 slotPosition, GameObject parcel, long slotId, string idParcel)
     {
@@ -113,9 +132,7 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
         // Lower the mast to the default position
         yield return StartCoroutine(LiftMastToHeight(0));
-
-        yield return StartCoroutine(MoveToOriginPosition());
-
+        yield return MoveToOriginPosition();
         // Notifica il completamento del compito
         OnTaskCompleted?.Invoke();
     }
@@ -199,12 +216,12 @@ public class ForkliftNavController : MonoBehaviour
     private async Task UpdateParcelLocation(string parcelTimestamp, long slotId)
     {
         string query = @"
-    MATCH (p:Parcel {timestamp: $parcelTimestamp})-[r:LOCATED_IN]->(d:Area {type: 'Delivery'})
-    DELETE r
-    WITH p
-    MATCH (s:Slot), (p:Parcel {timestamp: $parcelTimestamp})
-    WHERE ID(s) = $slotId
-    CREATE (s)-[:CONTAINS]->(p)";
+                MATCH (p:Parcel {timestamp: $parcelTimestamp})-[r:LOCATED_IN]->(d:Area {type: 'Delivery'})
+                DELETE r
+                WITH p
+                MATCH (s:Slot), (p:Parcel {timestamp: $parcelTimestamp})
+                WHERE ID(s) = $slotId
+                CREATE (s)-[:CONTAINS]->(p)";
         var parameters = new Dictionary<string, object> { { "parcelTimestamp", parcelTimestamp }, { "slotId", slotId } };
 
         try
