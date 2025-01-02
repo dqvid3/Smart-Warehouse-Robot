@@ -96,14 +96,13 @@ public class Neo4jHelper
         }
     }
 
-    public async Task UpdateParcelPositionStatusAsync(float z, bool hasParcel)
+    public async Task UpdateParcelPositionStatusAsync(string positionId, bool hasParcel)
     {
         string query = @"
         MATCH (p:Position)
-        WHERE abs(p.z - $z) < 0.1
+        WHERE p.id = $positionId
         SET p.hasParcel = $hasParcel";
-        var parameters = new Dictionary<string, object> { { "z", z }, { "hasParcel", hasParcel } };
-
+        var parameters = new Dictionary<string, object> { { "positionId", positionId }, { "hasParcel", hasParcel } };
         await ExecuteWriteAsync(query, parameters);
     }
 }

@@ -315,9 +315,10 @@ DETACH DELETE p
     private async Task<List<Vector3>> GetConveyorPositionsInShipping()
     {
         string query = @"
-    MATCH (shipping:Area {type: 'Shipping'})-[:HAS_POSITION]->(pos:Position)
-    RETURN pos.x AS x, pos.y AS y, pos.z AS z
-    ";
+        MATCH (shipping:Area {type: 'Shipping'})-[:HAS_POSITION]->(pos:Position)
+        WHERE pos.hasParcel = false
+        RETURN pos.x AS x, pos.y AS y, pos.z AS z 
+        ";
 
         var conveyorPositions = new List<Vector3>();
 

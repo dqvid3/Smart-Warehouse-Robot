@@ -13,6 +13,7 @@ FOREACH (pos_data IN [
   {z: -4}
 ] |
   CREATE (pos:Position {
+    id: "delivery_" + toString(pos_data.z), 
     x: round(toFloat(delivery.center_x - 4.225 * delivery.length/10) * 1000.0) / 1000.0, 
     z: round(toFloat(delivery.center_z + pos_data.z * delivery.width/10) * 1000.0) / 1000.0,
     y: 0.995, 
@@ -21,15 +22,18 @@ FOREACH (pos_data IN [
   CREATE (delivery)-[:HAS_POSITION]->(pos)
 )
 
+// Create positions relative to the shipping area
 FOREACH (pos_data IN [
   {z: 0},
   {z: 3},
   {z: -3}
 ] |
   CREATE (pos:Position {
+    id: "shipping_" + toString(pos_data.z), 
     x: round(toFloat(shipping.center_x + 3.775 * shipping.length/10 + shipping.length/10 * -0.5) * 1000.0) / 1000.0, 
     z: round(toFloat(shipping.center_z + pos_data.z * shipping.width/10) * 1000.0) / 1000.0,
-    y: 0.995
+    y: 0.995,
+    hasParcel: false
   })
   CREATE (shipping)-[:HAS_POSITION]->(pos)
 )

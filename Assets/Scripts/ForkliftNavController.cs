@@ -45,12 +45,6 @@ public class ForkliftNavController : MonoBehaviour
         // Rotate to face the parcel
         yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
 
-        if (qrReader == null)
-        {
-            Debug.LogError("QRCodeReader non assegnato nel ForkliftNavController!");
-            yield break;
-        }
-
         // Leggi il QR code con tentativi ripetuti
         string qrCode = null;
         int maxAttempts = 5; // Numero massimo di tentativi
@@ -116,17 +110,16 @@ public class ForkliftNavController : MonoBehaviour
         float shelfHeight = slotPosition.y;
 
         // Lift the mast to the height of the shelf layer
-        yield return StartCoroutine(LiftMastToHeight(shelfHeight));
+        yield return StartCoroutine(LiftMastToHeight(shelfHeight + 0.05f));
         // Move forward to place the parcel
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
         // Lower the mast slightly to release the parcel
-        yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.1f));
+        yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
         // Visually detach the parcel
         parcel.transform.SetParent(null);
 
         // Update the parcel's location in the database
         _ = UpdateParcelLocation(idParcel, slotId);
-
 
         // Move backward away from the shelf
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
@@ -139,6 +132,8 @@ public class ForkliftNavController : MonoBehaviour
 
     public IEnumerator PickParcelFromShelf(Vector3 parcelPosition, Vector3 conveyorDestination)
     {
+        string positionId = "shipping_" + conveyorDestination.z.ToString();
+        _ = neo4jHelper.UpdateParcelPositionStatusAsync(positionId, true);
         Vector3 qrCodeDirection = Vector3.forward;
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
@@ -155,12 +150,16 @@ public class ForkliftNavController : MonoBehaviour
         yield return LiftMastToHeight(parcelPosition.y + 0.05f);
         parcel.transform.SetParent(grabPoint);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
-        yield return LiftMastToHeight(1);
-
-        yield return MoveToPosition(conveyorDestination);
-        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
-        yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
-        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y - 0.1f)); 
+        yield return LiftMastToHeight(2);
+        
+        qrCodeDirection = Vector3.right;
+        approachPosition = conveyorDestination + qrCodeDirection * approachDistance;
+        yield return MoveToPosition(approachPosition);
+        yield return SmoothRotateToDirection(-qrCodeDirection);
+        approachPosition.x -= takeBoxDistance;
+        yield return StartCoroutine(MoveToPosition(approachPosition));
+        Debug.Log($" vado avanti  nastro{approachPosition}");
+        yield return StartCoroutine(LiftMastToHeight(conveyorDestination.y)); 
         parcel.transform.SetParent(null);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
         yield return MoveToOriginPosition();
