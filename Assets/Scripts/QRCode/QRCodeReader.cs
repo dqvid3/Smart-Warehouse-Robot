@@ -54,7 +54,7 @@ public class QRCodeReader : MonoBehaviour
             return null;
         }
     }
-
+    /*
     private void OnGUI()
     {
         if (renderTexture != null)
@@ -66,6 +66,6 @@ public class QRCodeReader : MonoBehaviour
         {
             GUI.Label(new Rect(10, 10 + (256 + 10) * gameObject.GetInstanceID(), 200, 20), "RenderTexture non assegnata!");
         }
-    }
+    }*/
 
 }

@@ -3,20 +3,8 @@
   "WorkspaceRootPath": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\orchestratore\\robot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\orchestratore\\robot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|c:\\progettiunity\\smart-warehouse-robot\\assets\\scripts\\orchestratore\\robotmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\orchestratore\\robotmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\forkliftnavcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\forkliftnavcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|c:\\progettiunity\\smart-warehouse-robot\\assets\\scripts\\neo4j\\neo4jhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\neo4j\\neo4jhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|c:\\progettiunity\\smart-warehouse-robot\\assets\\scripts\\qrcode\\qrcodereader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\qrcode\\qrcodereader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,58 +14,19 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "Neo4jHelper.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Neo4j\\Neo4jHelper.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\Neo4j\\Neo4jHelper.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Neo4j\\Neo4jHelper.cs",
-              "RelativeToolTip": "Assets\\Scripts\\Neo4j\\Neo4jHelper.cs",
-              "ViewState": "AgIAACMAAAAAAAAAAAAwwDcAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-02T17:47:43.888Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ForkliftNavController.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\ForkliftNavController.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
-              "RelativeToolTip": "Assets\\Scripts\\ForkliftNavController.cs",
-              "ViewState": "AgIAAIEAAAAAAAAAAAAkwJsAAAAuAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-02T11:02:19.422Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Robot.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\Robot.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\Orchestratore\\Robot.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\Robot.cs",
-              "RelativeToolTip": "Assets\\Scripts\\Orchestratore\\Robot.cs",
-              "ViewState": "AgIAAG4AAAAAAAAAAAAkwIsAAAAnAAAAAAAAAA==",
+              "Title": "QRCodeReader.cs",
+              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\QRCode\\QRCodeReader.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\QRCode\\QRCodeReader.cs",
+              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\QRCode\\QRCodeReader.cs",
+              "RelativeToolTip": "Assets\\Scripts\\QRCode\\QRCodeReader.cs",
+              "ViewState": "AgIAABQAAAAAAAAAAAAuwEcAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-29T16:07:16.638Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "RobotManager.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\RobotManager.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\Orchestratore\\RobotManager.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\RobotManager.cs",
-              "RelativeToolTip": "Assets\\Scripts\\Orchestratore\\RobotManager.cs",
-              "ViewState": "AgIAAOMAAAAAAAAAAAAuwCMBAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-29T16:25:02.015Z",
+              "WhenOpened": "2025-01-03T20:02:34.04Z",
               "EditorCaption": ""
             }
           ]
