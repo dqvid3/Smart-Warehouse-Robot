@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Neo4j.Driver;
 using UnityEngine.AI;
 using UnityEngine.Apple;
+using UnityEngine.Rendering;
+using System;
 
 public class Robot : MonoBehaviour
 {
@@ -19,8 +21,9 @@ public class Robot : MonoBehaviour
     public ForkliftNavController forkliftNavController;
     public NavMeshAgent navMeshAgent;
     public RobotManager robotManager;
-    public Vector3 position;
+    public Vector3 destination;
     private Vector3 originPosition = Vector3.zero;
+    private Vector3 currentRobotPosition;
 
     public enum RobotState
     {
@@ -36,15 +39,28 @@ public class Robot : MonoBehaviour
     private void Start()
     {
         currentState = RobotState.Idle;
-        originPosition = transform.position;
+        originPosition = forkliftNavController.GetPosition();
+        currentRobotPosition = originPosition;
     }
 
     private float batteryDrainInterval = 5f; // Intervallo in secondi per il drenaggio della batteria
     private float batteryDrainTimer = 0f;    // Timer per il drenaggio della batteria
 
-    private void Update()
+    private float positionUpdateInterval = 2f; // Intervallo in secondi per l'aggiornamento della posizione
+    private float positionUpdateTimer = 0f;    // Timer per l'aggiornamento della posizione
+
+    private async void Update()
     {
-        // Riduzione del livello di batteria ogni 2 secondi, solo se non si trova nella originPosition
+        // Aggiorna la posizione corrente ogni 2 secondi
+        positionUpdateTimer += Time.deltaTime;
+        if (positionUpdateTimer >= positionUpdateInterval)
+        {
+            positionUpdateTimer = 0f; // Resetta il timer
+            currentRobotPosition = forkliftNavController.GetPosition(); // Aggiorna la posizione
+            await UpdateRobotPositionInDatabase();
+        }
+
+        // Riduzione del livello di batteria
         if (Vector3.Distance(transform.position, originPosition) > 0.1f) // Verifica che il robot non sia nella originPosition
         {
             batteryDrainTimer += Time.deltaTime;
@@ -61,11 +77,11 @@ public class Robot : MonoBehaviour
         // Controllo del livello di batteria e cambio stato a RechargeState se necessario
         if (batteryLevel < 5 && currentState != RobotState.RechargeState)
         {
-                // Salva il task corrente e lo stato prima di passare alla ricarica
-                previousTask = currentTask;
-                previousState = currentState;
-                previousPosition = position;
-                currentState = RobotState.RechargeState;  
+            // Salva il task corrente e lo stato prima di passare alla ricarica
+            previousTask = currentTask;
+            previousState = currentState;
+            previousPosition = destination;
+            currentState = RobotState.RechargeState;
         }
 
         // Controlla se lo stato è cambiato
@@ -75,6 +91,7 @@ public class Robot : MonoBehaviour
             previousState = currentState;
         }
     }
+
 
     private void OnStateChanged()
     {
@@ -95,7 +112,7 @@ public class Robot : MonoBehaviour
                 break;
 
             case RobotState.StoreState:
-                currentTask = $"Robot {id}: Picking up the parcel at position: {position}";
+                currentTask = $"Robot {id}: Picking up the parcel at position: {destination}";
                 Debug.Log(currentTask);
                 StartCoroutine(HandleStoreTask());
                 break;
@@ -114,11 +131,11 @@ public class Robot : MonoBehaviour
         bool taskSuccess = false;
 
         // Prova a eseguire il compito
-        yield return StartCoroutine(forkliftNavController.PickParcelFromDelivery(position, (parcel, category, idParcel) =>
+        yield return StartCoroutine(forkliftNavController.PickParcelFromDelivery(destination, (parcel, category, idParcel) =>
         {
             if (parcel != null && !string.IsNullOrEmpty(category) && !string.IsNullOrEmpty(idParcel))
             {
-                StartCoroutine(FindSlotAndStore(parcel, category, position, idParcel));
+                StartCoroutine(FindSlotAndStore(parcel, category, destination, idParcel));
                 taskSuccess = true;
             }
         }));
@@ -138,9 +155,9 @@ public class Robot : MonoBehaviour
     {
         _ = UpdateStateInDatabase();
         Vector3 destination = robotManager.askConveyorPosition(); 
-        yield return StartCoroutine(forkliftNavController.PickParcelFromShelf(position, destination));
+        yield return StartCoroutine(forkliftNavController.PickParcelFromShelf(destination, destination));
         currentState = RobotState.Idle;
-        _ =  robotManager.removeParcelFromShelf(position);
+        _ =  robotManager.RemoveParcelFromShelf(destination);
         robotManager.NotifyTaskCompletion(id);
     }
 
@@ -162,10 +179,34 @@ public class Robot : MonoBehaviour
         robotManager.NotifyTaskCompletion(id);
     }
 
+    private Coroutine waitingRoutineCoroutine;
+
     private void WaitingRoutine()
     {
-        navMeshAgent.speed = 0;
+        if (waitingRoutineCoroutine != null)
+        {
+            StopCoroutine(waitingRoutineCoroutine); // Interrompe eventuali routine precedenti
+        }
+
+        waitingRoutineCoroutine = StartCoroutine(HandleWaitingRoutine());
     }
+
+    private IEnumerator HandleWaitingRoutine()
+    {
+        float initialSpeed = navMeshAgent.speed; // Salva la velocità iniziale del NavMeshAgent
+        navMeshAgent.speed = 0; // Ferma il movimento del robot
+
+        Debug.Log($"Robot {id} è in attesa. Tornerà allo stato precedente in 5 secondi.");
+
+        yield return new WaitForSeconds(5f); // Aspetta 5 secondi
+
+        navMeshAgent.speed = initialSpeed; // Ripristina la velocità del robot
+        currentState = previousState; // Torna allo stato precedente salvato
+        Debug.Log($"Robot {id} ha ripreso lo stato: {previousState}");
+
+        waitingRoutineCoroutine = null; // Reset della variabile Coroutine
+    }
+
 
     private IEnumerator ChargingRoutine()
     {
@@ -187,7 +228,7 @@ public class Robot : MonoBehaviour
 
         // Riprendi il task precedente
         currentState = previousState;
-        position = previousPosition;
+        destination = previousPosition;
         currentTask = previousTask;
 
         Debug.Log($"Robot {id} ha completato la ricarica e riprende il task: {currentTask}");
@@ -199,7 +240,35 @@ public class Robot : MonoBehaviour
         {
             string robotState = currentState.ToString();
             string task = currentTask != null ? currentTask : "No Task";
-            await databaseManager.UpdateRobotStateAsync(id.ToString(), robotState, task, batteryLevel);
+
+            await databaseManager.UpdateRobotStateAsync(
+                id,   // ID del robot
+                currentRobotPosition.x,  // Posizione X
+                currentRobotPosition.z,  // Posizione Z
+                isActive,  // Stato attivo
+                task,  // Task corrente
+                robotState,  // Stato del robot
+                batteryLevel  // Livello della batteria
+            );
+        }
+    }
+
+    private async Task UpdateRobotPositionInDatabase()
+    {
+        try
+        {
+            if (databaseManager != null)
+            {
+                await databaseManager.UpdateRobotPositionAsync(
+                    id,   // ID del robot
+                    currentRobotPosition.x,  // Posizione X
+                    currentRobotPosition.z   // Posizione Z
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Errore durante l'aggiornamento della posizione del robot {id}: {ex.Message}");
         }
     }
 }

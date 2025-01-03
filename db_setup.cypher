@@ -39,8 +39,21 @@ FOREACH (pos_data IN [
 )
 
 // Create robots
-CREATE (:Robot {x: 0, z: 0, state: "inactive", battery: 10})
-CREATE (:Robot {x: 0, z: 0, state: "inactive", battery: 100})
+FOREACH (robot_data IN [
+  {id: 0, x: -15, z: 30, active: true, task: "None", state: "Idle", battery: 100},
+  {id: 1, x: 0, z: 30, active: true, task: "None", state: "Idle", battery: 100},
+  {id: 2, x: 15, z: 0, active: true, task: "None", state: "Idle", battery: 100}
+] |
+  CREATE (:Robot {
+    id: robot_data.id, 
+    x: robot_data.x, 
+    z: robot_data.z, 
+    active: robot_data.active, 
+    task: robot_data.task, 
+    state: robot_data.state,
+    battery: robot_data.battery
+  })
+);
 
 // Create shelves with layers and slots
 FOREACH (shelf IN [

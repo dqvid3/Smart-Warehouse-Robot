@@ -1,119 +1,250 @@
-using System.Collections.Generic;
-using UnityEngine;
 using Neo4j.Driver;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using UnityEngine;
 
 public class DatabaseManager : MonoBehaviour
 {
-    private IDriver _driver;
+    private Neo4jHelper neo4jHelper;
 
-    // Inizializzazione del driver Neo4j
-    public void Init(string uri, string user, string password)
+    private void Start()
     {
-        _driver = GraphDatabase.Driver(uri, AuthTokens.Basic(user, password));
+        neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
     }
 
     private void OnDestroy()
     {
-        _driver?.Dispose();
+        neo4jHelper.CloseConnection();
     }
 
-    // Esegui una query generica
-    public async System.Threading.Tasks.Task<IResultCursor> RunQueryAsync(string query, Dictionary<string, object> parameters = null)
+    public async Task<List<(int id, Vector3 position)>> GetRobotPositionsAsync()
     {
-        using (var session = _driver.AsyncSession())
+        string query = @"
+        MATCH (r:Robot)
+        RETURN r.id AS id, r.x AS x, r.z AS z";
+
+        var result = await neo4jHelper.ExecuteReadListAsync(query);
+        var robotPositions = new List<(int id, Vector3 position)>();
+
+        foreach (var record in result)
         {
-            return await session.RunAsync(query, parameters ?? new Dictionary<string, object>());
+            int id = record["id"].As<int>();
+            float x = record["x"].As<float>();
+            float z = record["z"].As<float>();
+            Vector3 position = new Vector3(x, 0, z);
+
+            robotPositions.Add((id, position));
         }
+
+        return robotPositions;
     }
 
-    // Recupera lo stato di tutti i robot dal database
-    public async System.Threading.Tasks.Task<List<Dictionary<string, object>>> GetRobotsAsync()
+
+    // Aggiorna lo stato di un robot
+    public async Task UpdateRobotStateAsync(
+        int robotId, float xPosition, float zPosition, bool isActive, string currentTask, string newState, float batteryLevel)
     {
         var query = @"
-            MATCH (r:Robot)
-            RETURN r.id AS id, r.state AS state, r.battery AS battery, r.currentTask AS currentTask";
+            MATCH (r:Robot {id: $robotId}) 
+            SET r.x = $xPosition, 
+                r.z = $zPosition, 
+                r.active = $isActive, 
+                r.task = $currentTask, 
+                r.state = $newState, 
+                r.battery = $batteryLevel";
 
-        var result = await RunQueryAsync(query);
-
-        var robots = new List<Dictionary<string, object>>();
-
-        while (await result.FetchAsync())
+        var parameters = new Dictionary<string, object>
         {
-            var robot = new Dictionary<string, object>
+            { "robotId", robotId },
+            { "xPosition", xPosition },
+            { "zPosition", zPosition },
+            { "isActive", isActive },
+            { "currentTask", currentTask },
+            { "newState", newState },
+            { "batteryLevel", batteryLevel }
+        };
+
+        await neo4jHelper.ExecuteWriteAsync(query, parameters);
+    }
+
+    public async Task UpdateRobotPositionAsync(int robotId, float xPosition, float zPosition)
+    {
+        var query = @"
+        MATCH (r:Robot {id: $robotId}) 
+        SET r.x = $xPosition, 
+            r.z = $zPosition";
+
+        var parameters = new Dictionary<string, object>
+    {
+        { "robotId", robotId },
+        { "xPosition", xPosition },
+        { "zPosition", zPosition }
+    };
+
+        await neo4jHelper.ExecuteWriteAsync(query, parameters);
+    }
+
+
+
+    public async Task<List<Vector3>> GetConveyorPositionsInShipping()
+    {
+        string query = @"
+        MATCH (shipping:Area {type: 'Shipping'})-[:HAS_POSITION]->(pos:Position)
+        WHERE pos.hasParcel = false
+        RETURN pos.x AS x, pos.y AS y, pos.z AS z 
+        ";
+
+        var conveyorPositions = new List<Vector3>();
+
+        try
+        {
+            IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
+
+            foreach (var record in result)
             {
-                { "id", result.Current["id"].As<string>() },
-                { "state", result.Current["state"].As<string>() },
-                { "battery", result.Current["battery"].As<float>() },
-                { "currentTask", result.Current["currentTask"]?.As<string>() }
-            };
-            robots.Add(robot);
+                float x = record["x"].As<float>();
+                float y = record["y"].As<float>();
+                float z = record["z"].As<float>();
+
+                conveyorPositions.Add(new Vector3(x, y, z));
+            }
         }
-
-        return robots;
-    }
-
-    // Recupera pacchi nell'area di consegna (già implementato)
-    public async System.Threading.Tasks.Task<List<string>> GetPendingParcelsAsync()
-    {
-        var query = @"
-            MATCH (p:Position {hasParcel: true}) 
-            RETURN p.x AS x, p.z AS z";
-
-        var result = await RunQueryAsync(query);
-
-        var parcels = new List<string>();
-
-        while (await result.FetchAsync())
+        catch (Exception ex)
         {
-            parcels.Add($"{result.Current["x"]},{result.Current["z"]}");
+            Debug.LogError($"Error fetching conveyor positions: {ex.Message}");
         }
 
-        return parcels;
+        return conveyorPositions;
     }
 
-    // Recupera ordini disponibili (già implementato)
-    public async System.Threading.Tasks.Task<List<string>> GetPendingOrdersAsync()
+    public async Task<IList<IRecord>> GetParcelsInDeliveryArea()
     {
-        var query = @"
-            MATCH (o:Product) 
-            WHERE NOT EXISTS(o.assignedRobot) 
-            RETURN o.product_name AS name, o.category AS category";
-
-        var result = await RunQueryAsync(query);
-
-        var orders = new List<string>();
-
-        while (await result.FetchAsync())
+        try
         {
-            orders.Add($"{result.Current["name"]}:{result.Current["category"]}");
-        }
+            string query = @"
+        MATCH (delivery:Area {type: 'Delivery'})-[:HAS_POSITION]->(pos:Position {hasParcel: true})
+        RETURN pos.x AS x, pos.y AS y, pos.z AS z
+        ";
 
-        return orders;
+            IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error checking for parcels: {ex.Message}");
+            return null;
+        }
     }
 
-    // Aggiorna lo stato di un robot (già implementato)
-    public async System.Threading.Tasks.Task UpdateRobotStateAsync(string robotId, string newState, string currentTask, float batteryLevel)
+    public async Task<IList<IRecord>> GetOldestOrderWithParcelCountAsync()
     {
-        var query = "MATCH (r:Robot {id: $robotId}) SET r.state = $state RETURN r";
+        string query = @"
+        MATCH (oldestOrder:Order)
+        WITH oldestOrder
+        ORDER BY oldestOrder.timestamp ASC
+        LIMIT 1
+        OPTIONAL MATCH (p:Parcel)-[:PART_OF]->(oldestOrder)
+        RETURN oldestOrder AS order, COUNT(p) AS parcelCount
+    ";
+
+        return await neo4jHelper.ExecuteReadListAsync(query);
+    }
+
+    public async Task DeleteOrderAsync(string orderId)
+    {
+        string query = @"
+        MATCH (order:Order {orderId: $orderId})
+        DETACH DELETE order
+    ";
+
         var parameters = new Dictionary<string, object>
-        {
-            { "robotId", robotId },
-            { "state", newState }
-        };
+    {
+        { "orderId", orderId }
+    };
 
-        await RunQueryAsync(query, parameters);
+        await neo4jHelper.ExecuteWriteAsync(query, parameters);
     }
 
-    // Assegna un task a un robot (già implementato)
-    public async System.Threading.Tasks.Task AssignTaskToRobotAsync(string robotId, string task)
+    public async Task<List<Vector3>> GetParcelPositionsForOrderAsync(string orderId)
     {
-        var query = "MATCH (r:Robot {id: $robotId}) SET r.currentTask = $task, r.state = 'busy' RETURN r";
-        var parameters = new Dictionary<string, object>
-        {
-            { "robotId", robotId },
-            { "task", task }
-        };
+        string query = @"
+        MATCH (p:Parcel)-[:PART_OF]->(oldestOrder:Order)
+        MATCH (s:Shelf)-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)-[:CONTAINS]->(p)
+        WHERE oldestOrder.orderId = $orderId
+        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z
+    ";
 
-        await RunQueryAsync(query, parameters);
+        var parameters = new Dictionary<string, object>
+    {
+        { "orderId", orderId }
+    };
+
+        var result = await neo4jHelper.ExecuteReadListAsync(query, parameters);
+        var parcelPositions = new List<Vector3>();
+
+        foreach (var record in result)
+        {
+            Vector3 position = new Vector3(
+                record["x"].As<float>(),
+                record["y"].As<float>(),
+                record["z"].As<float>()
+            );
+            parcelPositions.Add(position);
+        }
+
+        return parcelPositions;
+    }
+
+
+    public async Task<List<(Vector3 slotPosition, long slotId)>> GetAvailableSlotsAsync(string category)
+    {
+        string query = @"
+        MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
+        WHERE NOT (slot)-[:CONTAINS]->(:Parcel)
+        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z, ID(slot) AS slotId
+    ";
+
+        var parameters = new Dictionary<string, object>
+    {
+        { "category", category }
+    };
+
+        var result = await neo4jHelper.ExecuteReadListAsync(query, parameters);
+
+        var availableSlots = new List<(Vector3 slotPosition, long slotId)>();
+
+        foreach (var record in result)
+        {
+            Vector3 slotPosition = new Vector3(
+                record["x"].As<float>(),
+                record["y"].As<float>(),
+                record["z"].As<float>()
+            );
+            long slotId = record["slotId"].As<long>();
+
+            availableSlots.Add((slotPosition, slotId));
+        }
+
+        return availableSlots;
+    }
+
+    public async Task DeleteParcelFromShelfAsync(Vector3 parcelPosition)
+    {
+        string query = @"
+        MATCH (s:Shelf)-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)-[:CONTAINS]->(p:Parcel)
+        WHERE abs(s.x + slot.x - $x) < 0.01 AND abs(l.y - $y) < 0.01 AND abs(s.z - $z) < 0.01
+        DETACH DELETE p
+    ";
+
+        var parameters = new Dictionary<string, object>
+    {
+        { "x", parcelPosition.x },
+        { "y", parcelPosition.y },
+        { "z", parcelPosition.z }
+    };
+
+        await neo4jHelper.ExecuteWriteAsync(query, parameters);
     }
 }

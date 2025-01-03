@@ -10,13 +10,15 @@ public class ForkliftNavController : MonoBehaviour
 {
     [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels
     [SerializeField] private Transform grabPoint;
-    private NavMeshAgent agent;
     private ForkliftController forkliftController;
     private float approachDistance = 3.2f;
-    private float takeBoxDistance = 1.2f;
+    private float takeBoxDistance = 1.6f;
+    private float speed = 3.5f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
     private Vector3 defaultPosition;
+    private RobotMovementWithNavMeshAndCollisionPrevention robotMovement;
+
 
     // Evento per notificare il completamento del compito
     public event Action OnTaskCompleted;
@@ -25,9 +27,9 @@ public class ForkliftNavController : MonoBehaviour
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
         qrReader = GetComponent<QRCodeReader>();
-        agent = GetComponent<NavMeshAgent>();
         forkliftController = GetComponent<ForkliftController>();
         defaultPosition = transform.position;
+        robotMovement = GetComponent<RobotMovementWithNavMeshAndCollisionPrevention>();
     }
 
     void Update()
@@ -102,6 +104,7 @@ public class ForkliftNavController : MonoBehaviour
         Vector3 approachPosition = slotPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
 
+        yield return MoveBackwards(transform.forward, takeBoxDistance);
         // Move to the approach position
         yield return StartCoroutine(MoveToPosition(approachPosition));
         // Rotate to face the slot
@@ -124,8 +127,8 @@ public class ForkliftNavController : MonoBehaviour
         // Move backward away from the shelf
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
         // Lower the mast to the default position
-        yield return StartCoroutine(LiftMastToHeight(0));
         yield return MoveToOriginPosition();
+        yield return StartCoroutine(LiftMastToHeight(0));
         // Notifica il completamento del compito
         OnTaskCompleted?.Invoke();
     }
@@ -158,28 +161,28 @@ public class ForkliftNavController : MonoBehaviour
         yield return SmoothRotateToDirection(-qrCodeDirection);
         approachPosition.x -= takeBoxDistance;
         yield return StartCoroutine(MoveToPosition(approachPosition));
-        Debug.Log($" vado avanti  nastro{approachPosition}");
         yield return StartCoroutine(LiftMastToHeight(conveyorDestination.y)); 
         parcel.transform.SetParent(null);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
         yield return MoveToOriginPosition();
+        yield return StartCoroutine(LiftMastToHeight(0));
     }
 
     public IEnumerator MoveToOriginPosition()
     {
-        agent.SetDestination(defaultPosition);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        agent.ResetPath();
+        robotMovement.MoveWithCollisionPrevention(defaultPosition);
+        yield return new WaitUntil(() => robotMovement.HasArrivedAtDestination());
         Vector3 targetForward = Vector3.back; // Ruota di 180° rispetto all'asse Y
         yield return StartCoroutine(SmoothRotateToDirection(targetForward, 1f)); // Rotazione graduale
     }
 
+
     public IEnumerator MoveToPosition(Vector3 position)
     {
-        agent.SetDestination(position);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        agent.ResetPath();
+        robotMovement.MoveWithCollisionPrevention(position);
+        yield return new WaitUntil(() => robotMovement.HasArrivedAtDestination());
     }
+
 
     private IEnumerator SmoothRotateToDirection(Vector3 targetForward, float rotationSpeed = 1f)
     {
@@ -202,7 +205,6 @@ public class ForkliftNavController : MonoBehaviour
 
     private IEnumerator MoveBackwards(Vector3 direction, float distance)
     {
-        float speed = agent.speed;
         Vector3 startPosition = transform.position;
         Vector3 targetPosition = startPosition - direction * distance;
 
@@ -228,7 +230,6 @@ public class ForkliftNavController : MonoBehaviour
         try
         {
             await neo4jHelper.ExecuteWriteAsync(query, parameters);
-            //Debug.Log($"UpdateParcelLocation completed successfully for Parcel ID: {parcelTimestamp}, Slot ID: {slotId}");
         }
         catch (Exception ex)
         {
@@ -250,5 +251,9 @@ public class ForkliftNavController : MonoBehaviour
             return hit.collider.gameObject.transform.root.gameObject;
         }
         return null;
+    }
+
+    public Vector3 GetPosition() {
+        return robotMovement.GetPosition();
     }
 }

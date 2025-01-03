@@ -14,11 +14,9 @@ public class RobotManager : MonoBehaviour
     private Dictionary<Vector3, int> assignedParcels = new Dictionary<Vector3, int>(); // Per tracciare i pacchi assegnati
     private Dictionary<Vector3, int> assignedPositions = new Dictionary<Vector3, int>(); // Per tracciare le posizioni assegnate
 
-
     private Queue<Vector3> pendingStoreTasks = new Queue<Vector3>(); // Coda dei compiti di store
     private Queue<Vector3> pendingShippingTasks = new Queue<Vector3>(); // Coda dei compiti di shipping
     private List<Vector3> conveyorShipping;
-    private Neo4jHelper neo4jHelper; // Helper per il database
 
     private float checkInterval = 2f; // Intervallo tra le query
     private float lastCheckTime = 0f;
@@ -27,121 +25,79 @@ public class RobotManager : MonoBehaviour
     {
         string robotList = string.Join(", ", robots.Select(r => $"ID: {r.id}, Stato: {r.currentState}").ToArray());
         Debug.Log($"RobotManager avviato.\nRobot collegati: [{robotList}]");
-        neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
-        conveyorShipping = await GetConveyorPositionsInShipping();
+        conveyorShipping = await databaseManager.GetConveyorPositionsInShipping();
     }
 
 
-    private void Update()
+    private async void Update()
     {
         if (Time.time - lastCheckTime > checkInterval)
         {
             lastCheckTime = Time.time;
+
             CheckForShippingOrders();
-            CheckForParcelsInDeliveryArea();
+            await CheckForParcelsInDeliveryArea();
+            await HandleNearbyRobotsAsync(); // Controlla i robot vicini
+
             if (pendingShippingTasks.Count > 0)
             {
                 var nextTask = pendingShippingTasks.Dequeue();
                 AssignShippingTask(nextTask);
-            }else if(pendingStoreTasks.Count > 0)
+            }
+            else if (pendingStoreTasks.Count > 0)
             {
                 var nextTask = pendingStoreTasks.Dequeue();
                 AssignStoreTask(nextTask);
             }
-
         }
     }
+
 
     // Query per trovare pacchi nella zona di consegna
-    private async void CheckForParcelsInDeliveryArea()
+    private async Task CheckForParcelsInDeliveryArea()
     {
-        try
+        IList<IRecord> result = await databaseManager.GetParcelsInDeliveryArea();
+
+        if (result == null) return;
+
+        foreach (var record in result)
         {
-            string query = @"
-            MATCH (delivery:Area {type: 'Delivery'})-[:HAS_POSITION]->(pos:Position {hasParcel: true})
-            RETURN pos.x AS x, pos.y AS y, pos.z AS z
-            ";
+            Vector3 parcelPosition = new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
 
-            IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
+            // Verifica se il pacco è già stato assegnato
+            if (assignedParcels.ContainsKey(parcelPosition)) continue;
 
-            foreach (var record in result)
-            {
-                Vector3 parcelPosition = new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
-
-                // Verifica se il pacco è già stato assegnato
-                if (assignedParcels.ContainsKey(parcelPosition)) continue;
-
-                // Assegna il compito
-                AssignStoreTask(parcelPosition);
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Error checking for parcels: {ex.Message}");
+            // Assegna il compito
+            AssignStoreTask(parcelPosition);
         }
     }
+
 
     private async void CheckForShippingOrders()
     {
         try
         {
-            string query = @"
-            MATCH (oldestOrder:Order)
-            WITH oldestOrder
-            ORDER BY oldestOrder.timestamp ASC
-            LIMIT 1
-
-            OPTIONAL MATCH (p:Parcel)-[:PART_OF]->(oldestOrder)
-            RETURN oldestOrder, COUNT(p) AS parcelCount
-        ";
-
-            IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
+            var result = await databaseManager.GetOldestOrderWithParcelCountAsync();
 
             foreach (var record in result)
             {
-                var order = record["oldestOrder"].As<INode>();
+                var order = record["order"].As<INode>();
                 int parcelCount = record["parcelCount"].As<int>();
 
                 if (parcelCount == 0)
                 {
-                    // L'ordine non ha pacchi, cancellalo
-                    string deleteQuery = @"
-                    MATCH (order:Order {orderId: $orderId})
-                    DETACH DELETE order
-                ";
-
-                    var parameters = new Dictionary<string, object>
-                {
-                    { "orderId", order.Properties["orderId"].As<string>() }
-                };
-
-                    await neo4jHelper.ExecuteWriteAsync(deleteQuery, parameters);
+                    // Cancella l'ordine senza pacchi
+                    string orderId = order.Properties["orderId"].As<string>();
+                    await databaseManager.DeleteOrderAsync(orderId);
                 }
                 else
                 {
-                    // Se ci sono pacchi, processa le posizioni dei pacchi
-                    string parcelQuery = @"
-                    MATCH (p:Parcel)-[:PART_OF]->(oldestOrder)
-                    MATCH (s:Shelf)-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)-[:CONTAINS]->(p)
-                    WHERE oldestOrder.orderId = $orderId
-                    RETURN s.x + slot.x AS x, l.y AS y, s.z AS z
-                ";
+                    // Ottieni le posizioni dei pacchi per l'ordine
+                    string orderId = order.Properties["orderId"].As<string>();
+                    var parcelPositions = await databaseManager.GetParcelPositionsForOrderAsync(orderId);
 
-                    var parcelParameters = new Dictionary<string, object>
-                {
-                    { "orderId", order.Properties["orderId"].As<string>() }
-                };
-
-                    IList<IRecord> parcelResult = await neo4jHelper.ExecuteReadListAsync(parcelQuery, parcelParameters);
-
-                    foreach (var parcelRecord in parcelResult)
+                    foreach (var parcelPosition in parcelPositions)
                     {
-                        Vector3 parcelPosition = new Vector3(
-                            parcelRecord["x"].As<float>(),
-                            parcelRecord["y"].As<float>(),
-                            parcelRecord["z"].As<float>()
-                        );
-
                         // Verifica se il pacco è già stato assegnato
                         if (assignedParcels.ContainsKey(parcelPosition)) continue;
 
@@ -156,6 +112,7 @@ public class RobotManager : MonoBehaviour
             Debug.LogError($"Error checking for shipping orders: {ex.Message}");
         }
     }
+
 
     private void AssignStoreTask(Vector3 parcelPosition)
     {
@@ -172,7 +129,7 @@ public class RobotManager : MonoBehaviour
 
         Debug.Log($"Assegnato store task al Robot {availableRobot.id}");
 
-        availableRobot.position = parcelPosition;
+        availableRobot.destination = parcelPosition;
         availableRobot.currentState = RobotState.StoreState;
 
         assignedParcels[parcelPosition] = availableRobot.id;
@@ -193,7 +150,7 @@ public class RobotManager : MonoBehaviour
 
         Debug.Log($"Assegnato shipping task al Robot {availableRobot.id}");
 
-        availableRobot.position = parcelPosition;
+        availableRobot.destination = parcelPosition;
         availableRobot.currentState = RobotState.ShippingState;
 
         assignedParcels[parcelPosition] = availableRobot.id;
@@ -222,38 +179,21 @@ public class RobotManager : MonoBehaviour
 
     public async Task<(Vector3 slotPosition, long slotId)> GetAvailableSlot(int robotId, string category)
     {
-        string query = @"
-        MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
-        WHERE NOT (slot)-[:CONTAINS]->(:Parcel)
-        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z, ID(slot) AS slotId";
+        var availableSlots = await databaseManager.GetAvailableSlotsAsync(category);
 
-        IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "category", category } });
-
-        if (result.Count == 0)
+        foreach (var slot in availableSlots)
         {
-            return (Vector3.zero, -1); // Restituisce valori predefiniti se nessuno slot è disponibile
-        }
-
-        for (int i = 0; i < result.Count; i++)
-        {
-            var slotData = result[i];
-            float x = slotData["x"].As<float>();
-            float y = slotData["y"].As<float>();
-            float z = slotData["z"].As<float>();
-            long slotId = slotData["slotId"].As<long>();
-
-            Vector3 slotPosition = new Vector3(x, y, z);
-
-            if (!assignedPositions.ContainsKey(slotPosition))
+            if (!assignedPositions.ContainsKey(slot.slotPosition))
             {
-                assignedPositions[slotPosition] = robotId; // Segna lo slot come assegnato
-                return (slotPosition, slotId);
+                assignedPositions[slot.slotPosition] = robotId; // Segna lo slot come assegnato
+                return slot;
             }
         }
 
         Debug.LogWarning("Tutti gli slot disponibili sono già assegnati.");
         return (Vector3.zero, -1);
     }
+
 
 
     private Robot FindAvailableRobot()
@@ -276,23 +216,53 @@ public class RobotManager : MonoBehaviour
         return bestRobot;
     }
 
-    public async Task removeParcelFromShelf(Vector3 parcelPositionInShelf)
+    public async Task HandleNearbyRobotsAsync(float proximityThreshold = 2f)
     {
-        string query = @"
-MATCH (s:Shelf)-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)-[:CONTAINS]->(p:Parcel)
-WHERE abs(s.x + slot.x - $x) < 0.01 AND abs(l.y - $y) < 0.01 AND abs(s.z - $z) < 0.01
-DETACH DELETE p
-";
+        // Ottieni la lista delle posizioni dei robot dal database
+        var robotPositions = await databaseManager.GetRobotPositionsAsync();
 
-        var parameters = new Dictionary<string, object>
-    {
-        { "x", parcelPositionInShelf.x },
-        { "y", parcelPositionInShelf.y },
-        { "z", parcelPositionInShelf.z }
-    };
+        // Verifica i robot vicini
+        foreach (var robot in robots)
+        {
+            if (!robot.isActive) continue;
 
-        await neo4jHelper.ExecuteWriteAsync(query, parameters);
+            Vector3 robotPosition = robot.transform.position;
+
+            foreach (var otherRobot in robots)
+            {
+                if (robot.id == otherRobot.id || !otherRobot.isActive) continue;
+
+                Vector3 otherRobotPosition = otherRobot.transform.position;
+
+                // Controlla se i robot sono vicini
+                if (Vector3.Distance(robotPosition, otherRobotPosition) <= proximityThreshold)
+                {
+                    // Imposta uno dei due robot in attesa (priorità ai robot in Idle)
+                    if (robot.currentState == Robot.RobotState.Idle)
+                    {
+                        SetRobotToWait(otherRobot);
+                    }
+                    else
+                    {
+                        SetRobotToWait(robot);
+                    }
+                }
+            }
+        }
     }
+
+    private void SetRobotToWait(Robot robot)
+    {
+        robot.currentState = Robot.RobotState.Wait;
+        Debug.Log($"Robot {robot.id} è stato messo in attesa per evitare collisioni.");
+    }
+
+
+    public async Task RemoveParcelFromShelf(Vector3 parcelPositionInShelf)
+    {
+        await databaseManager.DeleteParcelFromShelfAsync(parcelPositionInShelf);
+    }
+
 
     public void NotifyTaskCompletion(int robotId)
     {
@@ -311,37 +281,4 @@ DETACH DELETE p
             assignedPositions.Remove(pair.Key);
         }
     }
-
-    private async Task<List<Vector3>> GetConveyorPositionsInShipping()
-    {
-        string query = @"
-        MATCH (shipping:Area {type: 'Shipping'})-[:HAS_POSITION]->(pos:Position)
-        WHERE pos.hasParcel = false
-        RETURN pos.x AS x, pos.y AS y, pos.z AS z 
-        ";
-
-        var conveyorPositions = new List<Vector3>();
-
-        try
-        {
-            IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
-
-            foreach (var record in result)
-            {
-                float x = record["x"].As<float>();
-                float y = record["y"].As<float>();
-                float z = record["z"].As<float>();
-
-                conveyorPositions.Add(new Vector3(x, y, z));
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Error fetching conveyor positions: {ex.Message}");
-        }
-
-        return conveyorPositions;
-    }
-
-
 }

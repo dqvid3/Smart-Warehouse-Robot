@@ -5,19 +5,14 @@ using UnityEngine.AI;
 public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
 {
     // --- PUBLIC PROPERTIES ---
-
-    [Header("Destinazioni")]
-    public Vector3 pointA;
-    public Vector3 pointB;
-
     [Header("Parametri di movimento")]
     public float moveSpeed = 3f;
     [Range(0.1f, 50f)]
-    public float raycastDistance = 5f;
+    public float raycastDistance = 20f;
     [Range(1, 360)]
     public int numberOfRays = 360;
     [Range(0.1f, 20f)]
-    public float obstacleDetectionDistance = 2f;
+    public float obstacleDetectionDistance = 2;
 
     [Header("Parametri del NavMeshAgent")]
     public float angularSpeed = 120f;
@@ -37,24 +32,26 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
     private Vector3 noisyPosition;
     private Vector3 estimatedPosition;
 
-    private bool isMoving = true;
+    private bool isMovementActive = false;
     private List<Vector3> freeRays = new List<Vector3>();
     private List<Vector3> compromisedRays = new List<Vector3>();
     private List<float> compromisedAngles = new List<float>();
 
     // --- UNITY METHODS ---
-
     public void Start()
     {
         InitializeAgent();
         InitializeKalmanFilters();
-        currentDestination = pointB;
-        agent.SetDestination(currentDestination);
+
         distances = new float[numberOfRays];
     }
 
+
     public void Update()
     {
+        // Esegui logica solo se il movimento è attivo
+        if (!isMovementActive) return;
+
         if (!agent.isStopped)
         {
             UpdateNoisyAndEstimatedPosition();
@@ -62,17 +59,10 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
 
         HandleObstacleDetectionAndAvoidance();
         CheckArrival();
-
         AdjustObstacleDetectionDistance();
-
-        if (isMoving)
-        {
-            DebugPositionInfo();
-        }
     }
 
     // --- INITIALIZATION METHODS ---
-
     private void InitializeAgent()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -117,8 +107,6 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
 
     private void UpdateNoisyAndEstimatedPosition()
     {
-        if (!isMoving) return;
-
         noisyPosition = transform.position + new Vector3(Random.Range(-0.2f, 0.2f), 0, Random.Range(-0.2f, 0.2f));
         float estimatedX = Mathf.Round(positionKalmanFilterX.Update(noisyPosition.x) * 100f) / 100f;
         float estimatedZ = Mathf.Round(positionKalmanFilterZ.Update(noisyPosition.z) * 100f) / 100f;
@@ -145,6 +133,10 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
 
             if (Physics.Raycast(transform.position, direction, out RaycastHit hit, raycastDistance))
             {
+                // Ignora il proprio oggetto
+                if (hit.collider.transform.IsChildOf(transform)) continue;
+
+
                 float noisyDistance = hit.distance + Random.Range(-0.2f, 0.2f);
                 distances[i] = kalmanFilters[i].Update(noisyDistance);
 
@@ -155,7 +147,8 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
                     compromisedAngles.Add(angle);
                     Debug.DrawRay(transform.position, direction * distances[i], Color.red);
 
-                    combinedAvoidanceDirection -= direction / distances[i]; // Weight inversely to distance
+                    // Calcolo della direzione di evitamento pesata inversamente alla distanza
+                    combinedAvoidanceDirection -= direction / distances[i];
                 }
                 else
                 {
@@ -175,8 +168,6 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
             Vector3 modifiedTargetDirection = (agent.destination - transform.position).normalized + combinedAvoidanceDirection;
             Vector3 avoidanceTarget = transform.position + modifiedTargetDirection.normalized * obstacleDetectionDistance;
             agent.SetDestination(avoidanceTarget);
-
-            Debug.Log("[INFO] Ostacolo rilevato, direzione modificata.");
         }
         else
         {
@@ -187,58 +178,61 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
         }
     }
 
+
+
     // --- ARRIVAL CHECK ---
 
     private void CheckArrival()
     {
         if (!agent.pathPending && agent.remainingDistance < 0.4f && !hasArrived)
         {
-            Debug.Log("[INFO] Robot troppo vicino alla destinazione, fermato e ricalcolando.");
             hasArrived = true;
             StopRobot();
-            RecalculatePath();
         }
     }
 
-    private void RecalculatePath()
+    public bool HasArrivedAtDestination()
     {
-        currentDestination = pointB;
-        agent.SetDestination(currentDestination);
-        StartRobot();
+        return hasArrived;
     }
+
 
     // --- ROBOT CONTROL ---
 
     private void StopRobot()
     {
+        agent.ResetPath();
         agent.isStopped = true;
-        isMoving = false;
+        isMovementActive = false;
     }
 
-    private void StartRobot()
-    {
-        agent.isStopped = false;
-        isMoving = true;
-    }
 
     // --- ADJUST OBSTACLE DETECTION ---
 
     private void AdjustObstacleDetectionDistance()
     {
-        float distanceToDestination = Vector3.Distance(estimatedPosition, pointB);
+        float distanceToDestination = Vector3.Distance(estimatedPosition, currentDestination);
 
         if (distanceToDestination < obstacleDetectionDistance && obstacleDetectionDistance > 0.1f)
         {
             obstacleDetectionDistance = Mathf.Max(0.1f, obstacleDetectionDistance - Time.deltaTime * 0.5f); // Adjust rate as needed
-            Debug.Log($"[INFO] Distanza a pointB: {distanceToDestination}, riducendo obstacleDetectionDistance a: {obstacleDetectionDistance}");
         }
     }
+ 
 
-    // --- DEBUGGING ---
+    // --- MOVE FUNCTION ---
 
-    private void DebugPositionInfo()
+    public void MoveWithCollisionPrevention(Vector3 destination)
     {
-        Debug.Log($"[DEBUG] Free Rays: {freeRays.Count}, Compromised Rays: {compromisedRays.Count}");
-        Debug.Log($"[DEBUG] Noisy Position: {noisyPosition}, Estimated Position: {estimatedPosition}");
+        agent.isStopped =false;
+        isMovementActive = true;
+        hasArrived = false;
+        currentDestination = destination;
+        agent.SetDestination(currentDestination);
+    }
+
+    public Vector3 GetPosition()
+    {
+        return estimatedPosition;
     }
 }
