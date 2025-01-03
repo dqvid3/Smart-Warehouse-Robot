@@ -154,8 +154,8 @@ public class Robot : MonoBehaviour
     private IEnumerator HandleShippingTask()
     {
         _ = UpdateStateInDatabase();
-        Vector3 destination = robotManager.askConveyorPosition(); 
-        yield return StartCoroutine(forkliftNavController.PickParcelFromShelf(destination, destination));
+        Vector3 conveyor = robotManager.askConveyorPosition(); 
+        yield return StartCoroutine(forkliftNavController.PickParcelFromShelf(destination, conveyor));
         currentState = RobotState.Idle;
         _ =  robotManager.RemoveParcelFromShelf(destination);
         robotManager.NotifyTaskCompletion(id);
