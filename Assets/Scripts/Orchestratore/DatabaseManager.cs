@@ -9,10 +9,11 @@ public class DatabaseManager : MonoBehaviour
 {
     private Neo4jHelper neo4jHelper;
 
-    private void Start()
+    private void Awake()
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
     }
+
 
     private void OnDestroy()
     {
@@ -115,6 +116,7 @@ public class DatabaseManager : MonoBehaviour
         {
             Debug.LogError($"Error fetching conveyor positions: {ex.Message}");
         }
+        Debug.Log($"{conveyorPositions}");
 
         return conveyorPositions;
     }
