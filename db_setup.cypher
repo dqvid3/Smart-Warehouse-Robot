@@ -38,23 +38,6 @@ FOREACH (pos_data IN [
   CREATE (shipping)-[:HAS_POSITION]->(pos)
 )
 
-// Create robots
-FOREACH (robot_data IN [
-  {id: 0, x: -15, z: 30, active: true, task: "None", state: "Idle", battery: 100},
-  {id: 1, x: 0, z: 30, active: true, task: "None", state: "Idle", battery: 100},
-  {id: 2, x: 15, z: 0, active: true, task: "None", state: "Idle", battery: 100}
-] |
-  CREATE (:Robot {
-    id: robot_data.id, 
-    x: robot_data.x, 
-    z: robot_data.z, 
-    active: robot_data.active, 
-    task: robot_data.task, 
-    state: robot_data.state,
-    battery: robot_data.battery
-  })
-);
-
 // Create shelves with layers and slots
 FOREACH (shelf IN [
   {x: 11, z: 20, category: "Books"},
@@ -81,6 +64,23 @@ FOREACH (shelf IN [
     )
   )
   CREATE (s)-[:LOCATED_IN]->(warehouse)
+);
+
+// Create robots
+FOREACH (robot_data IN [
+  {id: 0, x: -15, z: 30, active: true, task: "None", state: "Idle", battery: 100},
+  {id: 1, x: 0, z: 30, active: true, task: "None", state: "Idle", battery: 100},
+  {id: 2, x: 15, z: 0, active: true, task: "None", state: "Idle", battery: 100}
+] |
+  CREATE (:Robot {
+    id: robot_data.id, 
+    x: robot_data.x, 
+    z: robot_data.z, 
+    active: robot_data.active, 
+    task: robot_data.task, 
+    state: robot_data.state,
+    battery: robot_data.battery
+  })
 );
 
 // Create products
