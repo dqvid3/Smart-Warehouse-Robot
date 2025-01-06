@@ -10,11 +10,23 @@ public class ConveyorSensorShipping : MonoBehaviour
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
     }
 
-    void OnTriggerExit(Collider other)
+    void OnTriggerEnter(Collider other)
     {
-        Debug.Log("ciao");
+        // Aggiorna lo stato nel database
         _ = neo4jHelper.UpdateParcelPositionStatusAsync(positionId, false);
+
+        // Distrugge il parent (sunoko) e quindi tutti i figli (incluso il parcel)
+        if (other.transform.parent != null)
+        {
+            Destroy(other.transform.parent.gameObject);
+        }
+        else
+        {
+            // Se non c'è un parent, distruggi solo l'oggetto che ha attivato il trigger
+            Destroy(other.gameObject);
+        }
     }
+
 
     void OnDestroy()
     {

@@ -12,7 +12,7 @@ public class ForkliftNavController : MonoBehaviour
     [SerializeField] private Transform grabPoint;
     private ForkliftController forkliftController;
     private float approachDistance = 3.2f;
-    private float takeBoxDistance = 1.6f;
+    private float takeBoxDistance = 1.4f;
     private float speed = 3.5f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
@@ -57,8 +57,8 @@ public class ForkliftNavController : MonoBehaviour
             if (string.IsNullOrEmpty(qrCode))
             {
                 attempts++;
-                Debug.LogWarning($"Tentativo {attempts}: QR code non trovato. Ritento in 5 secondi...");
-                yield return new WaitForSeconds(5); // Attendi 5 secondi prima di ritentare
+                Debug.LogWarning($"Tentativo {attempts}: QR code non trovato. Ritento...");
+                yield return new WaitForSeconds(1); // Attendi 5 secondi prima di ritentare
             }
         }
 
@@ -83,6 +83,7 @@ public class ForkliftNavController : MonoBehaviour
         if (parcel == null)
         {
             Debug.LogWarning("Parcel non trovato.");
+            yield return StartCoroutine(MoveToOriginPosition());
             yield break;
         }
 
@@ -148,6 +149,12 @@ public class ForkliftNavController : MonoBehaviour
 
         // Find the parcel GameObject based on its position
         GameObject parcel = GetParcel(parcelPosition.y + 1);
+        if (parcel == null)
+        {
+            Debug.LogWarning("Parcel non trovato. Ritorno alla posizione originale.");
+            yield return StartCoroutine(MoveToOriginPosition());
+            yield break;
+        }
         yield return LiftMastToHeight(parcelPosition.y);
         yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
         yield return LiftMastToHeight(parcelPosition.y + 0.05f);

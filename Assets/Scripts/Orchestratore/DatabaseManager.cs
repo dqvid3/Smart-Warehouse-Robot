@@ -116,7 +116,6 @@ public class DatabaseManager : MonoBehaviour
         {
             Debug.LogError($"Error fetching conveyor positions: {ex.Message}");
         }
-        Debug.Log($"{conveyorPositions}");
 
         return conveyorPositions;
     }
