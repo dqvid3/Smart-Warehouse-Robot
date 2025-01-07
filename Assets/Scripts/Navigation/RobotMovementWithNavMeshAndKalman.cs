@@ -10,7 +10,7 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
     [Range(0.1f, 50f)]
     public float raycastDistance = 20f;
     [Range(1, 360)]
-    public int numberOfRays = 360;
+    public int numberOfRays = 72;
     [Range(0.1f, 20f)]
     public float obstacleDetectionDistance = 2;
 
@@ -117,6 +117,7 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
 
     private void HandleObstacleDetectionAndAvoidance()
     {
+        // Svuota le liste dei raggi
         freeRays.Clear();
         compromisedRays.Clear();
         compromisedAngles.Clear();
@@ -124,59 +125,85 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
         bool obstacleDetected = false;
         Vector3 combinedAvoidanceDirection = Vector3.zero;
 
+        // Esegui Raycast a 360 gradi
         for (int i = 0; i < numberOfRays; i++)
         {
             float angle = i * (360f / numberOfRays);
-            Vector3 direction = Quaternion.Euler(0, angle, 0) * Vector3.forward;
+            Vector3 direction = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
 
-            Debug.DrawRay(transform.position, direction * raycastDistance, Color.green);
-
+            // Esegui il Raycast
             if (Physics.Raycast(transform.position, direction, out RaycastHit hit, raycastDistance))
             {
-                // Ignora il proprio oggetto
-                if (hit.collider.transform.IsChildOf(transform)) continue;
+                // Ignora il proprio collider (oggetto stesso)
+                if (hit.collider.transform.IsChildOf(transform))
+                    continue;
 
+                // Se è un "Player", considera la priorità di evitamento
+                bool isPlayer = hit.collider.CompareTag("Player") || hit.collider.gameObject.layer == LayerMask.NameToLayer("Player");
 
+                // Introduci un po' di rumore e aggiorna la distanza
                 float noisyDistance = hit.distance + Random.Range(-0.2f, 0.2f);
                 distances[i] = kalmanFilters[i].Update(noisyDistance);
 
                 if (distances[i] < obstacleDetectionDistance)
                 {
                     obstacleDetected = true;
+
+                    // Salva il raggio e l'angolo come "compromessi"
                     compromisedRays.Add(direction);
                     compromisedAngles.Add(angle);
+
+                    // Disegna il raggio compromesso in rosso
                     Debug.DrawRay(transform.position, direction * distances[i], Color.red);
 
-                    // Calcolo della direzione di evitamento pesata inversamente alla distanza
-                    combinedAvoidanceDirection -= direction / distances[i];
+                    // Calcola il vettore di evitamento: se è un Player, aumenta la priorità
+                    float weight = isPlayer ? 2.0f : 1.0f; // I Player hanno un peso maggiore
+                    combinedAvoidanceDirection -= (direction / distances[i]) * weight;
                 }
                 else
                 {
                     freeRays.Add(direction);
+                    Debug.DrawRay(transform.position, direction * distances[i], Color.green);
                 }
             }
             else
             {
+                // Nessun ostacolo su questo raggio
                 distances[i] = raycastDistance;
                 freeRays.Add(direction);
+                Debug.DrawRay(transform.position, direction * raycastDistance, Color.green);
             }
         }
 
+        // Se abbiamo ostacoli rilevati
         if (obstacleDetected)
         {
-            combinedAvoidanceDirection.Normalize();
-            Vector3 modifiedTargetDirection = (agent.destination - transform.position).normalized + combinedAvoidanceDirection;
-            Vector3 avoidanceTarget = transform.position + modifiedTargetDirection.normalized * obstacleDetectionDistance;
+            // Normalizza la direzione di evitamento combinata
+            if (combinedAvoidanceDirection != Vector3.zero)
+            {
+                combinedAvoidanceDirection.Normalize();
+            }
+
+            // Calcola una nuova destinazione basata sull'evitamento
+            Vector3 mainDirection = (agent.destination - transform.position).normalized;
+            Vector3 modifiedTargetDirection = mainDirection + combinedAvoidanceDirection;
+            modifiedTargetDirection.Normalize();
+
+            Vector3 avoidanceTarget = transform.position + modifiedTargetDirection * obstacleDetectionDistance;
+
+            // Imposta una destinazione temporanea di "evasione"
             agent.SetDestination(avoidanceTarget);
         }
         else
         {
-            if (currentDestination != transform.position)
+            // Nessun ostacolo, ripristina la destinazione principale
+            if (currentDestination != Vector3.zero)
             {
                 agent.SetDestination(currentDestination);
             }
         }
     }
+
 
 
 

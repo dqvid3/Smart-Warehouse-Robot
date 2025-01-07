@@ -1,102 +1,12 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|c:\\progettiunity\\smart-warehouse-robot\\assets\\scripts\\navigation\\spaccotutto\\astarpathfinder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\navigation\\spaccotutto\\astarpathfinder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|c:\\progettiunity\\smart-warehouse-robot\\assets\\scripts\\navigation\\spaccotutto\\robotmovementwithastarandcollisionprevention.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\navigation\\spaccotutto\\robotmovementwithastarandcollisionprevention.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\navigation\\robotmovementwithnavmeshandkalman.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\navigation\\robotmovementwithnavmeshandkalman.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\forkliftnavcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\forkliftnavcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\navigation\\kalmanfilter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\navigation\\kalmanfilter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": [
-        {
-          "DockedWidth": 200,
-          "SelectedChildIndex": 1,
-          "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "RobotMovementWithAstarAndCollisionPrevention.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\SpaccoTutto\\RobotMovementWithAstarAndCollisionPrevention.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\Navigation\\SpaccoTutto\\RobotMovementWithAstarAndCollisionPrevention.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\SpaccoTutto\\RobotMovementWithAstarAndCollisionPrevention.cs",
-              "RelativeToolTip": "Assets\\Scripts\\Navigation\\SpaccoTutto\\RobotMovementWithAstarAndCollisionPrevention.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAvAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-07T09:09:09.468Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "AStarPathFinder.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\SpaccoTutto\\AstarPathFinder.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\Navigation\\SpaccoTutto\\AstarPathFinder.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\SpaccoTutto\\AstarPathFinder.cs",
-              "RelativeToolTip": "Assets\\Scripts\\Navigation\\SpaccoTutto\\AstarPathFinder.cs",
-              "ViewState": "AgIAABkAAAAAAAAAAAAkwC4AAAAPAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-07T09:08:00.925Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "KalmanFilter.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\KalmanFilter.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\Navigation\\KalmanFilter.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\KalmanFilter.cs",
-              "RelativeToolTip": "Assets\\Scripts\\Navigation\\KalmanFilter.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-07T08:06:41.44Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "RobotMovementWithNavMeshAndKalman.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\RobotMovementWithNavMeshAndKalman.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\Navigation\\RobotMovementWithNavMeshAndKalman.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\RobotMovementWithNavMeshAndKalman.cs",
-              "RelativeToolTip": "Assets\\Scripts\\Navigation\\RobotMovementWithNavMeshAndKalman.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAA7AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-07T08:06:11.814Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ForkliftNavController.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\ForkliftNavController.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
-              "RelativeToolTip": "Assets\\Scripts\\ForkliftNavController.cs",
-              "ViewState": "AgIAAOUAAAAAAAAAAAAowAwBAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-06T19:10:44.645Z"
-            }
-          ]
-        }
-      ]
+      "DocumentGroups": []
     }
   ]
 }
