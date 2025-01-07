@@ -10,9 +10,9 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
     [Range(0.1f, 50f)]
     public float raycastDistance = 20f;
     [Range(1, 360)]
-    public int numberOfRays = 72;
+    public int numberOfRays = 180;
     [Range(0.1f, 20f)]
-    public float obstacleDetectionDistance = 2;
+    public float obstacleDetectionDistance = 1.5f;
 
     [Header("Parametri del NavMeshAgent")]
     public float angularSpeed = 120f;
@@ -49,7 +49,7 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
 
     public void Update()
     {
-        // Esegui logica solo se il movimento è attivo
+        // Esegui logica solo se il movimento ï¿½ attivo
         if (!isMovementActive) return;
 
         if (!agent.isStopped)
@@ -138,7 +138,7 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
                 if (hit.collider.transform.IsChildOf(transform))
                     continue;
 
-                // Se è un "Player", considera la priorità di evitamento
+                // Se Ã¨ un "Player", considera la prioritÃ  di evitamento
                 bool isPlayer = hit.collider.CompareTag("Player") || hit.collider.gameObject.layer == LayerMask.NameToLayer("Player");
 
                 // Introduci un po' di rumore e aggiorna la distanza
@@ -156,7 +156,7 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
                     // Disegna il raggio compromesso in rosso
                     Debug.DrawRay(transform.position, direction * distances[i], Color.red);
 
-                    // Calcola il vettore di evitamento: se è un Player, aumenta la priorità
+                    // Calcola il vettore di evitamento: se Ã¨ un Player, aumenta la prioritÃ 
                     float weight = isPlayer ? 2.0f : 1.0f; // I Player hanno un peso maggiore
                     combinedAvoidanceDirection -= (direction / distances[i]) * weight;
                 }
@@ -202,7 +202,27 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
                 agent.SetDestination(currentDestination);
             }
         }
+
+        // Abbassa la soglia di rilevamento quando ci si avvicina alla destinazione
+        AdjustObstacleDetectionDistance();
+
+        // Reinizializza la soglia di rilevamento se ci si sta allontanando dalla destinazione
+        ResetObstacleDetectionDistanceIfNeeded();
     }
+
+    private void ResetObstacleDetectionDistanceIfNeeded()
+    {
+        // Calcola la distanza attuale dalla destinazione
+        float distanceToDestination = Vector3.Distance(estimatedPosition, currentDestination);
+
+        // Se la distanza dalla destinazione Ã¨ aumentata, reinizializza la soglia
+        if (distanceToDestination > obstacleDetectionDistance)
+        {
+            obstacleDetectionDistance = Mathf.Min(raycastDistance, obstacleDetectionDistance + Time.deltaTime * 0.5f);  // Aumenta lentamente la soglia
+        }
+    }
+
+
 
 
 
