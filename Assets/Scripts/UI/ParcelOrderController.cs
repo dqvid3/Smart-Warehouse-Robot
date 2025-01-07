@@ -57,7 +57,6 @@ public class ParcelOrderController : MonoBehaviour
     private async void OnCategoryChanged(ChangeEvent<string> evt)
     {
         await PopulateProductDropdown(evt.newValue);
-        insertButton.SetEnabled(productDropdown.choices.Any());
         productDropdown.SetEnabled(productDropdown.choices.Any());
         productDropdown.value = productDropdown.choices.FirstOrDefault() ?? "No Products";
     }
@@ -74,11 +73,13 @@ public class ParcelOrderController : MonoBehaviour
 
         productDropdown.choices = products.Select(record => record["product_name"].As<string>()).ToList();
         productDropdown.SetEnabled(productDropdown.choices.Any());
-
+        insertButton.SetEnabled(productDropdown.choices.Any());
+        
         if (productDropdown.choices.Any())
         {
             productDropdown.value = productDropdown.choices.First();
             await UpdateQuantityDropdown(productDropdown.value);
+            quantityDropdown.SetEnabled(true);
         }
         else
         {
