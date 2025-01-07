@@ -976,6 +976,8 @@ MonoBehaviour:
   navMeshAgent: {fileID: 3095190479552573583}
   robotManager: {fileID: 0}
   destination: {x: 0, y: 0, z: 0}
+  currentRobotPosition: {x: 0, y: 0, z: 0}
+  isPaused: 0
   currentState: 0
 --- !u!114 &5208561982904702695
 MonoBehaviour:

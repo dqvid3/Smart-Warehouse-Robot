@@ -218,13 +218,13 @@ public class RobotMovementWithNavMeshAndCollisionPrevention : MonoBehaviour
             obstacleDetectionDistance = Mathf.Max(0.1f, obstacleDetectionDistance - Time.deltaTime * 0.5f); // Adjust rate as needed
         }
     }
- 
+
 
     // --- MOVE FUNCTION ---
 
     public void MoveWithCollisionPrevention(Vector3 destination)
     {
-        agent.isStopped =false;
+        agent.isStopped = false;
         isMovementActive = true;
         hasArrived = false;
         currentDestination = destination;

@@ -44,7 +44,6 @@ public class RobotManager : MonoBehaviour
             }
         }
         HandleNearbyRobots();
-        CheckRobotDestinations();
     }
 
     private async Task CheckForParcelsInDeliveryArea()
@@ -93,6 +92,12 @@ public class RobotManager : MonoBehaviour
 
     private void AssignStoreTask(Vector3 parcelPosition)
     {
+        // Verifica se il parcel è già assegnato
+        if (assignedParcels.ContainsKey(parcelPosition))
+        {
+            return;
+        }
+
         Robot availableRobot = FindAvailableRobot(parcelPosition);
         if (availableRobot == null)
         {
@@ -103,14 +108,22 @@ public class RobotManager : MonoBehaviour
             }
             return;
         }
-        Debug.Log("Assegnato store task al Robot " + availableRobot.id);
+
+        Debug.Log($"Assegnato store task al Robot {availableRobot.id}.");
         availableRobot.destination = parcelPosition;
         availableRobot.currentState = RobotState.StoreState;
-        assignedParcels[parcelPosition] = availableRobot.id;
+        assignedParcels[parcelPosition] = availableRobot.id; // Registra l'assegnazione
     }
+
 
     private void AssignShippingTask(Vector3 parcelPosition)
     {
+        // Verifica se il parcel è già assegnato
+        if (assignedParcels.ContainsKey(parcelPosition))
+        {
+            return;
+        }
+
         Robot availableRobot = FindAvailableRobot(parcelPosition);
         if (availableRobot == null)
         {
@@ -121,11 +134,13 @@ public class RobotManager : MonoBehaviour
             }
             return;
         }
-        Debug.Log("Assegnato shipping task al Robot " + availableRobot.id);
+
+        Debug.Log($"Assegnato shipping task al Robot {availableRobot.id}.");
         availableRobot.destination = parcelPosition;
         availableRobot.currentState = RobotState.ShippingState;
-        assignedParcels[parcelPosition] = availableRobot.id;
+        assignedParcels[parcelPosition] = availableRobot.id; // Registra l'assegnazione
     }
+
 
     private int currentConveyorIndex = 0;
     public Vector3 askConveyorPosition()
@@ -143,17 +158,23 @@ public class RobotManager : MonoBehaviour
     public async Task<(Vector3 slotPosition, long slotId)> GetAvailableSlot(int robotId, string category)
     {
         var availableSlots = await databaseManager.GetAvailableSlotsAsync(category);
+
         foreach (var slot in availableSlots)
         {
-            if (!assignedPositions.ContainsKey(slot.slotPosition))
+            // Verifica se la posizione dello slot è già assegnata
+            if (assignedPositions.ContainsKey(slot.slotPosition))
             {
-                assignedPositions[slot.slotPosition] = robotId;
-                return slot;
+                continue;
             }
+
+            assignedPositions[slot.slotPosition] = robotId; // Registra l'assegnazione
+            return slot;
         }
+
         Debug.LogWarning("Tutti gli slot disponibili sono già assegnati.");
         return (Vector3.zero, -1);
     }
+
 
     private Robot FindAvailableRobot(Vector3 parcelPosition)
     {
@@ -177,19 +198,25 @@ public class RobotManager : MonoBehaviour
         for (int i = 0; i < robots.Count; i++)
         {
             var robotA = robots[i];
-            if (!robotA.isActive || robotA.currentRobotPosition == Vector3.zero || robotA.isPaused) continue;
+            if (!robotA.isActive || robotA.currentRobotPosition == Vector3.zero || robotA.isPaused)
+                continue;
+
             for (int j = i + 1; j < robots.Count; j++)
             {
                 var robotB = robots[j];
-                if (!robotB.isActive || robotB.currentRobotPosition == Vector3.zero || robotB.isPaused) continue;
+                if (!robotB.isActive || robotB.currentRobotPosition == Vector3.zero || robotB.isPaused)
+                    continue;
+
                 float distanceBetweenRobots = Vector3.Distance(robotA.currentRobotPosition, robotB.currentRobotPosition);
+
+                // Verifica se sono troppo vicini
                 if (distanceBetweenRobots <= threshold)
                 {
-                    if (robotA.currentState == RobotState.Idle && robotB.currentState != RobotState.Idle)
+                    if (robotA.currentState == Robot.RobotState.Idle && robotB.currentState != Robot.RobotState.Idle)
                     {
                         robotA.Pause();
                     }
-                    else if (robotB.currentState == RobotState.Idle && robotA.currentState != RobotState.Idle)
+                    else if (robotB.currentState == Robot.RobotState.Idle && robotA.currentState != Robot.RobotState.Idle)
                     {
                         robotB.Pause();
                     }
@@ -197,67 +224,20 @@ public class RobotManager : MonoBehaviour
                     {
                         float distAFromDest = Vector3.Distance(robotA.currentRobotPosition, robotA.destination);
                         float distBFromDest = Vector3.Distance(robotB.currentRobotPosition, robotB.destination);
+
                         if (distAFromDest > distBFromDest)
+                        {
                             robotA.Pause();
+                        }
                         else
+                        {
                             robotB.Pause();
+                        }
                     }
-                    break;
                 }
             }
         }
     }
-
-    public void CheckRobotDestinations(float threshold = 4f)
-    {
-        for (int i = 0; i < robots.Count; i++)
-        {
-            var robotA = robots[i];
-
-            if (!robotA.isActive
-                || robotA.isPaused
-                || robotA.destination == Vector3.zero)
-                continue;
-
-            for (int j = i + 1; j < robots.Count; j++)
-            {
-                var robotB = robots[j];
-
-                if (!robotB.isActive
-                    || robotB.isPaused
-                    || robotB.destination == Vector3.zero)
-                    continue;
-
-                float distanceBetweenDestinations = Vector3.Distance(robotA.destination, robotB.destination);
-
-                if (distanceBetweenDestinations <= threshold)
-                {
-                    if (robotA.currentState == RobotState.Idle && robotB.currentState != RobotState.Idle)
-                    {
-                        robotA.Pause();
-                    }
-                    else if (robotB.currentState == RobotState.Idle && robotA.currentState != RobotState.Idle)
-                    {
-                        robotB.Pause();
-                    }
-                    else
-                    {
-                        float distanceA = Vector3.Distance(robotA.currentRobotPosition, robotA.destination);
-                        float distanceB = Vector3.Distance(robotB.currentRobotPosition, robotB.destination);
-
-                        if (distanceA > distanceB)
-                            robotA.Pause();
-                        else
-                            robotB.Pause();
-                    }
-
-                    break;
-                }
-            }
-        }
-    }
-
-
 
     public async Task RemoveParcelFromShelf(Vector3 parcelPositionInShelf)
     {

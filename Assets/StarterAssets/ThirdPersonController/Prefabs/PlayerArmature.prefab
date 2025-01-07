@@ -1038,7 +1038,8 @@ GameObject:
   - component: {fileID: 135756642000475821}
   - component: {fileID: 4416926081852918493}
   - component: {fileID: 5438521117535721307}
-  - component: {fileID: 1716766223941245521}
+  - component: {fileID: 234947067602693902}
+  - component: {fileID: 8154692916407822833}
   m_Layer: 8
   m_Name: PlayerArmature
   m_TagString: Player
@@ -1301,8 +1302,28 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
---- !u!136 &1716766223941245521
-CapsuleCollider:
+--- !u!114 &234947067602693902
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4416926081852918481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SerializedVersion: 0
+  m_OverrideArea: 0
+  m_Area: 0
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
+--- !u!65 &8154692916407822833
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -1319,11 +1340,9 @@ CapsuleCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.27441806
-  m_Height: 1.828973
-  m_Direction: 1
-  m_Center: {x: 0, y: 0.9102709, z: 0.012394607}
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1.8293947, z: 0.5959366}
+  m_Center: {x: 0, y: 0.91589206, z: 0.02308926}
 --- !u!1 &4523139366846529165
 GameObject:
   m_ObjectHideFlags: 0

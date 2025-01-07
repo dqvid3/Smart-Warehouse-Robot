@@ -2224,7 +2224,7 @@ Transform:
   m_GameObject: {fileID: 410087039}
   serializedVersion: 2
   m_LocalRotation: {x: 0.60355335, y: 0.10355337, z: -0.07945928, w: 0.78656614}
-  m_LocalPosition: {x: 0, y: 50, z: 0}
+  m_LocalPosition: {x: 80.3, y: 20, z: -41.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3772,8 +3772,24 @@ PrefabInstance:
       value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: acceleration
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: angularSpeed
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: numberOfRays
+      value: 72
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleAvoidanceType
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: obstacleDetectionDistance
-      value: 2
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 3930341363416705507, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
@@ -5561,6 +5577,14 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5687913953643251548, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: m_Shape
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5687913953643251548, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
+      propertyPath: m_Extents.y
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5885216827943657505, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       propertyPath: canPush
       value: 1
@@ -5776,6 +5800,26 @@ PrefabInstance:
     - target: {fileID: 3553434550661240214, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: acceleration
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: angularSpeed
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: numberOfRays
+      value: 72
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleAvoidanceType
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleDetectionDistance
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 3930341363416705507, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
@@ -7189,6 +7233,26 @@ PrefabInstance:
     - target: {fileID: 3553434550661240214, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: acceleration
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: angularSpeed
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: numberOfRays
+      value: 72
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleAvoidanceType
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleDetectionDistance
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 3930341363416705507, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer

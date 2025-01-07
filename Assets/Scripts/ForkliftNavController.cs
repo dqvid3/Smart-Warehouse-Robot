@@ -12,7 +12,7 @@ public class ForkliftNavController : MonoBehaviour
     [SerializeField] private Transform grabPoint;
     private ForkliftController forkliftController;
     private float approachDistance = 3.2f;
-    private float takeBoxDistance = 1.4f;
+    private float takeBoxDistance = 1.6f;
     private float speed = 3.5f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
@@ -89,6 +89,7 @@ public class ForkliftNavController : MonoBehaviour
 
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
+        yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 0.1f));
         parcel.transform.SetParent(grabPoint);
 
@@ -117,6 +118,7 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(LiftMastToHeight(shelfHeight + 0.05f));
         // Move forward to place the parcel
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
+        yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
         // Lower the mast slightly to release the parcel
         yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
         // Visually detach the parcel
@@ -157,6 +159,7 @@ public class ForkliftNavController : MonoBehaviour
         }
         yield return LiftMastToHeight(parcelPosition.y);
         yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
+        yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
         yield return LiftMastToHeight(parcelPosition.y + 0.05f);
         parcel.transform.SetParent(grabPoint);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
@@ -174,7 +177,6 @@ public class ForkliftNavController : MonoBehaviour
         yield return MoveToOriginPosition();
         yield return StartCoroutine(LiftMastToHeight(0));
     }
-
     public IEnumerator MoveToOriginPosition()
     {
         robotMovement.MoveWithCollisionPrevention(defaultPosition);
@@ -183,7 +185,7 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(SmoothRotateToDirection(targetForward, 1f)); // Rotazione graduale
     }
 
-
+    
     public IEnumerator MoveToPosition(Vector3 position)
     {
         robotMovement.MoveWithCollisionPrevention(position);
