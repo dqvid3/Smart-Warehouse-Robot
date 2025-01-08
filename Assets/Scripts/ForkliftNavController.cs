@@ -186,19 +186,18 @@ public class ForkliftNavController : MonoBehaviour
     private async Task FreeSlot(Vector3 slotPosition)
     {
         string query = @"
-        MATCH (s:Shelf)-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
-        WHERE s.x + slot.x = $x AND l.y = $y AND s.z = $z
-        MATCH (slot)-[r:CONTAINS]->(p:Parcel)
-        DELETE r
-        SET slot.occupied = false";
+MATCH (s:Shelf)-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
+WHERE abs(s.x + slot.x - $x) < 0.01 AND abs(l.y - $y) < 0.01 AND abs(s.z - $z) < 0.01
+MATCH (slot)-[r:CONTAINS]->(p:Parcel)
+DELETE r
+SET slot.occupied = false";
+
         var parameters = new Dictionary<string, object>
         {
             { "x", slotPosition.x },
             { "y", slotPosition.y },
             { "z", slotPosition.z }
         }; 
-        Debug.Log(slotPosition);
-        Debug.Log(query);
         await neo4jHelper.ExecuteWriteAsync(query, parameters);
     }
 

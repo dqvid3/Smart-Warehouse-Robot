@@ -137,30 +137,19 @@ public class DatabaseManager : MonoBehaviour
     public async Task<IList<IRecord>> GetOldestOrderWithParcelCountAsync()
     {
         string query = @"
-        MATCH (oldestOrder:Order)
-        WITH oldestOrder
-        ORDER BY oldestOrder.timestamp ASC
-        LIMIT 1
-        OPTIONAL MATCH (p:Parcel)-[:PART_OF]->(oldestOrder)
-        RETURN oldestOrder AS order, COUNT(p) AS parcelCount";
-
+    MATCH (oldestOrder:Order)
+    WHERE EXISTS {
+        MATCH (oldestOrder)<-[:PART_OF]-(p:Parcel)<-[:CONTAINS]-(:Slot)
+    }
+    WITH oldestOrder
+    ORDER BY oldestOrder.timestamp ASC
+    LIMIT 1
+    MATCH (p:Parcel)-[:PART_OF]->(oldestOrder)
+    MATCH (p)<-[:CONTAINS]-(:Slot)
+    RETURN oldestOrder AS order, COUNT(p) AS parcelCount";
         return await neo4jHelper.ExecuteReadListAsync(query);
     }
 
-    public async Task DeleteOrderAsync(string orderId)
-    {
-        string query = @"
-        MATCH (order:Order {orderId: $orderId})
-        DETACH DELETE order
-    ";
-
-        var parameters = new Dictionary<string, object>
-    {
-        { "orderId", orderId }
-    };
-
-        await neo4jHelper.ExecuteWriteAsync(query, parameters);
-    }
 
     public async Task<List<Vector3>> GetParcelPositionsForOrderAsync(string orderId)
     {
@@ -189,38 +178,5 @@ public class DatabaseManager : MonoBehaviour
         }
 
         return parcelPositions;
-    }
-
-
-    public async Task<List<(Vector3 slotPosition, long slotId)>> GetAvailableSlotsAsync(string category)
-    {
-        string query = @"
-        MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
-        WHERE NOT (slot)-[:CONTAINS]->(:Parcel)
-        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z, ID(slot) AS slotId
-    ";
-
-        var parameters = new Dictionary<string, object>
-    {
-        { "category", category }
-    };
-
-        var result = await neo4jHelper.ExecuteReadListAsync(query, parameters);
-
-        var availableSlots = new List<(Vector3 slotPosition, long slotId)>();
-
-        foreach (var record in result)
-        {
-            Vector3 slotPosition = new Vector3(
-                record["x"].As<float>(),
-                record["y"].As<float>(),
-                record["z"].As<float>()
-            );
-            long slotId = record["slotId"].As<long>();
-
-            availableSlots.Add((slotPosition, slotId));
-        }
-
-        return availableSlots;
     }
 }
