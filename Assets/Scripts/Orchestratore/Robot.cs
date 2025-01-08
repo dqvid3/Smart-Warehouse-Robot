@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 public class Robot : MonoBehaviour
 {
     public int id;
-    [SerializeField] private Vector3 originPosition = Vector3.zero;
+    [SerializeField] private Vector3 originPosition;
     public RobotManager robotManager;  
     public Vector3 destination; 
     public float batteryLevel = 100f;
@@ -34,7 +34,7 @@ public class Robot : MonoBehaviour
     {
         forkliftNavController = GetComponent<ForkliftNavController>();
         databaseManager = GetComponent<DatabaseManager>();
-        forkliftNavController.defaultPosition = originPosition;
+        originPosition = forkliftNavController.defaultPosition;
     }
 
     void Update()
@@ -109,7 +109,6 @@ public class Robot : MonoBehaviour
         yield return StartCoroutine(forkliftNavController.DeliverParcel(destination));
         currentState = RobotState.Idle;
         robotManager.NotifyTaskCompletion(id);
-        yield return StartCoroutine(forkliftNavController.MoveToOriginPosition());
     }
 
     private IEnumerator HandleShippingTask()
@@ -118,7 +117,6 @@ public class Robot : MonoBehaviour
         Vector3 conveyorPosition = robotManager.askConveyorPosition();
         yield return StartCoroutine(forkliftNavController.ShipParcel(destination, conveyorPosition));
         currentState = RobotState.Idle;
-        yield return StartCoroutine(forkliftNavController.MoveToOriginPosition());
         robotManager.NotifyTaskCompletion(id);
     }
 

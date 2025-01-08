@@ -15,7 +15,7 @@ public class ForkliftNavController : MonoBehaviour
     private float takeBoxDistance = 1.35f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
-    public Vector3 defaultPosition = Vector3.zero;
+    public Vector3 defaultPosition;
 
     void Start()
     {
@@ -70,6 +70,7 @@ public class ForkliftNavController : MonoBehaviour
         _ = UpdateParcelLocation(timestamp, result[0]["slotId"].As<long>());
         // Move backward away from the shelf
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
+        yield return StartCoroutine(MoveToOriginPosition());
         yield return StartCoroutine(LiftMastToHeight(0));
     }
 
@@ -105,6 +106,7 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(LiftMastToHeight(conveyorDestination.y));
         parcel.transform.SetParent(null);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
+        yield return StartCoroutine(MoveToOriginPosition());
         yield return StartCoroutine(LiftMastToHeight(0));
     }
 
