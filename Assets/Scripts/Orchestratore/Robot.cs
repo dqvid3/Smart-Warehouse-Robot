@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 public class Robot : MonoBehaviour
 {
     public int id;
-    [SerializeField] private Vector3 originPosition;
     public RobotManager robotManager;  
     public Vector3 destination; 
     public float batteryLevel = 100f;
@@ -34,12 +33,11 @@ public class Robot : MonoBehaviour
     {
         forkliftNavController = GetComponent<ForkliftNavController>();
         databaseManager = GetComponent<DatabaseManager>();
-        originPosition = forkliftNavController.defaultPosition;
     }
 
     void Update()
     {
-        if (Vector3.Distance(transform.position, originPosition) > 0.1f)
+        if (Vector3.Distance(transform.position, forkliftNavController.defaultPosition) > 0.1f)
         {
             batteryDrainTimer += Time.deltaTime;
             if (batteryDrainTimer >= batteryDrainInterval)

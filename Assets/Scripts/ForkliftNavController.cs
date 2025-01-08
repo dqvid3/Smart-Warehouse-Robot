@@ -70,8 +70,8 @@ public class ForkliftNavController : MonoBehaviour
         _ = UpdateParcelLocation(timestamp, result[0]["slotId"].As<long>());
         // Move backward away from the shelf
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
-        yield return StartCoroutine(MoveToOriginPosition());
         yield return StartCoroutine(LiftMastToHeight(0));
+        yield return StartCoroutine(MoveToOriginPosition());
     }
 
     public IEnumerator ShipParcel(Vector3 slotPosition, Vector3 conveyorDestination)
@@ -106,8 +106,8 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(LiftMastToHeight(conveyorDestination.y));
         parcel.transform.SetParent(null);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
-        yield return StartCoroutine(MoveToOriginPosition());
         yield return StartCoroutine(LiftMastToHeight(0));
+        yield return StartCoroutine(MoveToOriginPosition());
     }
 
     public IEnumerator MoveToOriginPosition()
