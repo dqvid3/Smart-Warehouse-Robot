@@ -5,7 +5,7 @@ public class UIManager : MonoBehaviour
 {
     public UIDocument productCreationUI; // UI gestita da ProductCreationController (tasto 1)
     public UIDocument parcelSupplyUI; // UI gestita da ParcelSupplyController (tasto 2)
-    public UIDocument parcelOrderUI; // UI gestita da OrderManagementController (tasto E)
+    public UIDocument parcelOrderUI; // UI gestita da OrderManagementController (tasto 3)
     private int currentUI = 0; // 0 = nessuna UI, 1 = UI 1, 2 = UI 2, ecc...
     
     private void Start()
