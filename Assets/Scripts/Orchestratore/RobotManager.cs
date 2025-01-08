@@ -24,105 +24,114 @@ public class RobotManager : MonoBehaviour
         conveyorPositions = await databaseManager.GetConveyorPositions();
     }
 
-    private async void Update()
+    private void Update()
     {
         if (Time.time - lastCheckTime > checkInterval)
         {
             lastCheckTime = Time.time;
             CheckForShippingOrders();
-            await CheckForDeliveries();
-            if (pendingShippingTasks.Count > 0)
-            {
-                var nextTask = pendingShippingTasks.Dequeue();
-                AssignShippingTask(nextTask);
-            }
-            else if (pendingDeliveryTasks.Count > 0)
-            {
-                var nextTask = pendingDeliveryTasks.Dequeue();
-                AssignDeliveryTask(nextTask);
-            }
+            CheckForDeliveries();
+            CheckPendingTasks();
         }
         //HandleNearbyRobots();
     }
 
     private async void CheckForShippingOrders()
     {
-        try
+        var result = await databaseManager.GetOldestOrderWithParcelCountAsync();
+        foreach (var record in result)
         {
-            var result = await databaseManager.GetOldestOrderWithParcelCountAsync();
-            foreach (var record in result)
+            var order = record["order"].As<INode>();
+            string orderId = order.Properties["orderId"].As<string>();
+            var parcelPositions = await databaseManager.GetParcelPositionsForOrderAsync(orderId);
+            foreach (var parcelPosition in parcelPositions)
             {
-                var order = record["order"].As<INode>();
-                string orderId = order.Properties["orderId"].As<string>();
-                var parcelPositions = await databaseManager.GetParcelPositionsForOrderAsync(orderId);
-                foreach (var parcelPosition in parcelPositions)
-                {
-                    if (assignedParcels.ContainsKey(parcelPosition)) continue;
-                    AssignShippingTask(parcelPosition);
-                }
+                if (assignedParcels.ContainsKey(parcelPosition)) continue;
+                AssignShippingTask(parcelPosition);
             }
         }
-        catch (Exception ex)
+    }
+
+    private async void CheckForDeliveries()
+    {
+        IList<IRecord> result = await databaseManager.GetParcelsInDeliveryArea();
+        foreach (var record in result)
         {
-            Debug.LogError("Error checking for shipping orders: " + ex.Message);
+            Vector3 parcelPosition = new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
+            if (assignedParcels.ContainsKey(parcelPosition)) continue;
+            AssignDeliveryTask(parcelPosition);
+        }
+    }
+
+    private void CheckPendingTasks()
+    {
+        // Controlla se ci sono robot disponibili PRIMA di assegnare i task
+        bool robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
+
+        if (robotsAvailable)
+        {
+            // Assegna i task di shipping
+            while (pendingShippingTasks.Count > 0 && robotsAvailable)
+            {
+                var nextTask = pendingShippingTasks.Dequeue();
+                AssignShippingTask(nextTask);
+                robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
+            }
+
+            // Assegna i task di delivery
+            while (pendingDeliveryTasks.Count > 0 && robotsAvailable)
+            {
+                var nextTask = pendingDeliveryTasks.Dequeue();
+                AssignDeliveryTask(nextTask);
+                robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
+            }
         }
     }
 
     private void AssignShippingTask(Vector3 parcelPosition)
     {
         if (assignedParcels.ContainsKey(parcelPosition))
-            return;
+            return; // Considera il task già assegnato
 
         Robot availableRobot = FindAvailableRobot(parcelPosition);
         if (availableRobot == null)
         {
-            if (!pendingShippingTasks.Any(task => task == parcelPosition))
+            if (!pendingShippingTasks.Contains(parcelPosition))
             {
-                Debug.LogWarning("Nessun robot disponibile per Shipping. Compito aggiunto in coda.");
                 pendingShippingTasks.Enqueue(parcelPosition);
+                Debug.LogWarning($"Nessun robot disponibile per Shipping. Compito aggiunto in coda. ({parcelPosition}, {pendingShippingTasks.Count})");
             }
-            return;
+            return; // Nessun robot disponibile
         }
 
         Debug.Log($"Assegnato shipping task al Robot {availableRobot.id}.");
         availableRobot.destination = parcelPosition;
         availableRobot.currentState = RobotState.ShippingState;
         assignedParcels[parcelPosition] = availableRobot.id; // Registra l'assegnazione
-    }
-
-    private async Task CheckForDeliveries()
-    {
-        IList<IRecord> result = await databaseManager.GetParcelsInDeliveryArea();
-        if (result == null) return;
-        foreach (var record in result)
-        {
-            Vector3 parcelPosition = new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
-            //Debug.Log(parcelPosition);
-            if (assignedParcels.ContainsKey(parcelPosition)) continue;
-            AssignDeliveryTask(parcelPosition);
-        }
+        return; // Task assegnato con successo
     }
 
     private void AssignDeliveryTask(Vector3 parcelPosition)
     {
         if (assignedParcels.ContainsKey(parcelPosition))
-            return;
+            return; // Considera il task già assegnato
 
         Robot availableRobot = FindAvailableRobot(parcelPosition);
         if (availableRobot == null)
         {
-            if (!pendingDeliveryTasks.Any(task => task == parcelPosition))
+            if (!pendingDeliveryTasks.Contains(parcelPosition))
             {
-                Debug.LogWarning("Nessun robot disponibile per Store. Compito aggiunto in coda.");
                 pendingDeliveryTasks.Enqueue(parcelPosition);
+                Debug.LogWarning($"Nessun robot disponibile per Delivery. Compito aggiunto in coda. {parcelPosition}");
             }
-            return;
+            return; // Nessun robot disponibile
         }
 
         Debug.Log($"Assegnato delivery task al Robot {availableRobot.id}.");
         availableRobot.destination = parcelPosition;
         availableRobot.currentState = RobotState.DeliveryState;
         assignedParcels[parcelPosition] = availableRobot.id; // Registra l'assegnazione
+        return; // Task assegnato con successo
     }
 
     private int currentConveyorIndex = 0;
