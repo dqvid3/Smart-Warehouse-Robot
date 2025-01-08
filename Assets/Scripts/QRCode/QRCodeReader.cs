@@ -45,7 +45,6 @@ public class QRCodeReader : MonoBehaviour
         // Restituisci il risultato della decodifica
         if (result != null && !string.IsNullOrEmpty(result.Text))
         {
-            Debug.Log($"QR Code letto: {result.Text}");
             return result.Text;
         }
         else

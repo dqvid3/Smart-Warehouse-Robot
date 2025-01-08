@@ -30,8 +30,8 @@ public class ConveyorSensorDelivery : MonoBehaviour
     {
         if (!hasTriggered) return;
         _ = neo4jHelper.UpdateParcelPositionStatusAsync(positionId, false);
-        conveyorPhysic.speed = 2;
-        conveyorPhysic.meshSpeed = 1;
+        conveyorPhysic.speed = 3.5f;
+        conveyorPhysic.meshSpeed = 1.25f;
         hasTriggered = false;
     }
 

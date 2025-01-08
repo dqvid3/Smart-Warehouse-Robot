@@ -11,10 +11,9 @@ public class RobotManager : MonoBehaviour
     public List<Robot> robots = new List<Robot>();
     public DatabaseManager databaseManager;
     private Dictionary<Vector3, int> assignedParcels = new Dictionary<Vector3, int>();
-    private Dictionary<Vector3, int> assignedPositions = new Dictionary<Vector3, int>();
-    private Queue<Vector3> pendingStoreTasks = new Queue<Vector3>();
+    private Queue<Vector3> pendingDeliveryTasks = new Queue<Vector3>();
     private Queue<Vector3> pendingShippingTasks = new Queue<Vector3>();
-    private List<Vector3> conveyorShipping;
+    private List<Vector3> conveyorPositions;
     private float checkInterval = 2f;
     private float lastCheckTime = 0f;
 
@@ -22,7 +21,7 @@ public class RobotManager : MonoBehaviour
     {
         string robotList = string.Join(", ", robots.Select(r => "ID: " + r.id + ", Stato: " + r.currentState).ToArray());
         Debug.Log("RobotManager avviato.\nRobot collegati: [" + robotList + "]");
-        conveyorShipping = await databaseManager.GetConveyorPositionsInShipping();
+        conveyorPositions = await databaseManager.GetConveyorPositions();
     }
 
     private async void Update()
@@ -31,31 +30,19 @@ public class RobotManager : MonoBehaviour
         {
             lastCheckTime = Time.time;
             CheckForShippingOrders();
-            await CheckForParcelsInDeliveryArea();
+            await CheckForDeliveries();
             if (pendingShippingTasks.Count > 0)
             {
                 var nextTask = pendingShippingTasks.Dequeue();
                 AssignShippingTask(nextTask);
             }
-            else if (pendingStoreTasks.Count > 0)
+            else if (pendingDeliveryTasks.Count > 0)
             {
-                var nextTask = pendingStoreTasks.Dequeue();
-                AssignStoreTask(nextTask);
+                var nextTask = pendingDeliveryTasks.Dequeue();
+                AssignDeliveryTask(nextTask);
             }
         }
-        HandleNearbyRobots();
-    }
-
-    private async Task CheckForParcelsInDeliveryArea()
-    {
-        IList<IRecord> result = await databaseManager.GetParcelsInDeliveryArea();
-        if (result == null) return;
-        foreach (var record in result)
-        {
-            Vector3 parcelPosition = new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
-            if (assignedParcels.ContainsKey(parcelPosition)) continue;
-            AssignStoreTask(parcelPosition);
-        }
+        //HandleNearbyRobots();
     }
 
     private async void CheckForShippingOrders()
@@ -66,21 +53,12 @@ public class RobotManager : MonoBehaviour
             foreach (var record in result)
             {
                 var order = record["order"].As<INode>();
-                int parcelCount = record["parcelCount"].As<int>();
-                if (parcelCount == 0)
+                string orderId = order.Properties["orderId"].As<string>();
+                var parcelPositions = await databaseManager.GetParcelPositionsForOrderAsync(orderId);
+                foreach (var parcelPosition in parcelPositions)
                 {
-                    string orderId = order.Properties["orderId"].As<string>();
-                    await databaseManager.DeleteOrderAsync(orderId);
-                }
-                else
-                {
-                    string orderId = order.Properties["orderId"].As<string>();
-                    var parcelPositions = await databaseManager.GetParcelPositionsForOrderAsync(orderId);
-                    foreach (var parcelPosition in parcelPositions)
-                    {
-                        if (assignedParcels.ContainsKey(parcelPosition)) continue;
-                        AssignShippingTask(parcelPosition);
-                    }
+                    if (assignedParcels.ContainsKey(parcelPosition)) continue;
+                    AssignShippingTask(parcelPosition);
                 }
             }
         }
@@ -90,39 +68,10 @@ public class RobotManager : MonoBehaviour
         }
     }
 
-    private void AssignStoreTask(Vector3 parcelPosition)
-    {
-        // Verifica se il parcel è già assegnato
-        if (assignedParcels.ContainsKey(parcelPosition))
-        {
-            return;
-        }
-
-        Robot availableRobot = FindAvailableRobot(parcelPosition);
-        if (availableRobot == null)
-        {
-            if (!pendingStoreTasks.Any(task => task == parcelPosition))
-            {
-                Debug.LogWarning("Nessun robot disponibile per Store. Compito aggiunto in coda.");
-                pendingStoreTasks.Enqueue(parcelPosition);
-            }
-            return;
-        }
-
-        Debug.Log($"Assegnato store task al Robot {availableRobot.id}.");
-        availableRobot.destination = parcelPosition;
-        availableRobot.currentState = RobotState.StoreState;
-        assignedParcels[parcelPosition] = availableRobot.id; // Registra l'assegnazione
-    }
-
-
     private void AssignShippingTask(Vector3 parcelPosition)
     {
-        // Verifica se il parcel è già assegnato
         if (assignedParcels.ContainsKey(parcelPosition))
-        {
             return;
-        }
 
         Robot availableRobot = FindAvailableRobot(parcelPosition);
         if (availableRobot == null)
@@ -141,40 +90,48 @@ public class RobotManager : MonoBehaviour
         assignedParcels[parcelPosition] = availableRobot.id; // Registra l'assegnazione
     }
 
+    private async Task CheckForDeliveries()
+    {
+        IList<IRecord> result = await databaseManager.GetParcelsInDeliveryArea();
+        if (result == null) return;
+        foreach (var record in result)
+        {
+            Vector3 parcelPosition = new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
+            //Debug.Log(parcelPosition);
+            if (assignedParcels.ContainsKey(parcelPosition)) continue;
+            AssignDeliveryTask(parcelPosition);
+        }
+    }
+
+    private void AssignDeliveryTask(Vector3 parcelPosition)
+    {
+        if (assignedParcels.ContainsKey(parcelPosition))
+            return;
+
+        Robot availableRobot = FindAvailableRobot(parcelPosition);
+        if (availableRobot == null)
+        {
+            if (!pendingDeliveryTasks.Any(task => task == parcelPosition))
+            {
+                Debug.LogWarning("Nessun robot disponibile per Store. Compito aggiunto in coda.");
+                pendingDeliveryTasks.Enqueue(parcelPosition);
+            }
+            return;
+        }
+
+        Debug.Log($"Assegnato delivery task al Robot {availableRobot.id}.");
+        availableRobot.destination = parcelPosition;
+        availableRobot.currentState = RobotState.DeliveryState;
+        assignedParcels[parcelPosition] = availableRobot.id; // Registra l'assegnazione
+    }
 
     private int currentConveyorIndex = 0;
     public Vector3 askConveyorPosition()
     {
-        if (conveyorShipping == null || conveyorShipping.Count == 0)
-        {
-            Debug.LogWarning("Conveyor positions list is empty!");
-            return Vector3.zero;
-        }
-        Vector3 selectedPosition = conveyorShipping[currentConveyorIndex];
-        currentConveyorIndex = (currentConveyorIndex + 1) % conveyorShipping.Count;
+        Vector3 selectedPosition = conveyorPositions[currentConveyorIndex];
+        currentConveyorIndex = (currentConveyorIndex + 1) % conveyorPositions.Count;
         return selectedPosition;
     }
-
-    public async Task<(Vector3 slotPosition, long slotId)> GetAvailableSlot(int robotId, string category)
-    {
-        var availableSlots = await databaseManager.GetAvailableSlotsAsync(category);
-
-        foreach (var slot in availableSlots)
-        {
-            // Verifica se la posizione dello slot è già assegnata
-            if (assignedPositions.ContainsKey(slot.slotPosition))
-            {
-                continue;
-            }
-
-            assignedPositions[slot.slotPosition] = robotId; // Registra l'assegnazione
-            return slot;
-        }
-
-        Debug.LogWarning("Tutti gli slot disponibili sono già assegnati.");
-        return (Vector3.zero, -1);
-    }
-
 
     private Robot FindAvailableRobot(Vector3 parcelPosition)
     {
@@ -192,8 +149,7 @@ public class RobotManager : MonoBehaviour
         }
         return closestRobot;
     }
-
-    public void HandleNearbyRobots(float threshold = 8f)
+/*    public void HandleNearbyRobots(float threshold = 8f)
     {
         for (int i = 0; i < robots.Count; i++)
         {
@@ -238,17 +194,10 @@ public class RobotManager : MonoBehaviour
             }
         }
     }
-
-    public async Task RemoveParcelFromShelf(Vector3 parcelPositionInShelf)
-    {
-        await databaseManager.DeleteParcelFromShelfAsync(parcelPositionInShelf);
-    }
-
+*/
     public void NotifyTaskCompletion(int robotId)
     {
         var parcelsToRemove = assignedParcels.Where(pair => pair.Value == robotId).ToList();
         foreach (var pair in parcelsToRemove) assignedParcels.Remove(pair.Key);
-        var positionsToRemove = assignedPositions.Where(pair => pair.Value == robotId).ToList();
-        foreach (var pair in positionsToRemove) assignedPositions.Remove(pair.Key);
     }
 }

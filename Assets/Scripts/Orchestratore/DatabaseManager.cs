@@ -1,7 +1,6 @@
 using Neo4j.Driver;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -13,7 +12,6 @@ public class DatabaseManager : MonoBehaviour
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
     }
-
 
     private void OnDestroy()
     {
@@ -87,9 +85,7 @@ public class DatabaseManager : MonoBehaviour
         await neo4jHelper.ExecuteWriteAsync(query, parameters);
     }
 
-
-
-    public async Task<List<Vector3>> GetConveyorPositionsInShipping()
+    public async Task<List<Vector3>> GetConveyorPositions()
     {
         string query = @"
         MATCH (shipping:Area {type: 'Shipping'})-[:HAS_POSITION]->(pos:Position)
@@ -125,9 +121,8 @@ public class DatabaseManager : MonoBehaviour
         try
         {
             string query = @"
-        MATCH (delivery:Area {type: 'Delivery'})-[:HAS_POSITION]->(pos:Position {hasParcel: true})
-        RETURN pos.x AS x, pos.y AS y, pos.z AS z
-        ";
+            MATCH (delivery:Area {type: 'Delivery'})-[:HAS_POSITION]->(pos:Position {hasParcel: true})
+            RETURN pos.x AS x, pos.y AS y, pos.z AS z";
 
             IList<IRecord> result = await neo4jHelper.ExecuteReadListAsync(query);
             return result;
@@ -147,8 +142,7 @@ public class DatabaseManager : MonoBehaviour
         ORDER BY oldestOrder.timestamp ASC
         LIMIT 1
         OPTIONAL MATCH (p:Parcel)-[:PART_OF]->(oldestOrder)
-        RETURN oldestOrder AS order, COUNT(p) AS parcelCount
-    ";
+        RETURN oldestOrder AS order, COUNT(p) AS parcelCount";
 
         return await neo4jHelper.ExecuteReadListAsync(query);
     }
@@ -174,8 +168,7 @@ public class DatabaseManager : MonoBehaviour
         MATCH (p:Parcel)-[:PART_OF]->(oldestOrder:Order)
         MATCH (s:Shelf)-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)-[:CONTAINS]->(p)
         WHERE oldestOrder.orderId = $orderId
-        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z
-    ";
+        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z";
 
         var parameters = new Dictionary<string, object>
     {
@@ -229,23 +222,5 @@ public class DatabaseManager : MonoBehaviour
         }
 
         return availableSlots;
-    }
-
-    public async Task DeleteParcelFromShelfAsync(Vector3 parcelPosition)
-    {
-        string query = @"
-        MATCH (s:Shelf)-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)-[:CONTAINS]->(p:Parcel)
-        WHERE abs(s.x + slot.x - $x) < 0.01 AND abs(l.y - $y) < 0.01 AND abs(s.z - $z) < 0.01
-        DETACH DELETE p
-    ";
-
-        var parameters = new Dictionary<string, object>
-    {
-        { "x", parcelPosition.x },
-        { "y", parcelPosition.y },
-        { "z", parcelPosition.z }
-    };
-
-        await neo4jHelper.ExecuteWriteAsync(query, parameters);
     }
 }
