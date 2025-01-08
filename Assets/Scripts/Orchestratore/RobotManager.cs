@@ -97,7 +97,7 @@ public class RobotManager : MonoBehaviour
             if (!pendingShippingTasks.Contains(parcelPosition))
             {
                 pendingShippingTasks.Enqueue(parcelPosition);
-                Debug.LogWarning($"Nessun robot disponibile per Shipping. Compito aggiunto in coda. ({parcelPosition}, {pendingShippingTasks.Count})");
+                Debug.LogWarning($"Nessun robot disponibile per Shipping. Compito aggiunto in coda. ({parcelPosition})");
             }
             return; // Nessun robot disponibile
         }
