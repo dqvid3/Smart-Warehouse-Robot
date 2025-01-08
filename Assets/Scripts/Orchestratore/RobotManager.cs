@@ -1,18 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
-using System.Threading.Tasks;
 using Neo4j.Driver;
-using System;
 using static Robot;
 using System.Linq;
 
 public class RobotManager : MonoBehaviour
 {
-    public List<Robot> robots = new List<Robot>();
+    public List<Robot> robots = new();
     public DatabaseManager databaseManager;
-    private Dictionary<Vector3, int> assignedParcels = new Dictionary<Vector3, int>();
-    private Queue<Vector3> pendingDeliveryTasks = new Queue<Vector3>();
-    private Queue<Vector3> pendingShippingTasks = new Queue<Vector3>();
+    private Dictionary<Vector3, int> assignedParcels = new();
+    private Queue<Vector3> pendingDeliveryTasks = new();
+    private Queue<Vector3> pendingShippingTasks = new();
     private List<Vector3> conveyorPositions;
     private float checkInterval = 2f;
     private float lastCheckTime = 0f;
@@ -57,7 +55,7 @@ public class RobotManager : MonoBehaviour
         IList<IRecord> result = await databaseManager.GetParcelsInDeliveryArea();
         foreach (var record in result)
         {
-            Vector3 parcelPosition = new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
+            Vector3 parcelPosition = new(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
             if (assignedParcels.ContainsKey(parcelPosition)) continue;
             AssignDeliveryTask(parcelPosition);
         }
@@ -158,52 +156,7 @@ public class RobotManager : MonoBehaviour
         }
         return closestRobot;
     }
-/*    public void HandleNearbyRobots(float threshold = 8f)
-    {
-        for (int i = 0; i < robots.Count; i++)
-        {
-            var robotA = robots[i];
-            if (!robotA.isActive || robotA.currentRobotPosition == Vector3.zero || robotA.isPaused)
-                continue;
 
-            for (int j = i + 1; j < robots.Count; j++)
-            {
-                var robotB = robots[j];
-                if (!robotB.isActive || robotB.currentRobotPosition == Vector3.zero || robotB.isPaused)
-                    continue;
-
-                float distanceBetweenRobots = Vector3.Distance(robotA.currentRobotPosition, robotB.currentRobotPosition);
-
-                // Verifica se sono troppo vicini
-                if (distanceBetweenRobots <= threshold)
-                {
-                    if (robotA.currentState == Robot.RobotState.Idle && robotB.currentState != Robot.RobotState.Idle)
-                    {
-                        robotA.Pause();
-                    }
-                    else if (robotB.currentState == Robot.RobotState.Idle && robotA.currentState != Robot.RobotState.Idle)
-                    {
-                        robotB.Pause();
-                    }
-                    else
-                    {
-                        float distAFromDest = Vector3.Distance(robotA.currentRobotPosition, robotA.destination);
-                        float distBFromDest = Vector3.Distance(robotB.currentRobotPosition, robotB.destination);
-
-                        if (distAFromDest > distBFromDest)
-                        {
-                            robotA.Pause();
-                        }
-                        else
-                        {
-                            robotB.Pause();
-                        }
-                    }
-                }
-            }
-        }
-    }
-*/
     public void NotifyTaskCompletion(int robotId)
     {
         var parcelsToRemove = assignedParcels.Where(pair => pair.Value == robotId).ToList();

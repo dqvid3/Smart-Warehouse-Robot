@@ -70,8 +70,8 @@ public class ForkliftNavController : MonoBehaviour
         _ = UpdateParcelLocation(timestamp, result[0]["slotId"].As<long>());
         // Move backward away from the shelf
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
-        yield return StartCoroutine(MoveToOriginPosition());
         yield return StartCoroutine(LiftMastToHeight(0));
+        yield return StartCoroutine(MoveToOriginPosition());
     }
 
     public IEnumerator ShipParcel(Vector3 slotPosition, Vector3 conveyorDestination)
@@ -106,8 +106,8 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(LiftMastToHeight(conveyorDestination.y));
         parcel.transform.SetParent(null);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
-        yield return StartCoroutine(MoveToOriginPosition());
         yield return StartCoroutine(LiftMastToHeight(0));
+        yield return StartCoroutine(MoveToOriginPosition());
     }
 
     public IEnumerator MoveToOriginPosition()
@@ -186,11 +186,11 @@ public class ForkliftNavController : MonoBehaviour
     private async Task FreeSlot(Vector3 slotPosition)
     {
         string query = @"
-MATCH (s:Shelf)-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
-WHERE abs(s.x + slot.x - $x) < 0.01 AND abs(l.y - $y) < 0.01 AND abs(s.z - $z) < 0.01
-MATCH (slot)-[r:CONTAINS]->(p:Parcel)
-DELETE r
-SET slot.occupied = false";
+        MATCH (s:Shelf)-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
+        WHERE abs(s.x + slot.x - $x) < 0.01 AND abs(l.y - $y) < 0.01 AND abs(s.z - $z) < 0.01
+        MATCH (slot)-[r:CONTAINS]->(p:Parcel)
+        DELETE r
+        SET slot.occupied = false";
 
         var parameters = new Dictionary<string, object>
         {
