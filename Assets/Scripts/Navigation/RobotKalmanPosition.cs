@@ -4,10 +4,10 @@ public class RobotKalmanPosition : MonoBehaviour
 {
     [Header("Kalman Filter Parameters")]
     public float processNoise = 0.1f;
-    public float measurementNoise = 0.5f;
+    public float measurementNoise = 0.2f;
 
     [Header("Sensore")]
-    public float sensorRange = 15f; // Raggio massimo di rilevamento dei sensori
+    public float sensorRange = 17.5f; // Raggio massimo di rilevamento dei sensori
     public LayerMask landmarkLayer; // Layer dei landmark nella scena
 
     private KalmanFilter positionKalmanFilterX;
