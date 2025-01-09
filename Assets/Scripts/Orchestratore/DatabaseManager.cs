@@ -18,6 +18,12 @@ public class DatabaseManager : MonoBehaviour
         neo4jHelper.CloseConnection();
     }
 
+    public async Task<IList<IRecord>> ExecuteReadListAsync(string query, Dictionary<string, object> parameters = null)
+    {
+        return await neo4jHelper.ExecuteReadListAsync(query, parameters);
+    }
+
+
     public async Task<List<(int id, Vector3 position)>> GetRobotPositionsAsync()
     {
         string query = @"
