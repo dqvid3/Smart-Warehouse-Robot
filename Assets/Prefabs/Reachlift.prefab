@@ -1002,6 +1002,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   processNoise: 0.1
   measurementNoise: 0.5
+  sensorRange: 10
+  landmarkLayer:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!114 &6295221857343116058
 MonoBehaviour:
   m_ObjectHideFlags: 0
