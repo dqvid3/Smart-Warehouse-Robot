@@ -17,13 +17,17 @@ public class ForkliftNavController : MonoBehaviour
     private QRCodeReader qrReader;
     public Vector3 defaultPosition;
 
+    private void Awake()
+    {
+        defaultPosition = transform.position;
+    }
+
     void Start()
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
         qrReader = GetComponent<QRCodeReader>();
         agent = GetComponent<NavMeshAgent>();
         forkliftController = GetComponent<ForkliftController>();
-        defaultPosition = transform.position;
     }
 
     public IEnumerator DeliverParcel(Vector3 parcelPosition)
@@ -124,7 +128,7 @@ public class ForkliftNavController : MonoBehaviour
     }
 
 
-    private IEnumerator SmoothRotateToDirection(Vector3 targetForward, float rotationSpeed = 1f)
+    public IEnumerator SmoothRotateToDirection(Vector3 targetForward, float rotationSpeed = 1f)
     {
         Quaternion startRotation = transform.rotation;
         Quaternion finalRotation = Quaternion.LookRotation(targetForward, Vector3.up);

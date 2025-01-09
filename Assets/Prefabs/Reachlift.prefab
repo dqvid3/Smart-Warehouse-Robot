@@ -186,7 +186,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8581437902828443420, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: -8143711972502570245, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -354,7 +354,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -1768435076690478254, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: -1591528498153048825, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: m_LocalPosition.y
@@ -394,7 +394,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -250016413570625702, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: -148841625954121029, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: m_Layer
@@ -438,7 +438,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1375810363502994148, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 1834100160471482057, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -450,7 +450,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2448666219916503848, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2461521135403673673, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: m_LocalPosition.y
@@ -657,7 +657,10 @@ PrefabInstance:
       addedObject: {fileID: 5208561982904702695}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3683593154494021682}
+      addedObject: {fileID: 8622431091526066733}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6295221857343116058}
     - targetCorrespondingSourceObject: {fileID: -4543832893031423791, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1630355590711519490}
@@ -967,7 +970,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   id: 0
-  originPosition: {x: 0, y: 0, z: 0}
   robotManager: {fileID: 0}
   destination: {x: 0, y: 0, z: 0}
   batteryLevel: 100
@@ -986,7 +988,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3326eef6d67ff4207aaf1ff3d48e3d1e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &3683593154494021682
+--- !u!114 &8622431091526066733
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -998,13 +1000,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 498540075bfce42df80bb70afced8999, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 3
-  raycastDistance: 5
-  numberOfRays: 360
-  obstacleDetectionDistance: 2
-  angularSpeed: 120
-  acceleration: 8
-  obstacleAvoidanceType: 0
+  processNoise: 0.1
+  measurementNoise: 0.5
+--- !u!114 &6295221857343116058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8887462579480094166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02c15b2399c910b40a6cd9a0bf182e84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agent: {fileID: 3095190479552573583}
+  controller: {fileID: 3382456182264306211}
+  robotKalmanPosition: {fileID: 8622431091526066733}
+  raycastDistance: 20
+  numberOfRays: 180
+  obstacleDetectionDistance: 1.5
+  rayHeight: 0.4
 --- !u!1 &9171051550921637103 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 635547659545568360, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
