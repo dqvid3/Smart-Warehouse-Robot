@@ -3,6 +3,9 @@ using UnityEngine;
 using Neo4j.Driver;
 using static Robot;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Collections;
+using UnityEngine.AI;
 
 public class RobotManager : MonoBehaviour
 {
@@ -14,6 +17,7 @@ public class RobotManager : MonoBehaviour
     private List<Vector3> conveyorPositions;
     private float checkInterval = 2f;
     private float lastCheckTime = 0f;
+    private HashSet<int> stoppedRobots = new HashSet<int>(); // Tiene traccia dei robot che sono stati fermati
 
     private async void Start()
     {
@@ -30,8 +34,8 @@ public class RobotManager : MonoBehaviour
             CheckForShippingOrders();
             CheckForDeliveries();
             CheckPendingTasks();
+            CheckAdjacentRobotConflicts();
         }
-        //HandleNearbyRobots();
     }
 
     private async void CheckForShippingOrders()
@@ -86,6 +90,64 @@ public class RobotManager : MonoBehaviour
         }
     }
 
+    private void CheckAdjacentRobotConflicts()
+    {
+        foreach (var parcel1 in assignedParcels)
+        {
+            foreach (var parcel2 in assignedParcels)
+            {
+                // Ignora lo stesso pacco o non adiacenti
+                if (parcel1.Key == parcel2.Key || !IsAdjacent(parcel1.Key, parcel2.Key))
+                    continue;
+
+                // Trova i robot assegnati
+                Robot robot1 = robots.FirstOrDefault(r => r.id == parcel1.Value);
+                Robot robot2 = robots.FirstOrDefault(r => r.id == parcel2.Value);
+
+                if (robot1 == null || robot2 == null || !robot1.isActive || !robot2.isActive)
+                    continue;
+
+                float distance1 = Vector3.Distance(robot1.transform.position, parcel1.Key);
+                float distance2 = Vector3.Distance(robot2.transform.position, parcel2.Key);
+
+                if (distance1 > distance2)
+                {
+                    // Ferma il robot solo se non è già stato fermato
+                    if (!stoppedRobots.Contains(robot1.id))
+                    {
+                        StartCoroutine(DelayRobotMovement(robot1, 3f));
+                        stoppedRobots.Add(robot1.id); // Aggiungi alla lista dei robot fermati
+                    }
+                }
+                else
+                {
+                    // Ferma il robot solo se non è già stato fermato
+                    if (!stoppedRobots.Contains(robot2.id))
+                    {
+                        StartCoroutine(DelayRobotMovement(robot2, 3f));
+                        stoppedRobots.Add(robot2.id); // Aggiungi alla lista dei robot fermati
+                    }
+                }
+            }
+        }
+    }
+
+    private bool IsAdjacent(Vector3 slot1, Vector3 slot2)
+    {
+        float distanceX = Mathf.Abs(slot1.x - slot2.x);
+        return distanceX >= 1.8f && distanceX <= 3f;
+    }
+
+    private IEnumerator DelayRobotMovement(Robot robot, float delayTime)
+    {
+        Debug.Log($"Robot {robot.id} fermo per {delayTime} secondi.");
+        NavMeshAgent agent = robot.GetComponent<NavMeshAgent>();
+        agent.isStopped = true;
+        yield return new WaitForSeconds(delayTime);
+        agent.isStopped = false;
+        Debug.Log($"Robot {robot.id} riprende il movimento.");
+    }
+
     private void AssignShippingTask(Vector3 parcelPosition)
     {
         if (assignedParcels.ContainsKey(parcelPosition))
@@ -133,11 +195,23 @@ public class RobotManager : MonoBehaviour
     }
 
     private int currentConveyorIndex = 0;
-    public Vector3 askConveyorPosition()
+    public Vector3 AskConveyorPosition()
     {
         Vector3 selectedPosition = conveyorPositions[currentConveyorIndex];
         currentConveyorIndex = (currentConveyorIndex + 1) % conveyorPositions.Count;
         return selectedPosition;
+    }
+
+    public IRecord AskSlot(string category, int robotId)
+    {
+        IList<IRecord> result = Task.Run(() => databaseManager.GetAvailableSlot(category)).Result;
+        var record = result[0];
+        float x = record[0].As<float>();
+        float y = record[1].As<float>();
+        float z = record[2].As<float>();
+        Vector3 slotPosition = new(x, y, z);
+        assignedParcels[slotPosition] = robotId;
+        return result[0];
     }
 
     private Robot FindAvailableRobot(Vector3 parcelPosition)
@@ -161,5 +235,7 @@ public class RobotManager : MonoBehaviour
     {
         var parcelsToRemove = assignedParcels.Where(pair => pair.Value == robotId).ToList();
         foreach (var pair in parcelsToRemove) assignedParcels.Remove(pair.Key);
+        // Rimuovi il robot dalla lista dei robot fermati quando ha finito
+        stoppedRobots.Remove(robotId);
     }
 }

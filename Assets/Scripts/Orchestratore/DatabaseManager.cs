@@ -70,7 +70,7 @@ public class DatabaseManager : MonoBehaviour
             return new Vector3(x, 0, z);
         }
 
-        // Se nessun record è trovato, ritorna un valore di default o lancia un'eccezione
+        // Se nessun record ï¿½ trovato, ritorna un valore di default o lancia un'eccezione
         Debug.LogWarning($"No landmark found with ID: {id}");
         return Vector3.zero;
     }
@@ -214,5 +214,22 @@ public class DatabaseManager : MonoBehaviour
         }
 
         return parcelPositions;
+    }
+    
+    public async Task<IList<IRecord>> GetAvailableSlot(string category)
+    {
+        string query = @"
+        MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
+        WHERE NOT (slot)-[:CONTAINS]->(:Parcel) AND slot.occupied = false
+        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z, ID(slot) AS slotId
+        LIMIT 1";
+        var result = await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "category", category } });
+        long slotId = result[0]["slotId"].As<long>();
+        query = @"
+        MATCH (s:Slot)
+        WHERE ID(s) = $slotId
+        SET s.occupied = true";
+        _ = neo4jHelper.ExecuteWriteAsync(query, new Dictionary<string, object> { { "slotId", slotId } });
+        return result;
     }
 }

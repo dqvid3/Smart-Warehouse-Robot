@@ -4,6 +4,7 @@ using System.Collections;
 using Neo4j.Driver;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System;
 
 public class ForkliftNavController : MonoBehaviour
 {
@@ -16,6 +17,7 @@ public class ForkliftNavController : MonoBehaviour
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
     public Vector3 defaultPosition;
+    private RobotExplainability explainability;
 
     private void Awake()
     {
@@ -28,16 +30,16 @@ public class ForkliftNavController : MonoBehaviour
         qrReader = GetComponent<QRCodeReader>();
         agent = GetComponent<NavMeshAgent>();
         forkliftController = GetComponent<ForkliftController>();
+        explainability = GetComponent<RobotExplainability>();
     }
 
-    public IEnumerator DeliverParcel(Vector3 parcelPosition)
+    public IEnumerator PickParcelFromDelivery(Vector3 parcelPosition, Action<string> callback)
     {
         Vector3 qrCodeDirection = Vector3.left;
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
 
         // Spostamento verso la box
-        RobotExplainability explainability = GetComponent<RobotExplainability>();
         explainability.ShowExplanation("Mi sto dirigendo verso la box per iniziare il prelievo.");
         yield return StartCoroutine(MoveToPosition(approachPosition));
 
@@ -48,10 +50,16 @@ public class ForkliftNavController : MonoBehaviour
         // Lettura del QR code
         string qrCode = qrReader.ReadQRCode();
         string[] qrParts = qrCode.Split('|');
-        string timestamp = qrParts[0];
         string category = qrParts[1];
         explainability.ShowExplanation($"QR code letto. Categoria della box: {category}.");
+        callback(qrCode);
+    }
 
+    public IEnumerator DeliverToShelf(Vector3 parcelPosition, IRecord record, string timestamp)
+    {
+        Vector3 qrCodeDirection = Vector3.left;
+        Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
+        approachPosition.y = transform.position.y;
         // Sollevamento della box
         GameObject parcel = GetParcel(parcelPosition.y + 1);
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
@@ -59,15 +67,12 @@ public class ForkliftNavController : MonoBehaviour
 
         // Avvicinamento alla box e prelievo
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
-        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 0.05f));
+        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
         parcel.transform.SetParent(grabPoint);
         explainability.ShowExplanation("Box prelevata. Mi sposto verso lo scaffale corretto.");
-
         // Cambio direzione per lo scaffale
         qrCodeDirection = Vector3.forward;
-        yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
-        IList<IRecord> result = Task.Run(() => GetAvailableSlot(category)).Result;
-        Vector3 slotPosition = GetSlotPosition(result[0]);
+        Vector3 slotPosition = GetSlotPosition(record);
         float shelfHeight = slotPosition.y;
         slotPosition.y = transform.position.y;
         approachPosition = slotPosition + qrCodeDirection * approachDistance;
@@ -85,7 +90,7 @@ public class ForkliftNavController : MonoBehaviour
         explainability.ShowExplanation("Box posata sullo scaffale. Sto tornando in posizione di standby.");
 
         // Ritorno alla posizione originale
-        _ = UpdateParcelLocation(timestamp, result[0]["slotId"].As<long>());
+        _ = UpdateParcelLocation(timestamp, record["slotId"].As<long>());
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
         yield return StartCoroutine(LiftMastToHeight(0));
         yield return StartCoroutine(MoveToOriginPosition());
@@ -106,7 +111,7 @@ public class ForkliftNavController : MonoBehaviour
         yield return SmoothRotateToDirection(-qrCodeDirection);
 
         // Find the parcel GameObject based on its position
-        GameObject parcel = GetParcel(slotPosition.y + 1);
+        GameObject parcel = GetParcel(slotPosition.y);
         yield return LiftMastToHeight(slotPosition.y);
         yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
         yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
@@ -215,25 +220,8 @@ public class ForkliftNavController : MonoBehaviour
             { "x", slotPosition.x },
             { "y", slotPosition.y },
             { "z", slotPosition.z }
-        }; 
+        };
         await neo4jHelper.ExecuteWriteAsync(query, parameters);
-    }
-
-    private async Task<IList<IRecord>> GetAvailableSlot(string category)
-    {
-        string query = @"
-        MATCH (s:Shelf {category: $category})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)
-        WHERE NOT (slot)-[:CONTAINS]->(:Parcel) AND slot.occupied = false
-        RETURN s.x + slot.x AS x, l.y AS y, s.z AS z, ID(slot) AS slotId
-        LIMIT 1";
-        var result = await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "category", category } });
-        long slotId = result[0]["slotId"].As<long>();
-        query = @"
-        MATCH (s:Slot)
-        WHERE ID(s) = $slotId
-        SET s.occupied = true";
-        _ = neo4jHelper.ExecuteWriteAsync(query, new Dictionary<string, object> { { "slotId", slotId } });
-        return result;
     }
 
     private Vector3 GetSlotPosition(IRecord record)

@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using Neo4j.Driver;
 
 public class Robot : MonoBehaviour
 {
@@ -75,7 +76,7 @@ public class Robot : MonoBehaviour
                 break;
 
             case RobotState.RechargeState:
-                explainability.ShowExplanation("Mi sto ricaricando perché la batteria è bassa.");
+                explainability.ShowExplanation("Mi sto ricaricando perchï¿½ la batteria ï¿½ bassa.");
                 StartCoroutine(ChargingRoutine());
                 break;
 
@@ -91,17 +92,6 @@ public class Robot : MonoBehaviour
         }
     }
 
-    private async Task<string> GetParcelDetails(string parcelId)
-    {
-        string query = @"
-            MATCH (p:Parcel {timestamp: $parcelId})-[:LOCATED_IN]->(s:Shelf)
-            RETURN s.category AS category";
-        var result = await databaseManager.ExecuteReadListAsync(query, new Dictionary<string, object> { { "parcelId", parcelId } });
-        return (string)result.FirstOrDefault()?["category"];
-
-    }
-
-    // Caso: Quando il robot si ricarica
     private IEnumerator ChargingRoutine()
     {
         float chargingTime = 10f;
@@ -129,7 +119,11 @@ public class Robot : MonoBehaviour
     private IEnumerator HandleDeliveryTask()
     {
         _ = UpdateStateInDatabase();
-        yield return StartCoroutine(forkliftNavController.DeliverParcel(destination));
+        string qrCodeResult = "";
+        yield return StartCoroutine(forkliftNavController.PickParcelFromDelivery(destination, (qrCode) => { qrCodeResult = qrCode; }));
+        string[] qrParts = qrCodeResult.Split('|');
+        IRecord record = robotManager.AskSlot(qrParts[1], id);
+        yield return StartCoroutine(forkliftNavController.DeliverToShelf(destination, record, qrParts[0]));
         currentState = RobotState.Idle;
         robotManager.NotifyTaskCompletion(id);
     }
@@ -137,14 +131,14 @@ public class Robot : MonoBehaviour
     private IEnumerator HandleShippingTask()
     {
         _ = UpdateStateInDatabase();
-        Vector3 conveyorPosition = robotManager.askConveyorPosition();
+        Vector3 conveyorPosition = robotManager.AskConveyorPosition();
         yield return StartCoroutine(forkliftNavController.ShipParcel(destination, conveyorPosition));
         currentState = RobotState.Idle;
         robotManager.NotifyTaskCompletion(id);
     }
 
 
-private async Task UpdateStateInDatabase()
+    private async Task UpdateStateInDatabase()
     {/*
         if (databaseManager != null)
         {
