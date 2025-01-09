@@ -1,12 +1,14 @@
 using System.Collections;
 using UnityEngine;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 public class Robot : MonoBehaviour
 {
     public int id;
-    public RobotManager robotManager;  
-    public Vector3 destination; 
+    public RobotManager robotManager;
+    public Vector3 destination;
     public float batteryLevel = 100f;
     public RobotState currentState = RobotState.Idle;
     public string currentTask = "None";
@@ -16,6 +18,7 @@ public class Robot : MonoBehaviour
     private Vector3 previousDestination;
     private DatabaseManager databaseManager;
     private ForkliftNavController forkliftNavController;
+    private RobotExplainability explainability; // Per la spiegazione contestuale
     private RobotState lastKnownState = RobotState.Idle;
 
     public enum RobotState
@@ -33,6 +36,7 @@ public class Robot : MonoBehaviour
     {
         forkliftNavController = GetComponent<ForkliftNavController>();
         databaseManager = GetComponent<DatabaseManager>();
+        explainability = GetComponent<RobotExplainability>(); // Inizializza la classe per le spiegazioni contestuali
     }
 
     void Update()
@@ -62,38 +66,59 @@ public class Robot : MonoBehaviour
 
     private void OnStateChanged()
     {
+        RobotExplainability explainability = GetComponent<RobotExplainability>();
+
         switch (currentState)
         {
             case RobotState.Idle:
-                currentTask = "Idle";
-                _ = UpdateStateInDatabase();
+                explainability.ShowExplanation("Sono in standby, in attesa di un compito.");
                 break;
+
             case RobotState.RechargeState:
-                currentTask = "Recharge";
+                explainability.ShowExplanation("Mi sto ricaricando perché la batteria è bassa.");
                 StartCoroutine(ChargingRoutine());
                 break;
+
             case RobotState.DeliveryState:
-                currentTask = "Robot " + id + ": Picking up the parcel at position: " + destination;
+                explainability.ShowExplanation($"Sto prelevando un pacco all'area {destination} per stoccarlo nello scaffale corretto.");
                 StartCoroutine(HandleDeliveryTask());
                 break;
+
             case RobotState.ShippingState:
-                currentTask = "Robot " + id + ": Inizia la consegna del pacco.";
+                explainability.ShowExplanation($"Sto consegnando un pacco al nastro trasportatore.");
                 StartCoroutine(HandleShippingTask());
                 break;
         }
     }
 
+    private async Task<string> GetParcelDetails(string parcelId)
+    {
+        string query = @"
+            MATCH (p:Parcel {timestamp: $parcelId})-[:LOCATED_IN]->(s:Shelf)
+            RETURN s.category AS category";
+        var result = await databaseManager.ExecuteReadListAsync(query, new Dictionary<string, object> { { "parcelId", parcelId } });
+        return (string)result.FirstOrDefault()?["category"];
+
+    }
+
+    // Caso: Quando il robot si ricarica
     private IEnumerator ChargingRoutine()
     {
         float chargingTime = 10f;
         float elapsedTime = 0f;
+
+        explainability.ShowExplanation("Mi sto spostando verso l'area di ricarica.");
         yield return StartCoroutine(forkliftNavController.MoveToOriginPosition());
+
+        explainability.ShowExplanation("Inizio la ricarica della batteria.");
         while (elapsedTime < chargingTime)
         {
             elapsedTime += Time.deltaTime;
             batteryLevel = Mathf.Lerp(0, 100, elapsedTime / chargingTime);
             yield return null;
         }
+
+        explainability.ShowExplanation("Ricarica completata. Torno operativo.");
         batteryLevel = 100f;
         isActive = true;
         currentState = previousState;
@@ -118,7 +143,8 @@ public class Robot : MonoBehaviour
         robotManager.NotifyTaskCompletion(id);
     }
 
-    private async Task UpdateStateInDatabase()
+
+private async Task UpdateStateInDatabase()
     {/*
         if (databaseManager != null)
         {

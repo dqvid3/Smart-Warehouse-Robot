@@ -36,47 +36,61 @@ public class ForkliftNavController : MonoBehaviour
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
 
-        // Move in front of the parcel
+        // Spostamento verso la box
+        RobotExplainability explainability = GetComponent<RobotExplainability>();
+        explainability.ShowExplanation("Mi sto dirigendo verso la box per iniziare il prelievo.");
         yield return StartCoroutine(MoveToPosition(approachPosition));
-        // Rotate to face the parcel
+
+        // Rotazione per leggere il QR code
+        explainability.ShowExplanation("Sto ruotando per leggere il QR code della box.");
         yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
 
+        // Lettura del QR code
         string qrCode = qrReader.ReadQRCode();
         string[] qrParts = qrCode.Split('|');
         string timestamp = qrParts[0];
         string category = qrParts[1];
+        explainability.ShowExplanation($"QR code letto. Categoria della box: {category}.");
 
+        // Sollevamento della box
         GameObject parcel = GetParcel(parcelPosition.y + 1);
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
-        // Go forward to pick the parcel
+        explainability.ShowExplanation("Sto sollevando la box.");
+
+        // Avvicinamento alla box e prelievo
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 0.05f));
         parcel.transform.SetParent(grabPoint);
-        // Change the QR code direction for the shelf approach
+        explainability.ShowExplanation("Box prelevata. Mi sposto verso lo scaffale corretto.");
+
+        // Cambio direzione per lo scaffale
         qrCodeDirection = Vector3.forward;
-        // Lift the mast further for safe transport
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
-        // Get an available slot from the database based on the parcel's category
         IList<IRecord> result = Task.Run(() => GetAvailableSlot(category)).Result;
         Vector3 slotPosition = GetSlotPosition(result[0]);
         float shelfHeight = slotPosition.y;
         slotPosition.y = transform.position.y;
         approachPosition = slotPosition + qrCodeDirection * approachDistance;
-        // Move in front of the shelf
+
+        // Spostamento verso lo scaffale
         yield return StartCoroutine(MoveToPosition(approachPosition));
-        // Rotate to face the shelf
+        explainability.ShowExplanation("Sto raggiungendo lo scaffale per posare la box.");
+
+        // Rotazione verso lo scaffale e posizionamento
         yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
         yield return StartCoroutine(LiftMastToHeight(shelfHeight + 0.05f));
-        // Move forward to place the parcel
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
         yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
         parcel.transform.SetParent(null);
+        explainability.ShowExplanation("Box posata sullo scaffale. Sto tornando in posizione di standby.");
+
+        // Ritorno alla posizione originale
         _ = UpdateParcelLocation(timestamp, result[0]["slotId"].As<long>());
-        // Move backward away from the shelf
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
         yield return StartCoroutine(LiftMastToHeight(0));
         yield return StartCoroutine(MoveToOriginPosition());
     }
+
 
     public IEnumerator ShipParcel(Vector3 slotPosition, Vector3 conveyorDestination)
     {
