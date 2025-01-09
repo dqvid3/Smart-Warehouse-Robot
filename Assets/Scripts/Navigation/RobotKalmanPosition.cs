@@ -1,29 +1,36 @@
 using UnityEngine;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System;
 
 public class RobotKalmanPosition : MonoBehaviour
 {
     [Header("Kalman Filter Parameters")]
-    public float processNoise = 0.1f;
-    public float measurementNoise = 0.2f;
+    public float processNoise = 0.01f;
+    public float measurementNoise = 0.3f;
 
     [Header("Sensore")]
     public float sensorRange = 17.5f; // Raggio massimo di rilevamento dei sensori
     public LayerMask landmarkLayer; // Layer dei landmark nella scena
 
+    [Header("Database Manager")]
+    public DatabaseManager dbManager;
+
     private KalmanFilter positionKalmanFilterX;
     private KalmanFilter positionKalmanFilterZ;
     private Vector3 estimatedPosition;
+
+    private List<int> detectedLandmarkIDs = new List<int>();
 
     public void Start()
     {
         InitializeKalmanFilters();
     }
 
-    public void Update()
+    public async void Update()
     {
-        Vector3 noisyPosition = CalculateNoisyPositionFromLandmarks();
-        Debug.Log(noisyPosition);
-        Debug.Log(estimatedPosition);
+        PerformRaycastDetection();
+        Vector3 noisyPosition = await CalculateWeightedNoisyPositionFromIDs(); // Usando media ponderata
         UpdateEstimatedPosition(noisyPosition);
     }
 
@@ -33,27 +40,74 @@ public class RobotKalmanPosition : MonoBehaviour
         positionKalmanFilterZ = new KalmanFilter(0f, 1f, processNoise, measurementNoise);
     }
 
-    private Vector3 CalculateNoisyPositionFromLandmarks()
+    private void PerformRaycastDetection()
     {
-        Collider[] landmarks = Physics.OverlapSphere(transform.position, sensorRange, landmarkLayer);
-        if (landmarks.Length == 0)
+        detectedLandmarkIDs.Clear();
+
+        Collider[] colliders = Physics.OverlapSphere(transform.position, sensorRange, landmarkLayer);
+
+        foreach (Collider collider in colliders)
+        {
+            Landmark landmark = collider.GetComponent<Landmark>();
+            if (landmark != null)
+            {
+                Vector3 direction = (collider.transform.position - transform.position).normalized;
+                if (Physics.Raycast(transform.position, direction, out RaycastHit hit, sensorRange, landmarkLayer))
+                {
+                    if (hit.collider.GetComponent<Landmark>() == landmark)
+                    {
+                        landmark.OnHitByRay(this);
+                    }
+                }
+            }
+        }
+    }
+
+    public void ReceiveLandmarkID(int id)
+    {
+        if (!detectedLandmarkIDs.Contains(id))
+        {
+            detectedLandmarkIDs.Add(id);
+        }
+    }
+
+    private async Task<Vector3> CalculateWeightedNoisyPositionFromIDs()
+    {
+        if (detectedLandmarkIDs.Count == 0)
         {
             Debug.LogWarning("No landmarks detected!");
             return transform.position; // Usa la posizione corrente se non ci sono landmark
         }
 
-        Vector3 averagePosition = Vector3.zero;
-        foreach (Collider landmark in landmarks)
+        List<int> landmarkIDsCopy = new List<int>(detectedLandmarkIDs);
+        Vector3 weightedSum = Vector3.zero;
+        float totalWeight = 0;
+
+        foreach (int id in landmarkIDsCopy)
         {
-            averagePosition += landmark.transform.position;
+            try
+            {
+                Vector3 landmarkPosition = await dbManager.GetLandmarkPositionFromDatabase(id);
+                float distance = Vector3.Distance(transform.position, landmarkPosition);
+                float weight = 1f / Mathf.Pow(distance + 0.1f, 2);
+                weightedSum += landmarkPosition * weight;
+                totalWeight += weight;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error fetching landmark ID {id}: {ex.Message}");
+            }
         }
 
-        averagePosition /= landmarks.Length;
+        Vector3 weightedAverage = weightedSum / totalWeight;
+        /*float actualDistance = Vector3.Distance(transform.position, weightedAverage);
+        Debug.Log($"Estimated Position: {weightedAverage}, Actual Position: {transform.position}, Distance: {actualDistance}");*/
 
-        // Aggiungi rumore alla posizione media rilevata
-        float noiseX = Random.Range(-0.2f, 0.2f);
-        float noiseZ = Random.Range(-0.2f, 0.2f);
-        return new Vector3(averagePosition.x + noiseX, transform.position.y, averagePosition.z + noiseZ);
+
+        // Rumore
+        float noiseX = UnityEngine.Random.Range(-0.1f, 0.1f);
+        float noiseZ = UnityEngine.Random.Range(-0.1f, 0.1f);
+        return new Vector3(weightedAverage.x + noiseX, transform.position.y, weightedAverage.z + noiseZ);
     }
 
     private void UpdateEstimatedPosition(Vector3 noisyPosition)

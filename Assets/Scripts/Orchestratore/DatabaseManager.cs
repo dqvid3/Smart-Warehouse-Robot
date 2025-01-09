@@ -40,6 +40,36 @@ public class DatabaseManager : MonoBehaviour
         return robotPositions;
     }
 
+    public async Task<Vector3> GetLandmarkPositionFromDatabase(int id)
+    {
+        string query = @"
+        MATCH (l:Landmark {id: $id})
+        RETURN l.x AS x, l.z AS z
+        LIMIT 1
+    ";
+
+        // Esegui la query con il parametro id
+        var parameters = new Dictionary<string, object>
+    {
+        { "id", id }
+    };
+
+        var result = await neo4jHelper.ExecuteReadListAsync(query, parameters);
+
+        // Itera sui risultati (ci aspettiamo al massimo un record per il LIMIT 1)
+        foreach (var record in result)
+        {
+            float x = record["x"].As<float>();
+            float z = record["z"].As<float>();
+            return new Vector3(x, 0, z);
+        }
+
+        // Se nessun record è trovato, ritorna un valore di default o lancia un'eccezione
+        Debug.LogWarning($"No landmark found with ID: {id}");
+        return Vector3.zero;
+    }
+
+
 
     // Aggiorna lo stato di un robot
     public async Task UpdateRobotStateAsync(

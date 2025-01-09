@@ -27,7 +27,7 @@ public class RobotProximitySensor : MonoBehaviour
     private Vector3 estimatedPosition;
 
 
-    private float positionTolerance = 0.7f; // Tolleranza per la posizione
+    private float positionTolerance = 6f; // Tolleranza per la posizione
     private bool isNearDefaultPosition = false; // Flag per verificare se si trova vicino alla posizione predefinita
 
     // --- UNITY METHODS ---
@@ -50,6 +50,7 @@ public class RobotProximitySensor : MonoBehaviour
     {
         estimatedPosition = robotKalmanPosition.GetEstimatedPosition();
         isNearDefaultPosition = Vector3.Distance(defaultPosition, estimatedPosition) <= positionTolerance;
+        //Debug.Log($"{defaultPosition}, {estimatedPosition}, {Vector3.Distance(defaultPosition, estimatedPosition)}");
 
         if (isNearDefaultPosition)
         {
