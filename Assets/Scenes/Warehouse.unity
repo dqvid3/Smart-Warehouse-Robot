@@ -4676,7 +4676,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastDistance
-      value: 8
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: emergencyDistance
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: obstacleDetectionDistanceRobot
@@ -7630,7 +7634,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastDistance
-      value: 8
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: emergencyDistance
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: obstacleDetectionDistanceRobot
@@ -9530,7 +9538,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastDistance
-      value: 8
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: emergencyDistance
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: obstacleDetectionDistanceRobot

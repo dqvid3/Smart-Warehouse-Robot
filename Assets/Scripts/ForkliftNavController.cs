@@ -69,7 +69,10 @@ public class ForkliftNavController : MonoBehaviour
         // Avvicinamento alla box e prelievo
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
+
         parcel.transform.SetParent(grabPoint);
+        parcel.GetComponent<Rigidbody>().isKinematic = true;
+
         explainability.ShowExplanation("Box prelevata. Mi sposto verso lo scaffale corretto.");
         // Cambio direzione per lo scaffale
         qrCodeDirection = Vector3.forward;
@@ -88,6 +91,8 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
         yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
         parcel.transform.SetParent(null);
+        parcel.GetComponent<Rigidbody>().isKinematic = false;
+
         explainability.ShowExplanation("Box posata sullo scaffale. Sto tornando in posizione di standby.");
 
         // Ritorno alla posizione originale
@@ -118,7 +123,10 @@ public class ForkliftNavController : MonoBehaviour
         yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
         yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
         yield return LiftMastToHeight(slotPosition.y + 0.05f);
+
         parcel.transform.SetParent(grabPoint);
+        parcel.GetComponent<Rigidbody>().isKinematic = true; 
+        
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
 
         qrCodeDirection = Vector3.right;
@@ -130,6 +138,8 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(MoveToPosition(approachPosition));
         yield return StartCoroutine(LiftMastToHeight(conveyorDestination.y));
         parcel.transform.SetParent(null);
+        parcel.GetComponent<Rigidbody>().isKinematic = false;
+
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
         if (!robotManager.AreThereTask())
         {

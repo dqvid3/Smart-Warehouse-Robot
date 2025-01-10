@@ -10,7 +10,8 @@ public class RobotProximitySensor : MonoBehaviour
     public Robot robot;
 
     [Header("Sensore di prossimità")]
-    public float raycastDistance = 6f; 
+    public float raycastDistance = 3f;
+    public float emergencyDistance = 1.2f;
     public int numberOfRays = 180; 
     public float rayHeight = 0.4f; // Altezza dei raggi rispetto alla posizione del robot
 
@@ -66,6 +67,9 @@ public class RobotProximitySensor : MonoBehaviour
                 }
                 else
                 {
+                    if (Physics.Raycast(rayOrigin, direction, out RaycastHit hitEmergency, emergencyDistance)){
+                        isObstacleDetected=true;
+                    }
                     //Ostacolo statico
                     Debug.DrawRay(rayOrigin, direction * hit.distance, Color.yellow);
                 }
