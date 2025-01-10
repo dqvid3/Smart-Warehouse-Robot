@@ -93,8 +93,8 @@ public class ForkliftNavController : MonoBehaviour
         // Ritorno alla posizione originale
         _ = UpdateParcelLocation(timestamp, record["slotId"].As<long>());
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
-        yield return StartCoroutine(LiftMastToHeight(0));
         if (!robotManager.AreThereTask()) {
+            yield return StartCoroutine(LiftMastToHeight(0));
             yield return StartCoroutine(MoveToOriginPosition());
         }
     }
@@ -131,9 +131,9 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(LiftMastToHeight(conveyorDestination.y));
         parcel.transform.SetParent(null);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
-        yield return StartCoroutine(LiftMastToHeight(0));
         if (!robotManager.AreThereTask())
         {
+            yield return StartCoroutine(LiftMastToHeight(0));
             yield return StartCoroutine(MoveToOriginPosition());
         }
     }

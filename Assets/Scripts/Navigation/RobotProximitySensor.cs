@@ -7,117 +7,59 @@ public class RobotProximitySensor : MonoBehaviour
     // --- PUBLIC PROPERTIES ---
     [Header("Agent")]
     public NavMeshAgent agent;
-    public ForkliftNavController controller;
-    public RobotKalmanPosition robotKalmanPosition;
 
-    [Header("Sensore di prossimit‡")]
-    public float raycastDistance = 8f;
-    public int numberOfRays = 180;
-    public float obstacleDetectionDistancePlayer = 1.5f;
-    public float obstacleDetectionDistanceRobot = 2.5f;
-    public float rayHeight = 0.4f;
+    [Header("Sensore di prossimit√†")]
+    public float raycastDistance = 6f; 
+    public int numberOfRays = 180; 
+    public float rayHeight = 0.4f; // Altezza dei raggi rispetto alla posizione del robot
 
     // --- PRIVATE VARIABLES ---
-    private List<Vector3> compromisedRays = new List<Vector3>();
-    private List<float> compromisedAngles = new List<float>();
-
-    private bool isAvoidingPlayer = false;
-    private Vector3 avoidanceDirection;
-    private Vector3 lastKnownDestination;
-    private Vector3 defaultPosition;
-    private Vector3 estimatedPosition;
-
-
-    private float positionTolerance = 6f; // Tolleranza per la posizione
-    private bool isNearDefaultPosition = false; // Flag per verificare se si trova vicino alla posizione predefinita
+    private bool isObstacleDetected = false;
+    private Dictionary<Collider, Vector3> previousPositions = new Dictionary<Collider, Vector3>();
 
     // --- UNITY METHODS ---
-    public void Start()
-    {
-        defaultPosition = controller.defaultPosition;
-
-        // Blocca il movimento iniziale fino a quando non viene impostata una destinazione
-        agent.isStopped = true;
-
-        // Assicurati di avere una destinazione valida
-        if (agent.hasPath || agent.destination != Vector3.zero)
-        {
-            lastKnownDestination = agent.destination;
-            agent.isStopped = false; // Riattiva il movimento solo se la destinazione Ë valida
-        }
-    }
-
     public void Update()
     {
-        estimatedPosition = robotKalmanPosition.GetEstimatedPosition();
-        isNearDefaultPosition = Vector3.Distance(defaultPosition, estimatedPosition) <= positionTolerance;
-        //Debug.Log($"{defaultPosition}, {estimatedPosition}, {Vector3.Distance(defaultPosition, estimatedPosition)}");
+        HandleObstacleDetection();
 
-        if (isNearDefaultPosition)
+        // Ferma o riattiva il movimento in base alla presenza di un ostacolo
+        if (isObstacleDetected && !agent.isStopped)
         {
-            StartCoroutine(controller.SmoothRotateToDirection(Vector3.back));
-            DisableSensors();
-            return;
+            agent.isStopped = true;
         }
-        else
+        else if (!isObstacleDetected && agent.isStopped)
         {
-            if (!isAvoidingPlayer)
-            {
-                SaveCurrentDestination();
-            }
-
-            HandleObstacleDetectionAndAvoidance();
-
-            if (isAvoidingPlayer)
-            {
-                AvoidPlayer();
-            }
-            else if (!agent.hasPath || agent.remainingDistance < 0.1f)
-            {
-                RestoreLastKnownDestination();
-            }
+            agent.isStopped = false;
         }
     }
 
-    // --- OBSTACLE DETECTION & AVOIDANCE ---
+    // --- OBSTACLE DETECTION ---
 
-    private void HandleObstacleDetectionAndAvoidance()
+    private void HandleObstacleDetection()
     {
-        if (isNearDefaultPosition) return; // Ignora completamente la logica se vicino alla posizione predefinita
+        isObstacleDetected = false; // Resetta lo stato a ogni frame
 
-        compromisedRays.Clear();
-        compromisedAngles.Clear();
-
-        bool obstacleDetected = false;
-        Vector3 combinedAvoidanceDirection = Vector3.zero;
+        Vector3 rayOrigin = transform.position + new Vector3(0, rayHeight, 0);
 
         for (int i = 0; i < numberOfRays; i++)
         {
-            float angle = i * (360f / numberOfRays);
-            Vector3 direction = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
-            Vector3 rayOrigin = transform.position + new Vector3(0, rayHeight, 0);
+            float angle = i * (180f / (numberOfRays - 1)) - 90f; // Angolo da -90¬∞ a +90¬∞
+            Vector3 direction = Quaternion.Euler(0f, angle, 0f) * transform.forward;
 
-            if (Physics.Raycast(rayOrigin, direction, out RaycastHit hit, raycastDistance, ~LayerMask.GetMask("Ignore Raycast")))
+            if (Physics.Raycast(rayOrigin, direction, out RaycastHit hit, raycastDistance))
             {
-                bool isPlayer = hit.collider.CompareTag("Player");
-                bool isRobot = hit.collider.CompareTag("Robot");
-
-                // Controlla la distanza solo per i tag validi
-                if (isPlayer && hit.distance < obstacleDetectionDistancePlayer)
+                // Considera qualsiasi oggetto rilevato come ostacolo
+                if (IsObjectInMotion(hit.collider))
                 {
-                    obstacleDetected = true;
-                    combinedAvoidanceDirection -= direction / hit.distance;
+                    isObstacleDetected = true;
+                    //Ostacolo in movimento
                     Debug.DrawRay(rayOrigin, direction * hit.distance, Color.red);
-                }
-                else if (isRobot && hit.distance < obstacleDetectionDistanceRobot)
-                {
-                    obstacleDetected = true;
-                    combinedAvoidanceDirection -= direction / hit.distance * 0.6f; // Peso inferiore per i robot 
-                    Debug.DrawRay(rayOrigin, direction * hit.distance, Color.yellow);
+                    return; // Esce subito se rileva un ostacolo in movimento
                 }
                 else
                 {
-                    Debug.DrawRay(rayOrigin, direction * hit.distance, Color.green);
+                    //Ostacolo statico
+                    Debug.DrawRay(rayOrigin, direction * hit.distance, Color.yellow);
                 }
             }
             else
@@ -125,54 +67,22 @@ public class RobotProximitySensor : MonoBehaviour
                 Debug.DrawRay(rayOrigin, direction * raycastDistance, Color.green);
             }
         }
+    }
 
-        if (obstacleDetected)
+    private bool IsObjectInMotion(Collider collider)
+    {
+        // Controlla se l'oggetto si sta muovendo rilevando cambiamenti di posizione
+        if (previousPositions.TryGetValue(collider, out Vector3 previousPosition))
         {
-            isAvoidingPlayer = true;
-            avoidanceDirection = combinedAvoidanceDirection.normalized;
+            Vector3 currentPosition = collider.transform.position;
+            previousPositions[collider] = currentPosition;
+            return Vector3.SqrMagnitude(previousPosition - currentPosition) > 0.0001f; // Precisione per rilevare piccoli movimenti
         }
         else
         {
-            isAvoidingPlayer = false;
+            // Salva la posizione iniziale del collider
+            previousPositions[collider] = collider.transform.position;
+            return false;
         }
-    }
-
-
-    private void AvoidPlayer()
-    {
-        if (avoidanceDirection != Vector3.zero)
-        {
-            // Rotazione graduale per evitare il giocatore
-            Quaternion targetRotation = Quaternion.LookRotation(avoidanceDirection);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, 20f * Time.deltaTime);
-
-            // Continua verso la destinazione originale senza spostarsi lateralmente
-            Vector3 forwardMovement = transform.forward * agent.speed * Time.deltaTime;
-            agent.Move(forwardMovement);
-        }
-    }
-
-    private void SaveCurrentDestination()
-    {
-        if (agent.hasPath)
-        {
-            lastKnownDestination = agent.destination;
-        }
-    }
-
-    private void RestoreLastKnownDestination()
-    {
-        if (lastKnownDestination != null && lastKnownDestination != agent.destination)
-        {
-            agent.SetDestination(lastKnownDestination);
-        }
-    }
-
-    private void DisableSensors()
-    {
-        isAvoidingPlayer = false;
-        compromisedRays.Clear();
-        compromisedAngles.Clear();
-        avoidanceDirection = Vector3.zero;
     }
 }
