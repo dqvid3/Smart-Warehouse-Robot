@@ -7,6 +7,7 @@ using Neo4j.Driver;
 
 public class Robot : MonoBehaviour
 {
+    [Header ("Caratteristiche Robot")]
     public int id;
     public RobotManager robotManager;
     public Vector3 destination;
@@ -14,6 +15,8 @@ public class Robot : MonoBehaviour
     public RobotState currentState = RobotState.Idle;
     public string currentTask = "None";
     public bool isActive = true;
+    [Header("Script posizione stimata Robot")]
+    public RobotKalmanPosition kalmanPosition;
     private RobotState previousState = RobotState.Idle;
     private string previousTask = "None";
     private Vector3 previousDestination;
@@ -137,6 +140,10 @@ public class Robot : MonoBehaviour
         robotManager.NotifyTaskCompletion(id);
     }
 
+    public Vector3 GetEstimatedPosition()
+    {
+        return kalmanPosition.GetEstimatedPosition();
+    }
 
     private async Task UpdateStateInDatabase()
     {/*

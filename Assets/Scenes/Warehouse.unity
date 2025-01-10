@@ -4610,6 +4610,10 @@ PrefabInstance:
       propertyPath: sensor
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 3382456182264306211, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: robotManager
+      value: 
+      objectReference: {fileID: 1613119134}
     - target: {fileID: 3553434550661240214, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 2
@@ -7542,6 +7546,10 @@ PrefabInstance:
       propertyPath: sensor
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 3382456182264306211, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: robotManager
+      value: 
+      objectReference: {fileID: 1613119134}
     - target: {fileID: 3553434550661240214, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 2
@@ -8096,6 +8104,7 @@ MonoBehaviour:
   - {fileID: 1221965577}
   - {fileID: 8829896}
   databaseManager: {fileID: 1613119135}
+  robotKalmanPosition: {fileID: 0}
 --- !u!114 &1613119135
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9424,6 +9433,10 @@ PrefabInstance:
       propertyPath: sensor
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 3382456182264306211, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: robotManager
+      value: 
+      objectReference: {fileID: 1613119134}
     - target: {fileID: 3553434550661240214, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 2

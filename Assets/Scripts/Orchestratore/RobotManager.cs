@@ -11,6 +11,7 @@ public class RobotManager : MonoBehaviour
 {
     public List<Robot> robots = new();
     public DatabaseManager databaseManager;
+    public RobotKalmanPosition robotKalmanPosition;
     private Dictionary<Vector3, int> assignedParcels = new();
     private Queue<Vector3> pendingDeliveryTasks = new();
     private Queue<Vector3> pendingShippingTasks = new();
@@ -107,15 +108,15 @@ public class RobotManager : MonoBehaviour
                 if (robot1 == null || robot2 == null || !robot1.isActive || !robot2.isActive)
                     continue;
 
-                float distance1 = Vector3.Distance(robot1.transform.position, parcel1.Key);
-                float distance2 = Vector3.Distance(robot2.transform.position, parcel2.Key);
+                float distance1 = Vector3.Distance(robot1.GetEstimatedPosition(), parcel1.Key);
+                float distance2 = Vector3.Distance(robot2.GetEstimatedPosition(), parcel2.Key);
 
                 if (distance1 > distance2)
                 {
                     // Ferma il robot solo se non è già stato fermato
                     if (!stoppedRobots.Contains(robot1.id))
                     {
-                        StartCoroutine(DelayRobotMovement(robot1, 3f));
+                        StartCoroutine(DelayRobotMovement(robot1, 5f));
                         stoppedRobots.Add(robot1.id); // Aggiungi alla lista dei robot fermati
                     }
                 }
@@ -124,7 +125,7 @@ public class RobotManager : MonoBehaviour
                     // Ferma il robot solo se non è già stato fermato
                     if (!stoppedRobots.Contains(robot2.id))
                     {
-                        StartCoroutine(DelayRobotMovement(robot2, 3f));
+                        StartCoroutine(DelayRobotMovement(robot2, 5f));
                         stoppedRobots.Add(robot2.id); // Aggiungi alla lista dei robot fermati
                     }
                 }
@@ -194,6 +195,18 @@ public class RobotManager : MonoBehaviour
         return; // Task assegnato con successo
     }
 
+    public bool AreThereTask()
+    {
+        if (pendingDeliveryTasks.Count > 0)
+        {
+            return true;
+        }else if (pendingShippingTasks.Count > 0)
+        {
+            return true;
+        }
+        return false;
+    }
+
     private int currentConveyorIndex = 0;
     public Vector3 AskConveyorPosition()
     {
@@ -221,7 +234,9 @@ public class RobotManager : MonoBehaviour
         foreach (Robot robot in robots)
         {
             if (!robot.isActive || robot.currentState != RobotState.Idle) continue;
-            float distanceToParcel = Vector3.Distance(robot.transform.position, parcelPosition);
+            Vector3 robotPosition = robot.GetEstimatedPosition();
+            Debug.Log(robotPosition);
+            float distanceToParcel = Vector3.Distance(robotPosition, parcelPosition);
             if (distanceToParcel < shortestDistance)
             {
                 shortestDistance = distanceToParcel;

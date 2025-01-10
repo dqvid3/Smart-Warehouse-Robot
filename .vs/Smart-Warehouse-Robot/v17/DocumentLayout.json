@@ -1,26 +1,26 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\",
+  "WorkspaceRootPath": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\",
   "Documents": [
     {
       "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|c:\\progettiunity\\smart-warehouse-robot\\assets\\scripts\\navigation\\robotkalmanposition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\navigation\\robotkalmanposition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|c:\\progettiunity\\smart-warehouse-robot\\assets\\scripts\\orchestratore\\databasemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\navigation\\robotproximitysensor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\navigation\\robotproximitysensor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\orchestratore\\databasemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\orchestratore\\databasemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|c:\\progettiunity\\smart-warehouse-robot\\assets\\scripts\\scanmapforlandmarks.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\scanmapforlandmarks.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\navigation\\kalmanfilter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\navigation\\kalmanfilter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\navigation\\landmark.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\navigation\\landmark.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|C:\\ProgettiUnity\\Smart-Warehouse-Robot\\assets\\scripts\\navigation\\robotproximitysensor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{12CC2519-8F6B-5B12-6D6A-C9944B2431BE}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\navigation\\robotproximitysensor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -34,55 +34,51 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "DatabaseManager.cs",
               "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\DatabaseManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Orchestratore\\DatabaseManager.cs",
               "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\DatabaseManager.cs",
               "RelativeToolTip": "Assets\\Scripts\\Orchestratore\\DatabaseManager.cs",
-              "ViewState": "AgIAALIAAAAAAAAAAAAswNQAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAACMAAAAAAAAAAAAwwDwAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-09T15:16:35.554Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-01-09T15:51:20.792Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ScanMapForLandmarks.cs",
-              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\ScanMapForLandmarks.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\ScanMapForLandmarks.cs",
-              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\ScanMapForLandmarks.cs",
-              "RelativeToolTip": "Assets\\Scripts\\ScanMapForLandmarks.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACsAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "KalmanFilter.cs",
+              "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\KalmanFilter.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Navigation\\KalmanFilter.cs",
+              "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\KalmanFilter.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Navigation\\KalmanFilter.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAA9AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-09T14:43:28.366Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-01-09T15:36:54.009Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 1,
               "Title": "RobotProximitySensor.cs",
               "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\RobotProximitySensor.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Navigation\\RobotProximitySensor.cs",
               "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\RobotProximitySensor.cs",
               "RelativeToolTip": "Assets\\Scripts\\Navigation\\RobotProximitySensor.cs",
-              "ViewState": "AgIAAGYAAAAAAAAAAAAowGkAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAAAnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-09T14:25:55.424Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-01-09T15:32:14.648Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "Landmark.cs",
               "DocumentMoniker": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\Landmark.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Navigation\\Landmark.cs",
               "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\Landmark.cs",
               "RelativeToolTip": "Assets\\Scripts\\Navigation\\Landmark.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAvAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-09T14:18:28.393Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-01-09T14:18:28.393Z"
             },
             {
               "$type": "Document",
@@ -92,7 +88,7 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\Navigation\\RobotKalmanPosition.cs",
               "ToolTip": "C:\\ProgettiUnity\\Smart-Warehouse-Robot\\Assets\\Scripts\\Navigation\\RobotKalmanPosition.cs",
               "RelativeToolTip": "Assets\\Scripts\\Navigation\\RobotKalmanPosition.cs",
-              "ViewState": "AgIAAFQAAAAAAAAAAAAmwG0AAAA9AAAAAAAAAA==",
+              "ViewState": "AgIAAEsAAAAAAAAAAAAmwGcAAACBAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-01-09T09:27:53.905Z",
               "EditorCaption": ""

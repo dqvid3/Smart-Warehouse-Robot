@@ -8,6 +8,7 @@ using System;
 
 public class ForkliftNavController : MonoBehaviour
 {
+    public RobotManager robotManager;
     [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels
     [SerializeField] private Transform grabPoint;
     private NavMeshAgent agent;
@@ -93,7 +94,9 @@ public class ForkliftNavController : MonoBehaviour
         _ = UpdateParcelLocation(timestamp, record["slotId"].As<long>());
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
         yield return StartCoroutine(LiftMastToHeight(0));
-        yield return StartCoroutine(MoveToOriginPosition());
+        if (!robotManager.AreThereTask()) {
+            yield return StartCoroutine(MoveToOriginPosition());
+        }
     }
 
 
@@ -130,7 +133,10 @@ public class ForkliftNavController : MonoBehaviour
         parcel.transform.SetParent(null);
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
         yield return StartCoroutine(LiftMastToHeight(0));
-        yield return StartCoroutine(MoveToOriginPosition());
+        if (!robotManager.AreThereTask())
+        {
+            yield return StartCoroutine(MoveToOriginPosition());
+        }
     }
 
     public IEnumerator MoveToOriginPosition()

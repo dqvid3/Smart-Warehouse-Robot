@@ -134,7 +134,7 @@ public class RobotProximitySensor : MonoBehaviour
         {
             // Rotazione graduale per evitare il giocatore
             Quaternion targetRotation = Quaternion.LookRotation(avoidanceDirection);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, 30f * Time.deltaTime);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, 20f * Time.deltaTime);
 
             // Continua verso la destinazione originale senza spostarsi lateralmente
             Vector3 forwardMovement = transform.forward * agent.speed * Time.deltaTime;
