@@ -14,7 +14,7 @@ public class ForkliftNavController : MonoBehaviour
     private NavMeshAgent agent;
     private ForkliftController forkliftController;
     private float approachDistance = 3.2f;
-    private float takeBoxDistance = 1.35f;
+    private float takeBoxDistance = 1.3f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
     public Vector3 defaultPosition;
@@ -99,7 +99,6 @@ public class ForkliftNavController : MonoBehaviour
         }
     }
 
-
     public IEnumerator ShipParcel(Vector3 slotPosition, Vector3 conveyorDestination)
     {
         string positionId = "shipping_" + conveyorDestination.z.ToString();
@@ -176,8 +175,8 @@ public class ForkliftNavController : MonoBehaviour
     {
         Vector3 startPosition = transform.position;
         Vector3 targetPosition = startPosition - direction * distance;
-        float speed = 2;
-
+        float speed = 3f;
+        Debug.Log($"MoveBackwards - Start: {startPosition}, Direction: {direction}, Distance: {distance}, Target: {targetPosition}");
         while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
         {
             transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);

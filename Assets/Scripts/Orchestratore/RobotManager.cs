@@ -35,8 +35,8 @@ public class RobotManager : MonoBehaviour
             CheckForShippingOrders();
             CheckForDeliveries();
             CheckPendingTasks();
-            CheckAdjacentRobotConflicts();
         }
+        CheckAdjacentRobotConflicts();
     }
 
     private async void CheckForShippingOrders()
@@ -108,25 +108,31 @@ public class RobotManager : MonoBehaviour
                 if (robot1 == null || robot2 == null || !robot1.isActive || !robot2.isActive)
                     continue;
 
-                float distance1 = Vector3.Distance(robot1.GetEstimatedPosition(), parcel1.Key);
-                float distance2 = Vector3.Distance(robot2.GetEstimatedPosition(), parcel2.Key);
+                float distanceBetweenRobots = Vector3.Distance(robot1.GetEstimatedPosition(), robot2.GetEstimatedPosition());
 
-                if (distance1 > distance2)
+                // Fermare i robot solo se sono vicini
+                if (distanceBetweenRobots <= 7f) // Soglia per considerare i robot "vicini"
                 {
-                    // Ferma il robot solo se non è già stato fermato
-                    if (!stoppedRobots.Contains(robot1.id))
+                    Debug.Log($"Conflitto tra Robot {robot1.id} e Robot {robot2.id}, distanza: {distanceBetweenRobots}");
+
+                    float distance1 = Vector3.Distance(robot1.GetEstimatedPosition(), parcel1.Key);
+                    float distance2 = Vector3.Distance(robot2.GetEstimatedPosition(), parcel2.Key);
+
+                    if (distance1 > distance2)
                     {
-                        StartCoroutine(DelayRobotMovement(robot1, 5f));
-                        stoppedRobots.Add(robot1.id); // Aggiungi alla lista dei robot fermati
+                        if (!stoppedRobots.Contains(robot1.id))
+                        {
+                            StartCoroutine(DelayRobotMovement(robot1, 3f));
+                            stoppedRobots.Add(robot1.id);
+                        }
                     }
-                }
-                else
-                {
-                    // Ferma il robot solo se non è già stato fermato
-                    if (!stoppedRobots.Contains(robot2.id))
+                    else
                     {
-                        StartCoroutine(DelayRobotMovement(robot2, 5f));
-                        stoppedRobots.Add(robot2.id); // Aggiungi alla lista dei robot fermati
+                        if (!stoppedRobots.Contains(robot2.id))
+                        {
+                            StartCoroutine(DelayRobotMovement(robot2, 3f));
+                            stoppedRobots.Add(robot2.id);
+                        }
                     }
                 }
             }
@@ -200,7 +206,8 @@ public class RobotManager : MonoBehaviour
         if (pendingDeliveryTasks.Count > 0)
         {
             return true;
-        }else if (pendingShippingTasks.Count > 0)
+        }
+        else if (pendingShippingTasks.Count > 0)
         {
             return true;
         }
