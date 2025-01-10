@@ -34,7 +34,7 @@ public class ForkliftNavController : MonoBehaviour
         explainability = GetComponent<RobotExplainability>();
     }
 
-    public IEnumerator PickParcelFromDelivery(Vector3 parcelPosition, Action<string> callback)
+    public IEnumerator PickParcelFromDelivery(Vector3 parcelPosition, int robotId)
     {
         Vector3 qrCodeDirection = Vector3.left;
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
@@ -51,20 +51,13 @@ public class ForkliftNavController : MonoBehaviour
         // Lettura del QR code
         string qrCode = qrReader.ReadQRCode();
         string[] qrParts = qrCode.Split('|');
+        string timestamp = qrParts[0];
         string category = qrParts[1];
         explainability.ShowExplanation($"QR code letto. Categoria della box: {category}.");
-        callback(qrCode);
-    }
-
-    public IEnumerator DeliverToShelf(Vector3 parcelPosition, IRecord record, string timestamp)
-    {
-        Vector3 qrCodeDirection = Vector3.left;
-        Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
-        approachPosition.y = transform.position.y;
-        // Sollevamento della box
+        // Allineo le aste alla box
         GameObject parcel = GetParcel(parcelPosition.y + 1);
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
-        explainability.ShowExplanation("Sto sollevando la box.");
+        explainability.ShowExplanation("Allineo le aste alla box.");
 
         // Avvicinamento alla box e prelievo
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
@@ -74,6 +67,8 @@ public class ForkliftNavController : MonoBehaviour
         parcel.GetComponent<Rigidbody>().isKinematic = true;
 
         explainability.ShowExplanation("Box prelevata. Mi sposto verso lo scaffale corretto.");
+        yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
+        IRecord record = robotManager.AskSlot(category, robotId);
         // Cambio direzione per lo scaffale
         qrCodeDirection = Vector3.forward;
         Vector3 slotPosition = GetSlotPosition(record);
@@ -104,10 +99,8 @@ public class ForkliftNavController : MonoBehaviour
         }
     }
 
-    public IEnumerator ShipParcel(Vector3 slotPosition, Vector3 conveyorDestination)
+    public IEnumerator ShipParcel(Vector3 slotPosition, int robotId)
     {
-        string positionId = "shipping_" + conveyorDestination.z.ToString();
-        _ = neo4jHelper.UpdateParcelPositionStatusAsync(positionId, true);
         Vector3 qrCodeDirection = Vector3.forward;
         Vector3 approachPosition = slotPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
@@ -126,12 +119,13 @@ public class ForkliftNavController : MonoBehaviour
 
         parcel.transform.SetParent(grabPoint);
         parcel.GetComponent<Rigidbody>().isKinematic = true; 
-        
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
 
-        qrCodeDirection = Vector3.right;
+        Vector3 conveyorDestination = robotManager.AskConveyorPosition();
+        qrCodeDirection = Vector3.right;        
         approachPosition = conveyorDestination + qrCodeDirection * approachDistance;
         yield return MoveToPosition(approachPosition);
+        robotManager.FreeSlotPosition(robotId, conveyorDestination);
         _ = FreeSlot(slotPosition);
         yield return SmoothRotateToDirection(-qrCodeDirection);
         approachPosition.x -= takeBoxDistance;
@@ -186,7 +180,6 @@ public class ForkliftNavController : MonoBehaviour
         Vector3 startPosition = transform.position;
         Vector3 targetPosition = startPosition - direction * distance;
         float speed = 3f;
-        Debug.Log($"MoveBackwards - Start: {startPosition}, Direction: {direction}, Distance: {distance}, Target: {targetPosition}");
         while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
         {
             transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
@@ -215,8 +208,7 @@ public class ForkliftNavController : MonoBehaviour
         WITH p
         MATCH (s:Slot), (p:Parcel {timestamp: $parcelTimestamp})
         WHERE ID(s) = $slotId
-        CREATE (s)-[:CONTAINS]->(p)
-        SET s.occupied = true";
+        CREATE (s)-[:CONTAINS]->(p)";
         var parameters = new Dictionary<string, object> { { "parcelTimestamp", parcelTimestamp }, { "slotId", slotId } };
         await neo4jHelper.ExecuteWriteAsync(query, parameters);
     }

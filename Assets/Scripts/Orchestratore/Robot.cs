@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
-using System.Threading.Tasks;
 using Neo4j.Driver;
+using UnityEngine.AI;
 
 public class Robot : MonoBehaviour
 {
@@ -25,6 +25,7 @@ public class Robot : MonoBehaviour
     private ForkliftNavController forkliftNavController;
     private RobotExplainability explainability; // Per la spiegazione contestuale
     private RobotState lastKnownState = RobotState.Idle;
+    public float speed;
 
     public enum RobotState
     {
@@ -42,6 +43,7 @@ public class Robot : MonoBehaviour
         forkliftNavController = GetComponent<ForkliftNavController>();
         databaseManager = GetComponent<DatabaseManager>();
         explainability = GetComponent<RobotExplainability>(); // Inizializza la classe per le spiegazioni contestuali
+        speed = GetComponent<NavMeshAgent>().speed;
     }
 
     void Update()
@@ -122,21 +124,14 @@ public class Robot : MonoBehaviour
 
     private IEnumerator HandleDeliveryTask()
     {
-        _ = UpdateStateInDatabase();
-        string qrCodeResult = "";
-        yield return StartCoroutine(forkliftNavController.PickParcelFromDelivery(destination, (qrCode) => { qrCodeResult = qrCode; }));
-        string[] qrParts = qrCodeResult.Split('|');
-        IRecord record = robotManager.AskSlot(qrParts[1], id);
-        yield return StartCoroutine(forkliftNavController.DeliverToShelf(destination, record, qrParts[0]));
+        yield return StartCoroutine(forkliftNavController.PickParcelFromDelivery(destination, id));
         currentState = RobotState.Idle;
         robotManager.NotifyTaskCompletion(id);
     }
 
     private IEnumerator HandleShippingTask()
     {
-        _ = UpdateStateInDatabase();
-        Vector3 conveyorPosition = robotManager.AskConveyorPosition();
-        yield return StartCoroutine(forkliftNavController.ShipParcel(destination, conveyorPosition));
+        yield return StartCoroutine(forkliftNavController.ShipParcel(destination, id));
         currentState = RobotState.Idle;
         robotManager.NotifyTaskCompletion(id);
     }
@@ -144,23 +139,5 @@ public class Robot : MonoBehaviour
     public Vector3 GetEstimatedPosition()
     {
         return kalmanPosition.GetEstimatedPosition();
-    }
-
-    private async Task UpdateStateInDatabase()
-    {/*
-        if (databaseManager != null)
-        {
-            string robotState = currentState.ToString();
-            string task = currentTask != null ? currentTask : "No Task";
-            await databaseManager.UpdateRobotStateAsync(
-                id,
-                currentRobotPosition.x,
-                currentRobotPosition.z,
-                isActive,
-                task,
-                robotState,
-                batteryLevel
-            );
-        }*/
     }
 }

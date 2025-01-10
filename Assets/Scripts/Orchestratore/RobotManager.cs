@@ -1,35 +1,40 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Neo4j.Driver;
-using static Robot;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections;
 using UnityEngine.AI;
+using static Robot;
+using System.Collections;
 
 public class RobotManager : MonoBehaviour
 {
-    public List<Robot> robots = new();
-    private bool isPaused = false;
-    public DatabaseManager databaseManager;
-    public RobotKalmanPosition robotKalmanPosition;
-    private Dictionary<Vector3, int> assignedParcels = new();
-    private Queue<Vector3> pendingDeliveryTasks = new();
-    private Queue<Vector3> pendingShippingTasks = new();
-    private List<Vector3> conveyorPositions;
-    private float checkInterval = 2f;
-    private float lastCheckTime = 0f;
-    private HashSet<int> stoppedRobots = new HashSet<int>(); // Tiene traccia dei robot che sono stati fermati
+    public List<Robot> robots = new(); // List of all robots
+    private bool isPaused = false; // Pause state
+    public DatabaseManager databaseManager; // Database manager for querying data
+    private Dictionary<int, Vector3> robotAssignments = new(); // Tracks robot assignments (ID -> Position)
+    private Queue<(Vector3 Position, string Type)> pendingTasks = new(); // Queue for pending tasks (position + type)
+    private List<Vector3> shippingConveyorPositions; // List of conveyor positions
+    private float checkInterval = 2f; // Interval for checking tasks
+    private float lastCheckTime = 0f; // Last time tasks were checked
+    private int currentConveyorIndex = 0; // Index for cycling through conveyor positions
+    private float proximityCheckInterval = 1f; // Interval for checking robot proximity
+    private float lastProximityCheckTime = 0f; // Last time proximity was checked
+    private float proximityThreshold = 8f; // Distance threshold for stopping robots
 
     private async void Start()
     {
+        // Log all connected robots
         string robotList = string.Join(", ", robots.Select(r => "ID: " + r.id + ", Stato: " + r.currentState).ToArray());
         Debug.Log("RobotManager avviato.\nRobot collegati: [" + robotList + "]");
-        conveyorPositions = await databaseManager.GetConveyorPositions();
+
+        // Fetch conveyor positions from the database
+        shippingConveyorPositions = await databaseManager.GetConveyorPositions();
     }
 
     private void Update()
     {
+        // Check for tasks at regular intervals
         if (Time.time - lastCheckTime > checkInterval)
         {
             lastCheckTime = Time.time;
@@ -37,263 +42,167 @@ public class RobotManager : MonoBehaviour
             CheckForDeliveries();
             CheckPendingTasks();
         }
-        CheckAdjacentRobotConflicts();
 
-        if (Input.GetKeyDown(KeyCode.P)) // Usa il tasto P per mettere in pausa
+        // Check robot proximity at regular intervals
+        if (Time.time - lastProximityCheckTime > proximityCheckInterval)
+        {
+            lastProximityCheckTime = Time.time;
+            CheckRobotProximity();
+        }
+
+        // Toggle pause with the P key
+        if (Input.GetKeyDown(KeyCode.P))
         {
             TogglePause();
         }
     }
 
-    private void TogglePause()
+    private void CheckRobotProximity()
     {
-        isPaused = !isPaused;
-
-        if (isPaused)
+        // Iterate through all pairs of robots
+        for (int i = 0; i < robots.Count; i++)
         {
-            Time.timeScale = 0; // Ferma la scena
-            ShowAllExplanations();
-        }
-        else
-        {
-            Time.timeScale = 1; // Riprende la scena
-            HideAllExplanations();
-        }
-    }
-
-    private void ShowAllExplanations()
-    {
-        foreach (var robot in robots)
-        {
-            var explainability = robot.GetComponent<RobotExplainability>();
-            if (explainability != null)
+            for (int j = i + 1; j < robots.Count; j++)
             {
-                explainability.ToggleExplanation(true); // Mostra la vignetta
-            }
-        }
-    }
+                Robot robotA = robots[i];
+                Robot robotB = robots[j];
 
-    private void HideAllExplanations()
-    {
-        foreach (var robot in robots)
-        {
-            var explainability = robot.GetComponent<RobotExplainability>();
-            if (explainability != null)
-            {
-                explainability.ToggleExplanation(false); // Nascondi la vignetta
-            }
-        }
-    }
-
-
-    private async void CheckForShippingOrders()
-    {
-        var result = await databaseManager.GetOldestOrderWithParcelCountAsync();
-        foreach (var record in result)
-        {
-            var order = record["order"].As<INode>();
-            string orderId = order.Properties["orderId"].As<string>();
-            var parcelPositions = await databaseManager.GetParcelPositionsForOrderAsync(orderId);
-            foreach (var parcelPosition in parcelPositions)
-            {
-                if (assignedParcels.ContainsKey(parcelPosition)) continue;
-                AssignShippingTask(parcelPosition);
-            }
-        }
-    }
-
-    private async void CheckForDeliveries()
-    {
-        IList<IRecord> result = await databaseManager.GetParcelsInDeliveryArea();
-        foreach (var record in result)
-        {
-            Vector3 parcelPosition = new(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
-            if (assignedParcels.ContainsKey(parcelPosition)) continue;
-            AssignDeliveryTask(parcelPosition);
-        }
-    }
-
-    private void CheckPendingTasks()
-    {
-        // Controlla se ci sono robot disponibili PRIMA di assegnare i task
-        bool robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
-
-        if (robotsAvailable)
-        {
-            // Assegna i task di shipping
-            while (pendingShippingTasks.Count > 0 && robotsAvailable)
-            {
-                var nextTask = pendingShippingTasks.Dequeue();
-                AssignShippingTask(nextTask);
-                robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
-            }
-
-            // Assegna i task di delivery
-            while (pendingDeliveryTasks.Count > 0 && robotsAvailable)
-            {
-                var nextTask = pendingDeliveryTasks.Dequeue();
-                AssignDeliveryTask(nextTask);
-                robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
-            }
-        }
-    }
-
-    private void CheckAdjacentRobotConflicts()
-    {
-        foreach (var parcel1 in assignedParcels)
-        {
-            foreach (var parcel2 in assignedParcels)
-            {
-                // Ignora lo stesso pacco o non adiacenti
-                if (parcel1.Key == parcel2.Key || !IsAdjacent(parcel1.Key, parcel2.Key))
+                // Skip if either robot is not active or is idle
+                if (!robotA.isActive || !robotB.isActive || robotA.currentState == RobotState.Idle || robotB.currentState == RobotState.Idle)
                     continue;
 
-                // Trova i robot assegnati
-                Robot robot1 = robots.FirstOrDefault(r => r.id == parcel1.Value);
-                Robot robot2 = robots.FirstOrDefault(r => r.id == parcel2.Value);
+                // Get the estimated positions of the robots
+                Vector3 positionA = robotA.GetEstimatedPosition();
+                Vector3 positionB = robotB.GetEstimatedPosition();
 
-                if (robot1 == null || robot2 == null || !robot1.isActive || !robot2.isActive)
-                    continue;
+                // Calculate the distance between the two robots
+                float distance = Vector3.Distance(positionA, positionB);
+                Debug.Log($"{distance} DISTANZAA");
 
-                float distanceBetweenRobots = Vector3.Distance(robot1.GetEstimatedPosition(), robot2.GetEstimatedPosition());
-
-                // Fermare i robot solo se sono vicini
-                if (distanceBetweenRobots <= 7f) // Soglia per considerare i robot "vicini"
+                // If the robots are too close, stop the one further from its destination
+                if (distance < proximityThreshold)
                 {
-                    Debug.Log($"Conflitto tra Robot {robot1.id} e Robot {robot2.id}, distanza: {distanceBetweenRobots}");
+                    float distanceA = Vector3.Distance(positionA, robotA.destination);
+                    float distanceB = Vector3.Distance(positionB, robotB.destination);
 
-                    float distance1 = Vector3.Distance(robot1.GetEstimatedPosition(), parcel1.Key);
-                    float distance2 = Vector3.Distance(robot2.GetEstimatedPosition(), parcel2.Key);
-
-                    if (distance1 > distance2)
+                    if (distanceA > distanceB)
                     {
-                        if (!stoppedRobots.Contains(robot1.id))
-                        {
-                            StartCoroutine(DelayRobotMovement(robot1, 3f));
-                            stoppedRobots.Add(robot1.id);
-                        }
+                        Debug.Log($"Robot {robotA.id} fermato perché troppo vicino a Robot {robotB.id}.");
+                        StartCoroutine(StopRobot(robotA));
                     }
                     else
                     {
-                        if (!stoppedRobots.Contains(robot2.id))
-                        {
-                            StartCoroutine(DelayRobotMovement(robot2, 3f));
-                            stoppedRobots.Add(robot2.id);
-                        }
+                        Debug.Log($"Robot {robotB.id} fermato perché troppo vicino a Robot {robotA.id}.");
+                        StartCoroutine(StopRobot(robotB));
                     }
                 }
             }
         }
     }
 
-    private bool IsAdjacent(Vector3 slot1, Vector3 slot2)
+    private IEnumerator StopRobot(Robot robot)
     {
-        float distanceX = Mathf.Abs(slot1.x - slot2.x);
-        return distanceX >= 1.8f && distanceX <= 3f;
-    }
+        float stopDuration = 2;
+        Debug.Log($"Robot {robot.id} fermo per {stopDuration} secondi.");
 
-    private IEnumerator DelayRobotMovement(Robot robot, float delayTime)
-    {
-        Debug.Log($"Robot {robot.id} fermo per {delayTime} secondi.");
         NavMeshAgent agent = robot.GetComponent<NavMeshAgent>();
-        agent.isStopped = true;
-        yield return new WaitForSeconds(delayTime);
-        agent.isStopped = false;
+        agent.speed = 0; // Ferma il robot
+        yield return new WaitForSeconds(stopDuration); // Aspetta
+        agent.speed = robot.speed; // Riprendi il movimento
+
         Debug.Log($"Robot {robot.id} riprende il movimento.");
     }
 
-    private void AssignShippingTask(Vector3 parcelPosition)
+    private async void CheckForShippingOrders()
     {
-        if (assignedParcels.ContainsKey(parcelPosition))
-            return; // Considera il task già assegnato
+        // Fetch the oldest order with parcel count
+        var result = await databaseManager.GetOldestOrderWithParcelCountAsync();
+        foreach (var record in result)
+        {
+            var order = record["order"].As<INode>();
+            string orderId = order.Properties["orderId"].As<string>();
 
-        Robot availableRobot = FindAvailableRobot(parcelPosition);
+            // Get parcel positions for the order
+            var slotPositions = await databaseManager.GetParcelPositionsForOrderAsync(orderId);
+            foreach (var slot in slotPositions)
+            {
+                if (robotAssignments.ContainsValue(slot)) continue; // Skip if slot is already assigned
+                pendingTasks.Enqueue((slot, "Shipping")); // Add slot to pending tasks with task type
+            }
+        }
+    }
+
+    private async void CheckForDeliveries()
+    {
+        // Fetch parcels in the delivery area
+        IList<IRecord> result = await databaseManager.GetParcelsInDeliveryArea();
+        foreach (var record in result)
+        {
+            Vector3 parcelPosition = new(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
+            if (robotAssignments.ContainsValue(parcelPosition)) continue; // Skip if conveyor is already assigned
+            pendingTasks.Enqueue((parcelPosition, "Delivery")); // Add conveyor to pending tasks with task type
+        }
+    }
+
+    private void CheckPendingTasks()
+    {
+        // Check if there are available robots before assigning tasks
+        bool robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
+
+        if (robotsAvailable)
+        {
+            // Assign tasks if there are available robots
+            while (pendingTasks.Count > 0 && robotsAvailable)
+            {
+                var nextTask = pendingTasks.Dequeue();
+                AssignTask(nextTask.Position, nextTask.Type); // Pass task type explicitly
+                robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
+            }
+        }
+    }
+
+    private void AssignTask(Vector3 taskPosition, string taskType)
+    {
+        // Skip if the task is already assigned
+        if (robotAssignments.ContainsValue(taskPosition))
+        {
+            Debug.Log($"Task per la posizione {taskPosition} è già stato assegnato.");
+            return;
+        }
+
+        // Find an available robot
+        Robot availableRobot = FindAvailableRobot(taskPosition);
         if (availableRobot == null)
         {
-            if (!pendingShippingTasks.Contains(parcelPosition))
+            if (!pendingTasks.Any(t => t.Position == taskPosition))
             {
-                pendingShippingTasks.Enqueue(parcelPosition);
-                Debug.LogWarning($"Nessun robot disponibile per Shipping. Compito aggiunto in coda. ({parcelPosition})");
+                pendingTasks.Enqueue((taskPosition, taskType)); // Re-add to queue if no robot is available
+                Debug.LogWarning($"Nessun robot disponibile. Compito riaggiunto in coda. ({taskPosition})");
             }
-            return; // Nessun robot disponibile
+            return;
         }
 
-        Debug.Log($"Assegnato shipping task al Robot {availableRobot.id}.");
-        availableRobot.destination = parcelPosition;
-        availableRobot.currentState = RobotState.ShippingState;
-        assignedParcels[parcelPosition] = availableRobot.id; // Registra l'assegnazione
-        return; // Task assegnato con successo
+        // Assign the task to the robot
+        Debug.Log($"Assegnato task di {taskType} per la posizione {taskPosition} al Robot {availableRobot.id}.");
+        availableRobot.destination = taskPosition;
+        availableRobot.currentState = taskType == "Delivery" ? RobotState.DeliveryState : RobotState.ShippingState;
+        robotAssignments[availableRobot.id] = taskPosition; // Track the assignment
     }
 
-    private void AssignDeliveryTask(Vector3 parcelPosition)
-    {
-        if (assignedParcels.ContainsKey(parcelPosition))
-            return; // Considera il task già assegnato
-
-        Robot availableRobot = FindAvailableRobot(parcelPosition);
-        if (availableRobot == null)
-        {
-            if (!pendingDeliveryTasks.Contains(parcelPosition))
-            {
-                pendingDeliveryTasks.Enqueue(parcelPosition);
-                Debug.LogWarning($"Nessun robot disponibile per Delivery. Compito aggiunto in coda. {parcelPosition}");
-            }
-            return; // Nessun robot disponibile
-        }
-
-        Debug.Log($"Assegnato delivery task al Robot {availableRobot.id}.");
-        availableRobot.destination = parcelPosition;
-        availableRobot.currentState = RobotState.DeliveryState;
-        assignedParcels[parcelPosition] = availableRobot.id; // Registra l'assegnazione
-        return; // Task assegnato con successo
-    }
-
-    public bool AreThereTask()
-    {
-        if (pendingDeliveryTasks.Count > 0)
-        {
-            return true;
-        }
-        else if (pendingShippingTasks.Count > 0)
-        {
-            return true;
-        }
-        return false;
-    }
-
-    private int currentConveyorIndex = 0;
-    public Vector3 AskConveyorPosition()
-    {
-        Vector3 selectedPosition = conveyorPositions[currentConveyorIndex];
-        currentConveyorIndex = (currentConveyorIndex + 1) % conveyorPositions.Count;
-        return selectedPosition;
-    }
-
-    public IRecord AskSlot(string category, int robotId)
-    {
-        IList<IRecord> result = Task.Run(() => databaseManager.GetAvailableSlot(category)).Result;
-        var record = result[0];
-        float x = record[0].As<float>();
-        float y = record[1].As<float>();
-        float z = record[2].As<float>();
-        Vector3 slotPosition = new(x, y, z);
-        assignedParcels[slotPosition] = robotId;
-        return result[0];
-    }
-
-    private Robot FindAvailableRobot(Vector3 parcelPosition)
+    private Robot FindAvailableRobot(Vector3 taskPosition)
     {
         Robot closestRobot = null;
         float shortestDistance = float.MaxValue;
+
+        // Find the closest idle robot
         foreach (Robot robot in robots)
         {
             if (!robot.isActive || robot.currentState != RobotState.Idle) continue;
             Vector3 robotPosition = robot.GetEstimatedPosition();
-            Debug.Log(robotPosition);
-            float distanceToParcel = Vector3.Distance(robotPosition, parcelPosition);
-            if (distanceToParcel < shortestDistance)
+            float distanceToTask = Vector3.Distance(robotPosition, taskPosition);
+            if (distanceToTask < shortestDistance)
             {
-                shortestDistance = distanceToParcel;
+                shortestDistance = distanceToTask;
                 closestRobot = robot;
             }
         }
@@ -302,9 +211,81 @@ public class RobotManager : MonoBehaviour
 
     public void NotifyTaskCompletion(int robotId)
     {
-        var parcelsToRemove = assignedParcels.Where(pair => pair.Value == robotId).ToList();
-        foreach (var pair in parcelsToRemove) assignedParcels.Remove(pair.Key);
-        // Rimuovi il robot dalla lista dei robot fermati quando ha finito
-        stoppedRobots.Remove(robotId);
+        // Remove the robot's assignment when the task is completed
+        if (robotAssignments.TryGetValue(robotId, out Vector3 taskPosition))
+        {
+            Debug.Log($"Robot {robotId}: Rimozione assegnazione per la posizione {taskPosition} completata.");
+            robotAssignments.Remove(robotId);
+        }
+    }
+
+    public IRecord AskSlot(string category, int robotId)
+    {
+        // Get an available slot from the database
+        IList<IRecord> result = Task.Run(() => databaseManager.GetAvailableSlot(category)).Result;
+        var record = result[0];
+        float x = record[0].As<float>();
+        float y = record[1].As<float>();
+        float z = record[2].As<float>();
+        Vector3 slotPosition = new(x, y, z);
+
+        // Remove the robot's current assignment (if any)
+        if (robotAssignments.ContainsKey(robotId))
+        {
+            Vector3 currentPosition = robotAssignments[robotId];
+            Debug.Log($"Robot {robotId}: Rimozione assegnazione corrente per la posizione {currentPosition}.");
+            robotAssignments.Remove(robotId); // Remove the current assignment
+        }
+
+        // Assign the robot to the new slot position
+        Debug.Log($"Robot {robotId}: Nuova assegnazione per lo slot {slotPosition}.");
+        robotAssignments[robotId] = slotPosition; // Assign the robot to the new slot
+        return record;
+    }
+
+    public void FreeSlotPosition(int robotId, Vector3 conveyorPosition)
+    {
+        // Remove the robot's current assignment (if any)
+        if (robotAssignments.ContainsKey(robotId))
+        {
+            Vector3 currentPosition = robotAssignments[robotId];
+            Debug.Log($"Robot {robotId}: Rimozione assegnazione corrente per la posizione {currentPosition}.");
+            robotAssignments.Remove(robotId); // Remove the current assignment
+        }
+
+        // Assign the robot to the new conveyor position
+        Debug.Log($"Robot {robotId}: Nuova assegnazione per il conveyor {conveyorPosition}.");
+        robotAssignments[robotId] = conveyorPosition; // Assign the robot to the new conveyor
+    }
+
+    public Vector3 AskConveyorPosition()
+    {
+        // Get the next conveyor position in a round-robin fashion
+        Vector3 selectedPosition = shippingConveyorPositions[currentConveyorIndex];
+        currentConveyorIndex = (currentConveyorIndex + 1) % shippingConveyorPositions.Count;
+        return selectedPosition;
+    }
+
+    public bool AreThereTask()
+    {
+        // Check if there are any pending tasks
+        return pendingTasks.Count > 0;
+    }
+
+    private void TogglePause()
+    {
+        // Toggle pause state
+        isPaused = !isPaused;
+        Time.timeScale = isPaused ? 0 : 1; // Pause or resume the scene
+
+        // Show/hide explanations for all robots
+        foreach (var robot in robots)
+        {
+            var explainability = robot.GetComponent<RobotExplainability>();
+            if (explainability != null)
+            {
+                explainability.ToggleExplanation(isPaused); // Show/hide explanations
+            }
+        }
     }
 }
