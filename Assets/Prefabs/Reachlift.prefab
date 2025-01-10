@@ -977,6 +977,7 @@ MonoBehaviour:
   currentState: 0
   currentTask: None
   isActive: 0
+  isPaused: 0
   kalmanPosition: {fileID: 8622431091526066733}
 --- !u!114 &5208561982904702695
 MonoBehaviour:
@@ -1022,11 +1023,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   agent: {fileID: 3095190479552573583}
-  controller: {fileID: 3382456182264306211}
-  robotKalmanPosition: {fileID: 8622431091526066733}
+  robot: {fileID: 401018539474953004}
   raycastDistance: 20
   numberOfRays: 180
-  obstacleDetectionDistance: 1.5
   rayHeight: 0.4
 --- !u!1 &9171051550921637103 stripped
 GameObject:

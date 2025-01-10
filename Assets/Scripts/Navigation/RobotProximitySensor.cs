@@ -7,6 +7,7 @@ public class RobotProximitySensor : MonoBehaviour
     // --- PUBLIC PROPERTIES ---
     [Header("Agent")]
     public NavMeshAgent agent;
+    public Robot robot;
 
     [Header("Sensore di prossimità")]
     public float raycastDistance = 6f; 
@@ -20,16 +21,23 @@ public class RobotProximitySensor : MonoBehaviour
     // --- UNITY METHODS ---
     public void Update()
     {
-        HandleObstacleDetection();
-
-        // Ferma o riattiva il movimento in base alla presenza di un ostacolo
-        if (isObstacleDetected && !agent.isStopped)
+        if (robot.isPaused)
         {
-            agent.isStopped = true;
+            return;
         }
-        else if (!isObstacleDetected && agent.isStopped)
-        {
-            agent.isStopped = false;
+        else 
+        { 
+            HandleObstacleDetection();
+
+            // Ferma o riattiva il movimento in base alla presenza di un ostacolo
+            if (isObstacleDetected && !agent.isStopped)
+            {
+                agent.isStopped = true;
+            }
+            else if (!isObstacleDetected && agent.isStopped)
+            {
+                agent.isStopped = false;
+            }
         }
     }
 

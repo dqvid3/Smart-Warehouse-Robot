@@ -13,8 +13,11 @@ public class Robot : MonoBehaviour
     public RobotState currentState = RobotState.Idle;
     public string currentTask = "None";
     public bool isActive = true;
+    public bool isPaused = false;
+
     [Header("Script posizione stimata Robot")]
     public RobotKalmanPosition kalmanPosition;
+
     private RobotState previousState = RobotState.Idle;
     private string previousTask = "None";
     private Vector3 previousDestination;

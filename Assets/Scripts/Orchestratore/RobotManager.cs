@@ -149,8 +149,10 @@ public class RobotManager : MonoBehaviour
     {
         Debug.Log($"Robot {robot.id} fermo per {delayTime} secondi.");
         NavMeshAgent agent = robot.GetComponent<NavMeshAgent>();
+        robot.isPaused = true;
         agent.isStopped = true;
         yield return new WaitForSeconds(delayTime);
+        robot.isPaused = false;
         agent.isStopped = false;
         Debug.Log($"Robot {robot.id} riprende il movimento.");
     }
