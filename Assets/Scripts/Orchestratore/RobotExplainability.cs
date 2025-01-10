@@ -5,7 +5,7 @@ public class RobotExplainability : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI explanationText; // Campo per il testo
     [SerializeField] private Canvas explanationCanvas;       // Canvas per mostrare le spiegazioni
-    private float messageDisplayTime = 8f;                   // Durata del messaggio
+    public float messageDisplayTime = 8f;                   // Durata del messaggio
 
     private void Start()
     {
@@ -15,7 +15,7 @@ public class RobotExplainability : MonoBehaviour
         }
     }
 
-    public void ShowExplanation(string message, float duration = 8f)
+    public void ShowExplanation(string message)
     {
         if (explanationText != null)
         {
@@ -26,7 +26,7 @@ public class RobotExplainability : MonoBehaviour
         {
             explanationCanvas.gameObject.SetActive(true);
             CancelInvoke(nameof(HideExplanation));
-            Invoke(nameof(HideExplanation), duration);
+            Invoke(nameof(HideExplanation), messageDisplayTime);
         }
     }
 

@@ -4674,6 +4674,18 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: raycastDistance
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleDetectionDistanceRobot
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleDetectionDistancePlayer
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 6406223690766117192, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 2
@@ -6072,6 +6084,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   explanationText: {fileID: 1531388929}
   explanationCanvas: {fileID: 2050296834}
+  messageDisplayTime: 8
 --- !u!1 &1222037628
 GameObject:
   m_ObjectHideFlags: 0
@@ -6927,6 +6940,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   explanationText: {fileID: 925245565}
   explanationCanvas: {fileID: 1696689630}
+  messageDisplayTime: 8
 --- !u!1001 &1510456821
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7614,6 +7628,18 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: raycastDistance
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleDetectionDistanceRobot
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleDetectionDistancePlayer
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 6406223690766117192, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 2
@@ -7742,6 +7768,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   explanationText: {fileID: 509787911}
   explanationCanvas: {fileID: 1699823807}
+  messageDisplayTime: 8
 --- !u!1001 &1586354902
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9500,6 +9527,18 @@ PrefabInstance:
     - target: {fileID: 6227525030149813167, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: raycastDistance
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleDetectionDistanceRobot
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: obstacleDetectionDistancePlayer
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 6406223690766117192, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer

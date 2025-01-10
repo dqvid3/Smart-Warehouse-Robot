@@ -11,9 +11,10 @@ public class RobotProximitySensor : MonoBehaviour
     public RobotKalmanPosition robotKalmanPosition;
 
     [Header("Sensore di prossimità")]
-    public float raycastDistance = 20f;
+    public float raycastDistance = 8f;
     public int numberOfRays = 180;
-    public float obstacleDetectionDistance = 1f;
+    public float obstacleDetectionDistancePlayer = 1.5f;
+    public float obstacleDetectionDistanceRobot = 2.5f;
     public float rayHeight = 0.4f;
 
     // --- PRIVATE VARIABLES ---
@@ -87,7 +88,7 @@ public class RobotProximitySensor : MonoBehaviour
         compromisedRays.Clear();
         compromisedAngles.Clear();
 
-        bool playerDetected = false;
+        bool obstacleDetected = false;
         Vector3 combinedAvoidanceDirection = Vector3.zero;
 
         for (int i = 0; i < numberOfRays; i++)
@@ -98,13 +99,21 @@ public class RobotProximitySensor : MonoBehaviour
 
             if (Physics.Raycast(rayOrigin, direction, out RaycastHit hit, raycastDistance, ~LayerMask.GetMask("Ignore Raycast")))
             {
-                if ((hit.collider.CompareTag("Player") || hit.collider.CompareTag("Robot")) && hit.distance < obstacleDetectionDistance)
+                bool isPlayer = hit.collider.CompareTag("Player");
+                bool isRobot = hit.collider.CompareTag("Robot");
+
+                // Controlla la distanza solo per i tag validi
+                if (isPlayer && hit.distance < obstacleDetectionDistancePlayer)
                 {
-                    playerDetected = true;
-                    compromisedRays.Add(direction);
-                    compromisedAngles.Add(angle);
+                    obstacleDetected = true;
                     combinedAvoidanceDirection -= direction / hit.distance;
                     Debug.DrawRay(rayOrigin, direction * hit.distance, Color.red);
+                }
+                else if (isRobot && hit.distance < obstacleDetectionDistanceRobot)
+                {
+                    obstacleDetected = true;
+                    combinedAvoidanceDirection -= direction / hit.distance * 0.6f; // Peso inferiore per i robot 
+                    Debug.DrawRay(rayOrigin, direction * hit.distance, Color.yellow);
                 }
                 else
                 {
@@ -117,7 +126,7 @@ public class RobotProximitySensor : MonoBehaviour
             }
         }
 
-        if (playerDetected)
+        if (obstacleDetected)
         {
             isAvoidingPlayer = true;
             avoidanceDirection = combinedAvoidanceDirection.normalized;
@@ -127,6 +136,7 @@ public class RobotProximitySensor : MonoBehaviour
             isAvoidingPlayer = false;
         }
     }
+
 
     private void AvoidPlayer()
     {
