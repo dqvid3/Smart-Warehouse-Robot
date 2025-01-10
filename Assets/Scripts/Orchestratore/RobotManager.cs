@@ -77,7 +77,6 @@ public class RobotManager : MonoBehaviour
 
                 // Calculate the distance between the two robots
                 float distance = Vector3.Distance(positionA, positionB);
-                Debug.Log($"{distance} DISTANZAA");
 
                 // If the robots are too close, stop the one further from its destination
                 if (distance < proximityThreshold)
@@ -102,7 +101,7 @@ public class RobotManager : MonoBehaviour
 
     private IEnumerator StopRobot(Robot robot)
     {
-        float stopDuration = 2;
+        float stopDuration = 4;
         Debug.Log($"Robot {robot.id} fermo per {stopDuration} secondi.");
 
         NavMeshAgent agent = robot.GetComponent<NavMeshAgent>();
