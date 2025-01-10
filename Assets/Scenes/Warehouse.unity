@@ -6088,7 +6088,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   explanationText: {fileID: 1531388929}
   explanationCanvas: {fileID: 2050296834}
-  messageDisplayTime: 8
 --- !u!1 &1222037628
 GameObject:
   m_ObjectHideFlags: 0
@@ -6944,7 +6943,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   explanationText: {fileID: 925245565}
   explanationCanvas: {fileID: 1696689630}
-  messageDisplayTime: 8
 --- !u!1001 &1510456821
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7776,7 +7774,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   explanationText: {fileID: 509787911}
   explanationCanvas: {fileID: 1699823807}
-  messageDisplayTime: 8
 --- !u!1001 &1586354902
 PrefabInstance:
   m_ObjectHideFlags: 0

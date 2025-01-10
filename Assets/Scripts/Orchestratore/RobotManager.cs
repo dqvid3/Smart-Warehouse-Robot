@@ -10,6 +10,7 @@ using UnityEngine.AI;
 public class RobotManager : MonoBehaviour
 {
     public List<Robot> robots = new();
+    private bool isPaused = false;
     public DatabaseManager databaseManager;
     public RobotKalmanPosition robotKalmanPosition;
     private Dictionary<Vector3, int> assignedParcels = new();
@@ -37,7 +38,53 @@ public class RobotManager : MonoBehaviour
             CheckPendingTasks();
         }
         CheckAdjacentRobotConflicts();
+
+        if (Input.GetKeyDown(KeyCode.P)) // Usa il tasto P per mettere in pausa
+        {
+            TogglePause();
+        }
     }
+
+    private void TogglePause()
+    {
+        isPaused = !isPaused;
+
+        if (isPaused)
+        {
+            Time.timeScale = 0; // Ferma la scena
+            ShowAllExplanations();
+        }
+        else
+        {
+            Time.timeScale = 1; // Riprende la scena
+            HideAllExplanations();
+        }
+    }
+
+    private void ShowAllExplanations()
+    {
+        foreach (var robot in robots)
+        {
+            var explainability = robot.GetComponent<RobotExplainability>();
+            if (explainability != null)
+            {
+                explainability.ToggleExplanation(true); // Mostra la vignetta
+            }
+        }
+    }
+
+    private void HideAllExplanations()
+    {
+        foreach (var robot in robots)
+        {
+            var explainability = robot.GetComponent<RobotExplainability>();
+            if (explainability != null)
+            {
+                explainability.ToggleExplanation(false); // Nascondi la vignetta
+            }
+        }
+    }
+
 
     private async void CheckForShippingOrders()
     {
@@ -149,10 +196,8 @@ public class RobotManager : MonoBehaviour
     {
         Debug.Log($"Robot {robot.id} fermo per {delayTime} secondi.");
         NavMeshAgent agent = robot.GetComponent<NavMeshAgent>();
-        robot.isPaused = true;
         agent.isStopped = true;
         yield return new WaitForSeconds(delayTime);
-        robot.isPaused = false;
         agent.isStopped = false;
         Debug.Log($"Robot {robot.id} riprende il movimento.");
     }

@@ -5,7 +5,7 @@ using Neo4j.Driver;
 
 public class Robot : MonoBehaviour
 {
-    [Header ("Caratteristiche Robot")]
+    [Header("Caratteristiche Robot")]
     public int id;
     public RobotManager robotManager;
     public Vector3 destination;
