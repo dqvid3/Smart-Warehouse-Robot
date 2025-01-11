@@ -246,6 +246,10 @@ PrefabInstance:
       propertyPath: m_AngularDrag
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 6038245046323913099, guid: 42ee078960b644a5f9ed1e69d5bc229e, type: 3}
+      propertyPath: m_Constraints
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8041253230537007012, guid: 42ee078960b644a5f9ed1e69d5bc229e, type: 3}
       propertyPath: m_Name
       value: Sunoko

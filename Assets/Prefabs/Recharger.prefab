@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6562676984420592124}
   - component: {fileID: 8986780715568204115}
   - component: {fileID: 2372190042315190574}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Recharger
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -7636,7 +7636,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: emergencyDistance
-      value: 1.2
+      value: 0.8
       objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: obstacleDetectionDistanceRobot
@@ -8136,7 +8136,6 @@ MonoBehaviour:
   - {fileID: 1221965577}
   - {fileID: 8829896}
   databaseManager: {fileID: 1613119135}
-  robotKalmanPosition: {fileID: 0}
 --- !u!114 &1613119135
 MonoBehaviour:
   m_ObjectHideFlags: 0
