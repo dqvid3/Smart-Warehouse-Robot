@@ -19,6 +19,7 @@ public class ForkliftNavController : MonoBehaviour
     private QRCodeReader qrReader;
     public Vector3 defaultPosition;
     private RobotExplainability explainability;
+    private Rigidbody parcelRigidbody;
 
     private void Awake()
     {
@@ -64,7 +65,10 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
 
         parcel.transform.SetParent(grabPoint);
-        parcel.GetComponent<Rigidbody>().isKinematic = true;
+        parcelRigidbody = parcel.GetComponent<Rigidbody>();
+        parcelRigidbody.isKinematic = true;
+        parcelRigidbody.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+
 
         explainability.ShowExplanation("Box prelevata. Mi sposto verso lo scaffale corretto.");
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
@@ -86,7 +90,9 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
         yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
         parcel.transform.SetParent(null);
-        parcel.GetComponent<Rigidbody>().isKinematic = false;
+        parcelRigidbody = parcel.GetComponent<Rigidbody>();
+        parcelRigidbody.isKinematic = false;
+        parcelRigidbody.constraints = RigidbodyConstraints.None;
 
         explainability.ShowExplanation("Box posata sullo scaffale. Sto tornando in posizione di standby.");
 
@@ -118,7 +124,9 @@ public class ForkliftNavController : MonoBehaviour
         yield return LiftMastToHeight(slotPosition.y + 0.05f);
 
         parcel.transform.SetParent(grabPoint);
-        parcel.GetComponent<Rigidbody>().isKinematic = true; 
+        Rigidbody parcelRigidbody = parcel.GetComponent<Rigidbody>();
+        parcelRigidbody.isKinematic = true;
+        parcelRigidbody.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
 
         Vector3 conveyorDestination = robotManager.AskConveyorPosition();
@@ -132,7 +140,10 @@ public class ForkliftNavController : MonoBehaviour
         yield return StartCoroutine(MoveToPosition(approachPosition));
         yield return StartCoroutine(LiftMastToHeight(conveyorDestination.y));
         parcel.transform.SetParent(null);
-        parcel.GetComponent<Rigidbody>().isKinematic = false;
+        parcelRigidbody = parcel.GetComponent<Rigidbody>();
+        parcelRigidbody.isKinematic = false;
+        parcelRigidbody.constraints = RigidbodyConstraints.None;
+
 
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
         if (!robotManager.AreThereTask())
