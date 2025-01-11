@@ -21,7 +21,6 @@ public class Robot : MonoBehaviour
     private RobotState previousState = RobotState.Idle;
     private string previousTask = "None";
     private Vector3 previousDestination;
-    private DatabaseManager databaseManager;
     private ForkliftNavController forkliftNavController;
     private RobotExplainability explainability; // Per la spiegazione contestuale
     private RobotState lastKnownState = RobotState.Idle;
@@ -41,7 +40,6 @@ public class Robot : MonoBehaviour
     void Start()
     {
         forkliftNavController = GetComponent<ForkliftNavController>();
-        databaseManager = GetComponent<DatabaseManager>();
         explainability = GetComponent<RobotExplainability>(); // Inizializza la classe per le spiegazioni contestuali
         speed = GetComponent<NavMeshAgent>().speed;
     }
@@ -126,7 +124,6 @@ public class Robot : MonoBehaviour
     {
         yield return StartCoroutine(forkliftNavController.PickParcelFromDelivery(destination, id));
         currentState = RobotState.Idle;
-        robotManager.NotifyTaskCompletion(id);
     }
 
     private IEnumerator HandleShippingTask()

@@ -20,7 +20,7 @@ public class RobotManager : MonoBehaviour
     private int currentConveyorIndex = 0; // Index for cycling through conveyor positions
     private float proximityCheckInterval = 1f; // Interval for checking robot proximity
     private float lastProximityCheckTime = 0f; // Last time proximity was checked
-    private float proximityThreshold = 8f; // Distance threshold for stopping robots
+    private float proximityThreshold = 9f; // Distance threshold for stopping robots
 
     private async void Start()
     {
@@ -75,9 +75,22 @@ public class RobotManager : MonoBehaviour
                 Vector3 positionA = robotA.GetEstimatedPosition();
                 Vector3 positionB = robotB.GetEstimatedPosition();
 
+                if (!robotAssignments.ContainsKey(robotA.id) || !robotAssignments.ContainsKey(robotB.id)){
+                    // Get the default positions of the robots
+                    Vector3 defaultPositionA = robotA.GetComponent<ForkliftNavController>().defaultPosition;
+                    Vector3 defaultPositionB = robotB.GetComponent<ForkliftNavController>().defaultPosition;
+
+                    // Calculate the distance between the robots and their default positions
+                    float distanceFromDefaultA = Vector3.Distance(positionA, defaultPositionA);
+                    float distanceFromDefaultB = Vector3.Distance(positionB, defaultPositionB);
+
+                    // Skip if either robot is too close from its default position
+                    if (distanceFromDefaultA < 5 || distanceFromDefaultB < 5)
+                        continue;
+                }
+                
                 // Calculate the distance between the two robots
                 float distance = Vector3.Distance(positionA, positionB);
-
                 // If the robots are too close, stop the one further from its destination
                 if (distance < proximityThreshold)
                 {
