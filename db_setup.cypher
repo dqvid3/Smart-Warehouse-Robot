@@ -1,8 +1,10 @@
+
 // Create areas 
 CREATE (warehouse:Area {type: "Warehouse", center_x: 0, center_z: 0, length: 50, width: 50})
 CREATE (shipping:Area {type: "Shipping", center_x: -40, center_z: 0, length: 30, width: 50})
 CREATE (delivery:Area {type: "Delivery", center_x: 40, center_z: 0, length: 30, width: 50})
-CREATE (recharge:Area {type: "Recharge", center_x: 0, center_z: 30, length: 50, width: 10})
+CREATE (recharge:Area {type: "Recharge", center_x: 0, center_z: 30, length: 110, width: 10})
+CREATE (backup:Area {type: "Backup", center_x: 0, center_z: -30, length: 110, width: 10})
 
 // Create positions relative to the delivery area
 FOREACH (pos_data IN [
@@ -38,6 +40,16 @@ FOREACH (pos_data IN [
   CREATE (shipping)-[:HAS_POSITION]->(pos)
 )
 
+// Create a position relative to the backup area
+CREATE (backup_pos:Position {
+  id: "backup_0", 
+  x: 27.325, 
+  z: -30,
+  y: 0.995, 
+  hasParcel: false
+})
+CREATE (backup)-[:HAS_POSITION]->(backup_pos)
+
 // Create shelves with layers and slots
 FOREACH (shelf IN [
   {x: 11, z: 20, category: "Books"},
@@ -64,7 +76,21 @@ FOREACH (shelf IN [
     )
   )
   CREATE (s)-[:LOCATED_IN]->(warehouse)
-);
+)
+
+// Create a shelf in the backup area with category "Backup"
+CREATE (backup_shelf:Shelf {x: 0, z: -30, category: "Backup"})
+// Create layers for the backup shelf
+FOREACH (layer_id IN range(0, 3) |
+  CREATE (layer:Layer {id: layer_id, y: 1.35 + layer_id * 1.48})
+  CREATE (backup_shelf)-[:HAS_LAYER]->(layer)
+  // Create slots for the layer (with relative z positions)
+  FOREACH (slot_z IN [6.7, 4.7, 2.9, 0.9, -0.9, -2.9, -4.7, -6.7] |
+    CREATE (slot:Slot {x: slot_z, occupied: false})
+    CREATE (layer)-[:HAS_SLOT]->(slot)
+  )
+)
+CREATE (backup_shelf)-[:LOCATED_IN]->(backup)
 
 // Create robots
 FOREACH (robot_data IN [
