@@ -9,9 +9,9 @@ using System;
 public class ForkliftNavController : MonoBehaviour
 {
     public RobotManager robotManager;
+    public MovementWithAStar movementWithAStar;
     [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels
     [SerializeField] private Transform grabPoint;
-    private NavMeshAgent agent;
     private ForkliftController forkliftController;
     private float approachDistance = 3.2f;
     private float takeBoxDistance = 1.3f;
@@ -30,7 +30,6 @@ public class ForkliftNavController : MonoBehaviour
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
         qrReader = GetComponent<QRCodeReader>();
-        agent = GetComponent<NavMeshAgent>();
         forkliftController = GetComponent<ForkliftController>();
         explainability = GetComponent<RobotExplainability>();
     }
@@ -61,7 +60,7 @@ public class ForkliftNavController : MonoBehaviour
         explainability.ShowExplanation("Allineo le aste alla box.");
 
         // Avvicinamento alla box e prelievo
-        yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
+        yield return StartCoroutine(MoveTakeBoxDistance(approachPosition, -qrCodeDirection));
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y + 1));
 
         parcel.transform.SetParent(grabPoint);
@@ -87,7 +86,7 @@ public class ForkliftNavController : MonoBehaviour
         // Rotazione verso lo scaffale e posizionamento
         yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
         yield return StartCoroutine(LiftMastToHeight(shelfHeight + 0.05f));
-        yield return StartCoroutine(MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance));
+        yield return StartCoroutine(MoveTakeBoxDistance(approachPosition, -qrCodeDirection));
         yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
         parcel.transform.SetParent(null);
         parcelRigidbody = parcel.GetComponent<Rigidbody>();
@@ -121,7 +120,7 @@ public class ForkliftNavController : MonoBehaviour
         // Find the parcel GameObject based on its position
         GameObject parcel = GetParcel(slotPosition.y);
         yield return LiftMastToHeight(slotPosition.y);
-        yield return MoveToPosition(approachPosition - qrCodeDirection * takeBoxDistance);
+        yield return StartCoroutine(MoveTakeBoxDistance(approachPosition, -qrCodeDirection));
         yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
         yield return LiftMastToHeight(slotPosition.y + 0.05f);
 
@@ -133,19 +132,20 @@ public class ForkliftNavController : MonoBehaviour
 
         Vector3 conveyorDestination = robotManager.AskConveyorPosition();
         qrCodeDirection = Vector3.right;        
+        float heightConveyor = conveyorDestination.y;
+        conveyorDestination.y = 0;
         approachPosition = conveyorDestination + qrCodeDirection * approachDistance;
         yield return MoveToPosition(approachPosition);
         robotManager.FreeSlotPosition(robotId, conveyorDestination);
         _ = FreeSlot(slotPosition);
         yield return SmoothRotateToDirection(-qrCodeDirection);
-        approachPosition.x -= takeBoxDistance;
-        yield return StartCoroutine(MoveToPosition(approachPosition));
-        yield return StartCoroutine(LiftMastToHeight(conveyorDestination.y));
+        //approachPosition.x -= takeBoxDistance;
+        yield return StartCoroutine(MoveTakeBoxDistance(approachPosition, -qrCodeDirection));
+        yield return StartCoroutine(LiftMastToHeight(heightConveyor));
         parcel.transform.SetParent(null);
         parcelRigidbody = parcel.GetComponent<Rigidbody>();
         parcelRigidbody.isKinematic = false;
         parcelRigidbody.constraints = RigidbodyConstraints.None;
-
 
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
         robotManager.NotifyTaskCompletion(robotId);
@@ -165,9 +165,7 @@ public class ForkliftNavController : MonoBehaviour
 
     public IEnumerator MoveToPosition(Vector3 position)
     {
-        agent.SetDestination(position);
-        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance);
-        agent.ResetPath();
+        yield return movementWithAStar.MovementToPosition(position);
     }
 
 
@@ -201,6 +199,19 @@ public class ForkliftNavController : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
     }
+
+    public IEnumerator MoveTakeBoxDistance(Vector3 approachPosition, Vector3 qrCodeDirection, float speed = 3.5f)
+    {
+        Vector3 targetPosition = approachPosition + (qrCodeDirection * takeBoxDistance);
+
+        while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
+            yield return null;
+        }
+        transform.position = targetPosition;
+    }
+
 
     private GameObject GetParcel(float height)
     {

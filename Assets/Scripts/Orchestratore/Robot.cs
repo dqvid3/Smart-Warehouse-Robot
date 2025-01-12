@@ -41,7 +41,7 @@ public class Robot : MonoBehaviour
     {
         forkliftNavController = GetComponent<ForkliftNavController>();
         explainability = GetComponent<RobotExplainability>(); // Inizializza la classe per le spiegazioni contestuali
-        speed = GetComponent<NavMeshAgent>().speed;
+        speed = GetComponent<MovementWithAStar>().moveSpeed;
     }
 
     void Update()
