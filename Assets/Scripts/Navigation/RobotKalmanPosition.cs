@@ -145,6 +145,8 @@ public class RobotKalmanPosition : MonoBehaviour
             Vector3 correctedPosition = weightedSum / totalWeight;
             float actualDistance = Vector3.Distance(transform.position, correctedPosition);
             Debug.Log($"Estimated Position: {correctedPosition}, Actual Position: {transform.position}, Distance: {actualDistance}");
+            Debug.DrawLine(transform.position, predictedPosition, Color.red, 0.1f);
+            Debug.DrawLine(predictedPosition, correctedPosition, Color.green, 0.1f);
             return Vector3.Lerp(predictedPosition, correctedPosition, Mathf.Clamp(totalWeight / 10f, 0f, 1f)); // Peso variabile per casi in cui non vi sono Landmark rilevati
         }
         else
