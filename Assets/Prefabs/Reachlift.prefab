@@ -993,6 +993,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   dbManager: {fileID: 5208561982904702695}
+  movement: {fileID: 6997144608973667529}
 --- !u!114 &6295221857343116058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1131,6 +1132,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forkliftNavController: {fileID: 3382456182264306211}
+  showPath: 0
+  start: {x: 0, y: 0, z: 0}
   robotToMove: {fileID: 8887462579480094166}
   moveSpeed: 3.5
 --- !u!1 &9171051550921637103 stripped

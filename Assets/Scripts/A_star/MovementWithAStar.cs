@@ -9,7 +9,7 @@ public class MovementWithAStar : MonoBehaviour
     public ForkliftNavController forkliftNavController;
     public bool showPath = false;
 
-    private Vector3 start;
+    public Vector3 start;
     private Vector3 end;
 
     private LineRenderer lineRenderer;
@@ -24,8 +24,7 @@ public class MovementWithAStar : MonoBehaviour
         lineRenderer.endWidth = 0.2f;
         lineRenderer.positionCount = 0;
 
-        // La posizione iniziale è quella corrente del GameObject
-        start = forkliftNavController.defaultPosition;
+        this.start = forkliftNavController.defaultPosition;
     }
 
     public IEnumerator MovementToPosition(Vector3 destination)
@@ -61,7 +60,7 @@ public class MovementWithAStar : MonoBehaviour
             }
 
             // Inizia a muovere l'oggetto
-            StartCoroutine(MoveAlongPath(fullPath, true));
+            StartCoroutine(MoveAlongPath(fullPath));
         }
         else
         {
@@ -80,7 +79,7 @@ public class MovementWithAStar : MonoBehaviour
         }
     }
 
-    private IEnumerator MoveAlongPath(Vector3[] path, bool isFirstPath)
+    private IEnumerator MoveAlongPath(Vector3[] path)
     {
         Vector3 initialDirection = (path[1] - path[0]).normalized;
         Quaternion initialRotation = Quaternion.LookRotation(initialDirection);

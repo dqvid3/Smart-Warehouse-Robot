@@ -2,36 +2,57 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using Unity.VisualScripting;
 
 public class RobotKalmanPosition : MonoBehaviour
 {
     [Header("Kalman Filter Parameters")]
     public float processNoise = 0.01f;
-    public float measurementNoise = 0.3f;
+    public float measurementNoise = 0.4f;
+    public float odometryNoise = 0.01f;
 
-    [Header("Sensore")]
+    [Header("Sensor")]
     public float sensorRange = 17.5f; // Raggio massimo di rilevamento dei sensori
     public LayerMask landmarkLayer; // Layer dei landmark nella scena
 
     [Header("Database Manager")]
     public DatabaseManager dbManager;
 
+    [Header("Movement")]
+    public MovementWithAStar movement;
+
     private KalmanFilter positionKalmanFilterX;
     private KalmanFilter positionKalmanFilterZ;
+    private Vector3 odometryStart;
     private Vector3 estimatedPosition;
 
     private List<int> detectedLandmarkIDs = new List<int>();
+    private int numLandmarksDetected;
 
     public void Start()
     {
         InitializeKalmanFilters();
+        numLandmarksDetected = 0;
+        odometryStart = movement.start;
+        estimatedPosition = odometryStart;
     }
 
     public async void Update()
     {
-        PerformRaycastDetection();
-        Vector3 noisyPosition = await CalculateWeightedNoisyPositionFromIDs(); // Usando media ponderata
-        UpdateEstimatedPosition(noisyPosition);
+        // Predizione della posizione basata sull'odometria
+        Vector3 predictedPosition = PredictPositionFromOdometry();
+
+        // Correzione della posizione con i landmark
+        numLandmarksDetected = PerformRaycastDetection();
+        if (numLandmarksDetected >= 3)
+        {
+            Vector3 correctedPosition = await CorrectPositionWithLandmarks(predictedPosition);
+            UpdateEstimatedPosition(correctedPosition);
+        }
+        else
+        {
+            UpdateEstimatedPosition(predictedPosition);
+        }
     }
 
     private void InitializeKalmanFilters()
@@ -40,7 +61,26 @@ public class RobotKalmanPosition : MonoBehaviour
         positionKalmanFilterZ = new KalmanFilter(0f, 1f, processNoise, measurementNoise);
     }
 
-    private void PerformRaycastDetection()
+    private Vector3 PredictPositionFromOdometry()
+    {
+        Vector3 currentRobotPosition = movement.start;
+        Vector3 deltaPosition = currentRobotPosition - odometryStart;
+
+        odometryStart = movement.start;
+
+        //Quaternion currentRotation = movement.robotToMove.transform.rotation;
+        //Vector3 rotatedDelta = currentRotation * deltaPosition;
+
+        // Rumore per incertezze
+        float noiseX = UnityEngine.Random.Range(-odometryNoise, odometryNoise);
+        float noiseZ = UnityEngine.Random.Range(-odometryNoise, odometryNoise);
+        Vector3 noise = new Vector3(noiseX, 0, noiseZ);
+
+        Vector3 predictedPosition = estimatedPosition  + noise;
+        return predictedPosition;
+    }
+
+    private int PerformRaycastDetection()
     {
         detectedLandmarkIDs.Clear();
 
@@ -61,6 +101,7 @@ public class RobotKalmanPosition : MonoBehaviour
                 }
             }
         }
+        return detectedLandmarkIDs.Count;
     }
 
     public void ReceiveLandmarkID(int id)
@@ -71,12 +112,12 @@ public class RobotKalmanPosition : MonoBehaviour
         }
     }
 
-    private async Task<Vector3> CalculateWeightedNoisyPositionFromIDs()
+    private async Task<Vector3> CorrectPositionWithLandmarks(Vector3 predictedPosition)
     {
         if (detectedLandmarkIDs.Count == 0)
         {
             Debug.LogWarning("No landmarks detected!");
-            return transform.position; // Usa la posizione corrente se non ci sono landmark
+            return predictedPosition;
         }
 
         List<int> landmarkIDsCopy = new List<int>(detectedLandmarkIDs);
@@ -88,32 +129,35 @@ public class RobotKalmanPosition : MonoBehaviour
             try
             {
                 Vector3 landmarkPosition = await dbManager.GetLandmarkPositionFromDatabase(id);
-                float distance = Vector3.Distance(transform.position, landmarkPosition);
+                float distance = Vector3.Distance(predictedPosition, landmarkPosition);
                 float weight = 1f / Mathf.Pow(distance + 0.1f, 2);
                 weightedSum += landmarkPosition * weight;
                 totalWeight += weight;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Error fetching landmark ID {id}: {ex.Message}");
+                Debug.LogError($"Errore nel recupero del landmark {id}: {ex.Message}");
             }
         }
 
-        Vector3 weightedAverage = weightedSum / totalWeight;
-        float actualDistance = Vector3.Distance(transform.position, weightedAverage);
-        Debug.Log($"Estimated Position: {weightedAverage}, Actual Position: {transform.position}, Distance: {actualDistance}");
-
-
-        // Rumore
-        float noiseX = UnityEngine.Random.Range(-0.1f, 0.1f);
-        float noiseZ = UnityEngine.Random.Range(-0.1f, 0.1f);
-        return new Vector3(weightedAverage.x + noiseX, transform.position.y, weightedAverage.z + noiseZ);
+        if (totalWeight > 0)
+        {
+            Vector3 correctedPosition = weightedSum / totalWeight;
+            float actualDistance = Vector3.Distance(transform.position, correctedPosition);
+            Debug.Log($"Estimated Position: {correctedPosition}, Actual Position: {transform.position}, Distance: {actualDistance}");
+            return Vector3.Lerp(predictedPosition, correctedPosition, Mathf.Clamp(totalWeight / 10f, 0f, 1f)); // Peso variabile per casi in cui non vi sono Landmark rilevati
+        }
+        else
+        {
+            return predictedPosition;
+        }
     }
 
-    private void UpdateEstimatedPosition(Vector3 noisyPosition)
+
+    private void UpdateEstimatedPosition(Vector3 correctedPosition)
     {
-        float estimatedX = positionKalmanFilterX.Update(noisyPosition.x);
-        float estimatedZ = positionKalmanFilterZ.Update(noisyPosition.z);
+        float estimatedX = positionKalmanFilterX.Update(correctedPosition.x);
+        float estimatedZ = positionKalmanFilterZ.Update(correctedPosition.z);
 
         estimatedPosition = new Vector3(estimatedX, transform.position.y, estimatedZ);
     }
