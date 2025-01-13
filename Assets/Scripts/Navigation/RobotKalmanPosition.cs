@@ -23,7 +23,7 @@ public class RobotKalmanPosition : MonoBehaviour
 
     private KalmanFilter positionKalmanFilterX;
     private KalmanFilter positionKalmanFilterZ;
-    private Vector3 odometryStart;
+    private Vector3 lastRealPosition;
     private Vector3 estimatedPosition;
 
     private List<int> detectedLandmarkIDs = new List<int>();
@@ -33,8 +33,8 @@ public class RobotKalmanPosition : MonoBehaviour
     {
         InitializeKalmanFilters();
         numLandmarksDetected = 0;
-        odometryStart = movement.start;
-        estimatedPosition = odometryStart;
+        lastRealPosition = movement.GetOdometry();
+        estimatedPosition = lastRealPosition;
     }
 
     public async void Update()
@@ -63,22 +63,19 @@ public class RobotKalmanPosition : MonoBehaviour
 
     private Vector3 PredictPositionFromOdometry()
     {
-        Vector3 currentRobotPosition = movement.start;
-        Vector3 deltaPosition = currentRobotPosition - odometryStart;
+        Vector3 currentRealPosition = movement.robotToMove.transform.position;
 
-        odometryStart = movement.start;
+        Vector3 deltaOdometry = currentRealPosition - lastRealPosition;
 
-        //Quaternion currentRotation = movement.robotToMove.transform.rotation;
-        //Vector3 rotatedDelta = currentRotation * deltaPosition;
+        deltaOdometry.x += UnityEngine.Random.Range(-odometryNoise, odometryNoise);
+        deltaOdometry.z += UnityEngine.Random.Range(-odometryNoise, odometryNoise);
 
-        // Rumore per incertezze
-        float noiseX = UnityEngine.Random.Range(-odometryNoise, odometryNoise);
-        float noiseZ = UnityEngine.Random.Range(-odometryNoise, odometryNoise);
-        Vector3 noise = new Vector3(noiseX, 0, noiseZ);
+        lastRealPosition = currentRealPosition;
+        Vector3 predictedPosition = currentRealPosition + deltaOdometry;
 
-        Vector3 predictedPosition = estimatedPosition  + noise;
         return predictedPosition;
     }
+
 
     private int PerformRaycastDetection()
     {
@@ -130,7 +127,7 @@ public class RobotKalmanPosition : MonoBehaviour
             {
                 Vector3 landmarkPosition = await dbManager.GetLandmarkPositionFromDatabase(id);
                 float distance = Vector3.Distance(predictedPosition, landmarkPosition);
-                float weight = 1f / Mathf.Pow(distance + 0.1f, 2);
+                float weight = 1f / Mathf.Pow(distance, 2);
                 weightedSum += landmarkPosition * weight;
                 totalWeight += weight;
             }
@@ -144,9 +141,9 @@ public class RobotKalmanPosition : MonoBehaviour
         {
             Vector3 correctedPosition = weightedSum / totalWeight;
             float actualDistance = Vector3.Distance(transform.position, correctedPosition);
-            Debug.Log($"Estimated Position: {correctedPosition}, Actual Position: {transform.position}, Distance: {actualDistance}");
-            Debug.DrawLine(transform.position, predictedPosition, Color.red, 0.1f);
-            Debug.DrawLine(predictedPosition, correctedPosition, Color.green, 0.1f);
+            //Debug.Log($"Estimated Position: {correctedPosition}, Actual Position: {transform.position}, Distance: {actualDistance}");
+            //Debug.DrawLine(transform.position, predictedPosition, Color.red, 0.1f);
+            //Debug.DrawLine(predictedPosition, correctedPosition, Color.blue, 0.1f);
             return Vector3.Lerp(predictedPosition, correctedPosition, Mathf.Clamp(totalWeight / 10f, 0f, 1f)); // Peso variabile per casi in cui non vi sono Landmark rilevati
         }
         else

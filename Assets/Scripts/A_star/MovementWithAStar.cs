@@ -123,4 +123,9 @@ public class MovementWithAStar : MonoBehaviour
         }
         start = end; //Aggiornamento posizione iniziale
     }
+
+    public Vector3 GetOdometry()
+    {
+        return robotToMove.transform.position;
+    }
 }
