@@ -22,7 +22,7 @@ public class Robot : MonoBehaviour
     private string previousTask = "None";
     private Vector3 previousDestination;
     private ForkliftNavController forkliftNavController;
-    private RobotExplainability explainability; // Per la spiegazione contestuale
+    private RobotExplainability explainability; 
     private RobotState lastKnownState = RobotState.Idle;
     public float speed;
 
@@ -40,7 +40,7 @@ public class Robot : MonoBehaviour
     void Start()
     {
         forkliftNavController = GetComponent<ForkliftNavController>();
-        explainability = GetComponent<RobotExplainability>(); // Inizializza la classe per le spiegazioni contestuali
+        explainability = GetComponent<RobotExplainability>();
         speed = GetComponent<MovementWithAStar>().moveSpeed;
     }
 

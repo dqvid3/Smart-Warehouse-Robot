@@ -3,8 +3,8 @@ using TMPro;
 
 public class RobotExplainability : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI explanationText; // Campo per il testo
-    [SerializeField] private Canvas explanationCanvas;       // Canvas per mostrare le spiegazioni
+    [SerializeField] private TextMeshProUGUI explanationText; 
+    [SerializeField] private Canvas explanationCanvas;  
 
     private void Start()
     {

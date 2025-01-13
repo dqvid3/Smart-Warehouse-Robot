@@ -7,6 +7,7 @@ public class MovementWithAStar : MonoBehaviour
 {
     [Header("Controller")]
     public ForkliftNavController forkliftNavController;
+    public bool showPath = false;
 
     private Vector3 start;
     private Vector3 end;
@@ -19,7 +20,6 @@ public class MovementWithAStar : MonoBehaviour
     {
         lineRenderer = GetComponent<LineRenderer>();
 
-        // Inizializza le proprietà del LineRenderer
         lineRenderer.startWidth = 0.2f;
         lineRenderer.endWidth = 0.2f;
         lineRenderer.positionCount = 0;
@@ -30,16 +30,11 @@ public class MovementWithAStar : MonoBehaviour
 
     public IEnumerator MovementToPosition(Vector3 destination)
     {
-        // Aggiorno il campo di classe con il valore ricevuto dal metodo
         this.end = destination;
-
-        // Se la posizione di partenza è sempre la posizione attuale del robot...
         this.start = robotToMove.transform.position;
 
-        // Calcola il percorso
         PathRequestManager.RequestPath(start, end, OnPathFound);
 
-        // Aspetta finché il robot non raggiunge la posizione finale
         while (Vector3.Distance(robotToMove.transform.position, end) > 0.1f)
         {
             yield return null;
@@ -52,8 +47,6 @@ public class MovementWithAStar : MonoBehaviour
     {
         if (success)
         {
-            Debug.Log("Percorso trovato!");
-
             Vector3[] fullPath = new Vector3[path.Length + 2];
             fullPath[0] = start; // Primo punto è la posizione attuale
             for (int i = 0; i < path.Length; i++)
@@ -62,11 +55,13 @@ public class MovementWithAStar : MonoBehaviour
             }
             fullPath[fullPath.Length - 1] = end; // Ultimo punto è la destinazione finale
 
-            // Disegna il percorso
-            DrawPath(fullPath);
+            if (showPath)
+            {
+                DrawPath(fullPath);
+            }
 
             // Inizia a muovere l'oggetto
-            StartCoroutine(MoveAlongPath(fullPath, true)); // Segnala che è il primo percorso
+            StartCoroutine(MoveAlongPath(fullPath, true));
         }
         else
         {
@@ -79,7 +74,6 @@ public class MovementWithAStar : MonoBehaviour
         // Imposta il numero di punti per il LineRenderer
         lineRenderer.positionCount = path.Length;
 
-        // Assegna i punti al LineRenderer
         for (int i = 0; i < path.Length; i++)
         {
             lineRenderer.SetPosition(i, path[i]);
@@ -88,17 +82,23 @@ public class MovementWithAStar : MonoBehaviour
 
     private IEnumerator MoveAlongPath(Vector3[] path, bool isFirstPath)
     {
-        //robotToMove.transform.position = path[0]; // Posiziona l'oggetto al punto iniziale
+        Vector3 initialDirection = (path[1] - path[0]).normalized;
+        Quaternion initialRotation = Quaternion.LookRotation(initialDirection);
+
+        // Rotazione iniziale
+        while (Quaternion.Angle(robotToMove.transform.rotation, initialRotation) > 0.1f)
+        {
+            robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, initialRotation, Time.deltaTime * moveSpeed);
+            yield return null;
+        }
 
         for (int i = 1; i < path.Length; i++)
         {
             Vector3 startPosition = robotToMove.transform.position;
             Vector3 targetPosition = path[i];
 
-            // Calcola la direzione verso il prossimo punto
             Vector3 direction = (targetPosition - startPosition).normalized;
 
-            // Determina la rotazione target
             Quaternion targetRotation = Quaternion.identity;
             if (direction != Vector3.zero)
             {
@@ -116,13 +116,12 @@ public class MovementWithAStar : MonoBehaviour
                 robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, targetRotation, Time.deltaTime * moveSpeed);
                 start = robotToMove.transform.position;
 
-                yield return null; // Aspetta il prossimo frame
+                yield return null;
             }
 
             robotToMove.transform.position = targetPosition;
             robotToMove.transform.rotation = targetRotation;
         }
         start = end; //Aggiornamento posizione iniziale
-        Debug.Log("Movimento completato!");
     }
 }

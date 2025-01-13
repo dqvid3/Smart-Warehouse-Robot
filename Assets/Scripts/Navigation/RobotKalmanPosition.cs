@@ -100,8 +100,8 @@ public class RobotKalmanPosition : MonoBehaviour
         }
 
         Vector3 weightedAverage = weightedSum / totalWeight;
-        /*float actualDistance = Vector3.Distance(transform.position, weightedAverage);
-        Debug.Log($"Estimated Position: {weightedAverage}, Actual Position: {transform.position}, Distance: {actualDistance}");*/
+        float actualDistance = Vector3.Distance(transform.position, weightedAverage);
+        Debug.Log($"Estimated Position: {weightedAverage}, Actual Position: {transform.position}, Distance: {actualDistance}");
 
 
         // Rumore
