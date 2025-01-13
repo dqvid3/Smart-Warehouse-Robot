@@ -664,6 +664,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6997144608973667529}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6646960972381987369}
     - targetCorrespondingSourceObject: {fileID: -4543832893031423791, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1630355590711519490}
@@ -988,6 +991,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   processNoise: 0.1
   measurementNoise: 0.5
+  odometryNoise: 0.01
   sensorRange: 10
   landmarkLayer:
     serializedVersion: 2
@@ -1132,10 +1136,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forkliftNavController: {fileID: 3382456182264306211}
-  showPath: 0
+  showPath: 1
   start: {x: 0, y: 0, z: 0}
   robotToMove: {fileID: 8887462579480094166}
   moveSpeed: 3.5
+--- !u!208 &6646960972381987369
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8887462579480094166}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.6, y: 1.5, z: 1.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 1.5, z: 1}
+  m_TimeToStationary: 0.5
 --- !u!1 &9171051550921637103 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 635547659545568360, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}

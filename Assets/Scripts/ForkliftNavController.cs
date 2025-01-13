@@ -54,6 +54,7 @@ public class ForkliftNavController : MonoBehaviour
         string timestamp = qrParts[0];
         string category = qrParts[1];
         explainability.ShowExplanation($"QR code letto. Categoria della box: {category}.");
+
         // Allineo le aste alla box
         GameObject parcel = GetParcel(parcelPosition.y + 1);
         yield return StartCoroutine(LiftMastToHeight(parcelPosition.y));
@@ -68,23 +69,60 @@ public class ForkliftNavController : MonoBehaviour
         parcelRigidbody.isKinematic = true;
         parcelRigidbody.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
 
-
         explainability.ShowExplanation("Box prelevata. Mi sposto verso lo scaffale corretto.");
-        yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
-        IRecord record = robotManager.AskSlot(category, robotId);
+
+        // Trova uno slot disponibile e senza ostacoli
+        IRecord record = null;
+        float shelfHeight = 0;
+        bool hasObstacle = true;
+        bool useBackupShelf = false; // Flag per indicare se stiamo usando lo scaffale di backup
         // Cambio direzione per lo scaffale
         qrCodeDirection = Vector3.forward;
-        Vector3 slotPosition = GetSlotPosition(record);
-        float shelfHeight = slotPosition.y;
-        slotPosition.y = transform.position.y;
-        approachPosition = slotPosition + qrCodeDirection * approachDistance;
+        while (hasObstacle)
+        {
+            // Cerca uno slot disponibile
+            if (!useBackupShelf)
+            {
+                record = robotManager.AskSlot(category, robotId);
+                if (record == null)
+                {
+                    explainability.ShowExplanation("Nessun slot disponibile nello scaffale principale. Uso lo scaffale di backup.");
+                    useBackupShelf = true; // Passa allo scaffale di backup
+                    continue;
+                }
+            }
+            else
+            {
+                record = robotManager.AskSlot("Backup", robotId);
+                if (record == null)
+                {
+                    explainability.ShowExplanation("Nessuno scaffale di backup disponibile. Impossibile completare il task.");
+                    yield break; // Esci dalla coroutine se non ci sono slot disponibili
+                }
+            }
 
-        // Spostamento verso lo scaffale
-        yield return StartCoroutine(MoveToPosition(approachPosition));
-        explainability.ShowExplanation("Sto raggiungendo lo scaffale per posare la box.");
+            // Ottieni la posizione dello slot
+            Vector3 slotPosition = GetSlotPosition(record);
+            shelfHeight = slotPosition.y;
+            slotPosition.y = transform.position.y;
+            approachPosition = slotPosition + qrCodeDirection * approachDistance;
+            // Spostamento verso lo scaffale
+            yield return StartCoroutine(MoveToPosition(approachPosition));
+            explainability.ShowExplanation("Sto raggiungendo lo scaffale per posare la box.");
 
-        // Rotazione verso lo scaffale e posizionamento
-        yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
+            // Rotazione verso lo scaffale e controllo ostacoli
+            yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
+            yield return StartCoroutine(LiftMastToHeight(shelfHeight - 1.5f));
+
+            // Controllo se c'è un ostacolo nello slot
+            slotPosition.y = shelfHeight;
+            hasObstacle = CheckForObstacle(slotPosition);
+            if (hasObstacle){
+                explainability.ShowExplanation("Trovato un ostacolo nello slot. Cerco un nuovo slot.");
+            }
+        }
+
+        // Posizionamento della box
         yield return StartCoroutine(LiftMastToHeight(shelfHeight + 0.05f));
         yield return StartCoroutine(MoveTakeBoxDistance(approachPosition, -qrCodeDirection));
         yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
@@ -99,13 +137,13 @@ public class ForkliftNavController : MonoBehaviour
         _ = UpdateParcelLocation(timestamp, record["slotId"].As<long>());
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
         robotManager.NotifyTaskCompletion(robotId);
-        
-        if (!robotManager.AreThereTask()) {
+
+        if (!robotManager.AreThereTask())
+        {
             yield return StartCoroutine(LiftMastToHeight(0));
             yield return StartCoroutine(MoveToOriginPosition());
         }
     }
-
     public IEnumerator ShipParcel(Vector3 slotPosition, int robotId)
     {
         Vector3 qrCodeDirection = Vector3.forward;
@@ -131,7 +169,7 @@ public class ForkliftNavController : MonoBehaviour
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
 
         Vector3 conveyorDestination = robotManager.AskConveyorPosition();
-        qrCodeDirection = Vector3.right;        
+        qrCodeDirection = Vector3.right;
         float heightConveyor = conveyorDestination.y;
         conveyorDestination.y = 0;
         approachPosition = conveyorDestination + qrCodeDirection * approachDistance;
@@ -200,7 +238,7 @@ public class ForkliftNavController : MonoBehaviour
         }
     }
 
-    public IEnumerator MoveTakeBoxDistance(Vector3 approachPosition, Vector3 qrCodeDirection, float speed = 3.5f)
+    public IEnumerator MoveTakeBoxDistance(Vector3 approachPosition, Vector3 qrCodeDirection, float speed = 2f)
     {
         Vector3 targetPosition = approachPosition + (qrCodeDirection * takeBoxDistance);
 
@@ -263,5 +301,21 @@ public class ForkliftNavController : MonoBehaviour
         float y = record[1].As<float>();
         float z = record[2].As<float>();
         return new Vector3(x, y, z);
+    }
+
+    private bool CheckForObstacle(Vector3 slotPosition)
+    {
+        Vector3 rayOrigin = slotPosition - Vector3.forward * .75f;
+        rayOrigin.y += 0.75f;
+        Vector3 rayDirection = Vector3.forward;
+        float rayLength = 1.5f; // Lunghezza del raggio
+        Debug.Log($"Origine del raggio: {rayOrigin}");
+        Debug.DrawRay(rayOrigin, rayDirection * rayLength, Color.red, 2f); // Debug per visualizzare il raggio
+        if (Physics.Raycast(rayOrigin, rayDirection, out RaycastHit hit, rayLength, layerMask))
+        {
+            Debug.Log($"Ostacolo trovato: {hit.collider.gameObject.name}");
+            return true;
+        }
+        return false;
     }
 }

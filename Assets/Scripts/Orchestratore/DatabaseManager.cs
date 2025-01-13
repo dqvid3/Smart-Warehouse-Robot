@@ -224,6 +224,10 @@ public class DatabaseManager : MonoBehaviour
         RETURN s.x + slot.x AS x, l.y AS y, s.z AS z, ID(slot) AS slotId
         LIMIT 1";
         var result = await neo4jHelper.ExecuteReadListAsync(query, new Dictionary<string, object> { { "category", category } });
+
+         if (result == null || result.Count == 0)
+            return null; // Nessuno slot disponibile
+            
         long slotId = result[0]["slotId"].As<long>();
         query = @"
         MATCH (s:Slot)

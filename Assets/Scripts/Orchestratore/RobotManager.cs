@@ -116,11 +116,10 @@ public class RobotManager : MonoBehaviour
     {
         float stopDuration = 4;
         Debug.Log($"Robot {robot.id} fermo per {stopDuration} secondi.");
-
-        NavMeshAgent agent = robot.GetComponent<NavMeshAgent>();
-        agent.speed = 0; // Ferma il robot
+        MovementWithAStar robMov = robot.GetComponent<MovementWithAStar>();
+        robMov.moveSpeed = 0; // Ferma il robot
         yield return new WaitForSeconds(stopDuration); // Aspetta
-        agent.speed = robot.speed; // Riprendi il movimento
+        robMov.moveSpeed = robot.speed; // Riprendi il movimento
 
         Debug.Log($"Robot {robot.id} riprende il movimento.");
     }
@@ -235,6 +234,10 @@ public class RobotManager : MonoBehaviour
     {
         // Get an available slot from the database
         IList<IRecord> result = Task.Run(() => databaseManager.GetAvailableSlot(category)).Result;
+
+        if (result == null)
+            return null; // Return null to indicate no slot was found
+            
         var record = result[0];
         float x = record[0].As<float>();
         float y = record[1].As<float>();
