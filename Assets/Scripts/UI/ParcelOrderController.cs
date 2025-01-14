@@ -93,9 +93,9 @@ public class ParcelOrderController : MonoBehaviour
     private async Task UpdateQuantityDropdown(string productName)
     {
         var result = await neo4jHelper.ExecuteReadListAsync(@"
-    MATCH (parcel:Parcel {product_name: $productName})<-[:CONTAINS]-(slot:Slot)
-    WHERE NOT (parcel)-[:PART_OF]->(:Order)
-    RETURN count(parcel) AS quantity",
+        MATCH (parcel:Parcel {product_name: $productName})<-[:CONTAINS]-(slot:Slot)
+        WHERE NOT (parcel)-[:PART_OF]->(:Order)
+        RETURN count(parcel) AS quantity",
             new Dictionary<string, object> { { "productName", productName } }
         );
 

@@ -87,7 +87,8 @@ public class Neo4jHelper
     {
         try
         {
-            return await ExecuteReadListAsync("MATCH (s:Shelf) RETURN DISTINCT s.category AS category")
+            string query = "MATCH (s:Shelf) WHERE s.category <> 'Backup' RETURN DISTINCT s.category AS category";
+            return await ExecuteReadListAsync(query)
                 .ContinueWith(task => task.Result.Select(record => record["category"].As<string>()).ToList());
         }
         catch (Exception ex)
