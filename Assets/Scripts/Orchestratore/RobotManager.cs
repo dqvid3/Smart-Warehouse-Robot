@@ -13,7 +13,7 @@ public class RobotManager : MonoBehaviour
     private bool isPaused = false; // Pause state
     public DatabaseManager databaseManager; // Database manager for querying data
     private Dictionary<int, Vector3> robotAssignments = new(); // Tracks robot assignments (ID -> Position)
-    private Queue<(Vector3 Position, string Type)> pendingTasks = new(); // Queue for pending tasks (position + type)
+    private Queue<(Vector3 Position, string Type, string Category, string Timestamp)> pendingTasks = new(); // Queue for pending tasks (position + type + category)
     private List<Vector3> shippingConveyorPositions; // List of conveyor positions
     private float checkInterval = 2f; // Interval for checking tasks
     private float lastCheckTime = 0f; // Last time tasks were checked
@@ -40,6 +40,7 @@ public class RobotManager : MonoBehaviour
             lastCheckTime = Time.time;
             CheckForShippingOrders();
             CheckForDeliveries();
+            CheckForExpiredParcelsInBackup();
             CheckPendingTasks();
         }
 
@@ -75,7 +76,8 @@ public class RobotManager : MonoBehaviour
                 Vector3 positionA = robotA.GetEstimatedPosition();
                 Vector3 positionB = robotB.GetEstimatedPosition();
 
-                if (!robotAssignments.ContainsKey(robotA.id) || !robotAssignments.ContainsKey(robotB.id)){
+                if (!robotAssignments.ContainsKey(robotA.id) || !robotAssignments.ContainsKey(robotB.id))
+                {
                     // Get the default positions of the robots
                     Vector3 defaultPositionA = robotA.GetComponent<ForkliftNavController>().defaultPosition;
                     Vector3 defaultPositionB = robotB.GetComponent<ForkliftNavController>().defaultPosition;
@@ -88,7 +90,7 @@ public class RobotManager : MonoBehaviour
                     if (distanceFromDefaultA < 5 || distanceFromDefaultB < 5)
                         continue;
                 }
-                
+
                 // Calculate the distance between the two robots
                 float distance = Vector3.Distance(positionA, positionB);
                 // If the robots are too close, stop the one further from its destination
@@ -138,7 +140,7 @@ public class RobotManager : MonoBehaviour
             foreach (var slot in slotPositions)
             {
                 if (robotAssignments.ContainsValue(slot)) continue; // Skip if slot is already assigned
-                pendingTasks.Enqueue((slot, "Shipping")); // Add slot to pending tasks with task type
+                pendingTasks.Enqueue((slot, "Shipping", null, null)); // Category is not needed for Shipping
             }
         }
     }
@@ -151,7 +153,18 @@ public class RobotManager : MonoBehaviour
         {
             Vector3 parcelPosition = new(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
             if (robotAssignments.ContainsValue(parcelPosition)) continue; // Skip if conveyor is already assigned
-            pendingTasks.Enqueue((parcelPosition, "Delivery")); // Add conveyor to pending tasks with task type
+            pendingTasks.Enqueue((parcelPosition, "Delivery", null, null)); // Category is not needed for Delivery
+        }
+    }
+
+    private async void CheckForExpiredParcelsInBackup()
+    {
+        // Fetch parcels in the delivery area
+        var slotPositions = await databaseManager.GetExpiredParcelsInBackupShelf();
+        foreach (var (slot, category, timestamp) in slotPositions)
+        {
+            if (robotAssignments.ContainsValue(slot)) continue; // Skip if slot is already assigned
+            pendingTasks.Enqueue((slot, "Disposal", category, timestamp)); // Category is needed for Disposal
         }
     }
 
@@ -166,13 +179,13 @@ public class RobotManager : MonoBehaviour
             while (pendingTasks.Count > 0 && robotsAvailable)
             {
                 var nextTask = pendingTasks.Dequeue();
-                AssignTask(nextTask.Position, nextTask.Type); // Pass task type explicitly
+                AssignTask(nextTask.Position, nextTask.Type, nextTask.Category);
                 robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
             }
         }
     }
 
-    private void AssignTask(Vector3 taskPosition, string taskType)
+    private void AssignTask(Vector3 taskPosition, string taskType, string category = null, string timestamp = null)
     {
         // Skip if the task is already assigned
         if (robotAssignments.ContainsValue(taskPosition))
@@ -185,18 +198,34 @@ public class RobotManager : MonoBehaviour
         Robot availableRobot = FindAvailableRobot(taskPosition);
         if (availableRobot == null)
         {
-            if (!pendingTasks.Any(t => t.Position == taskPosition))
+            // Re-add to queue with the correct category if no robot is available
+            if (!pendingTasks.Any(t => t.Position == taskPosition && t.Type == taskType))
             {
-                pendingTasks.Enqueue((taskPosition, taskType)); // Re-add to queue if no robot is available
+                pendingTasks.Enqueue((taskPosition, taskType, category, timestamp));
                 Debug.LogWarning($"Nessun robot disponibile. Compito riaggiunto in coda. ({taskPosition})");
             }
             return;
         }
 
-        // Assign the task to the robot
         Debug.Log($"Assegnato task di {taskType} per la posizione {taskPosition} al Robot {availableRobot.id}.");
         availableRobot.destination = taskPosition;
-        availableRobot.currentState = taskType == "Delivery" ? RobotState.DeliveryState : RobotState.ShippingState;
+
+        switch (taskType)
+        {
+            case "Delivery":
+                availableRobot.currentState = RobotState.DeliveryState;
+                break;
+            case "Shipping":
+                availableRobot.currentState = RobotState.ShippingState;
+                break;
+            case "Disposal":
+                availableRobot.currentState = RobotState.DisposalState;
+                availableRobot.category = category; // Pass the category to the robot
+                break;
+            default:
+                Debug.LogWarning($"Tipo di task sconosciuto: {taskType}");
+                break;
+        }
         robotAssignments[availableRobot.id] = taskPosition; // Track the assignment
     }
 
@@ -237,7 +266,7 @@ public class RobotManager : MonoBehaviour
 
         if (result == null)
             return null; // Return null to indicate no slot was found
-            
+
         var record = result[0];
         float x = record[0].As<float>();
         float y = record[1].As<float>();
@@ -258,7 +287,7 @@ public class RobotManager : MonoBehaviour
         return record;
     }
 
-    public void FreeSlotPosition(int robotId, Vector3 conveyorPosition)
+    public void FreeSlotPosition(int robotId)
     {
         // Remove the robot's current assignment (if any)
         if (robotAssignments.ContainsKey(robotId))
@@ -267,7 +296,9 @@ public class RobotManager : MonoBehaviour
             Debug.Log($"Robot {robotId}: Rimozione assegnazione corrente per la posizione {currentPosition}.");
             robotAssignments.Remove(robotId); // Remove the current assignment
         }
+    }
 
+    public void AssignConveyorPosition(int robotId, Vector3 conveyorPosition){
         // Assign the robot to the new conveyor position
         Debug.Log($"Robot {robotId}: Nuova assegnazione per il conveyor {conveyorPosition}.");
         robotAssignments[robotId] = conveyorPosition; // Assign the robot to the new conveyor

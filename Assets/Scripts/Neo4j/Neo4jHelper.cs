@@ -105,4 +105,30 @@ public class Neo4jHelper
         var parameters = new Dictionary<string, object> { { "positionId", positionId }, { "hasParcel", hasParcel } };
         await ExecuteWriteAsync(query, parameters);
     }
+
+    public async Task<Vector3> GetBackupPosition()
+    {
+        string query = @"
+        MATCH (p:Position)
+        WHERE p.id = 'backup_0'
+        RETURN p.x, p.z, p.y";
+
+        var record = await ExecuteReadAsync(query);
+
+        float x = record["p.x"].As<float>();
+        float z = record["p.z"].As<float>();
+        float y = record["p.y"].As<float>();
+        return new Vector3(x, y, z);
+    }
+
+    public async Task DeleteParcel(string timestamp)
+    {
+        string query = @"
+        MATCH (p:Parcel)
+        WHERE p.timestamp = $timestamp
+        DETACH DELETE p";
+
+        var parameters = new Dictionary<string, object> { { "timestamp", timestamp } };
+        await ExecuteWriteAsync(query, parameters);
+    }
 }
