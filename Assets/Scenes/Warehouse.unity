@@ -5000,6 +5000,14 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: threshold
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: raycastLength
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastDistance
       value: 3
@@ -5019,6 +5027,14 @@ PrefabInstance:
     - target: {fileID: 6406223690766117192, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: raycastManager
+      value: 
+      objectReference: {fileID: 1490135911}
+    - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: arrivalTolerance
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 7226365742750972302, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Mass
@@ -5119,6 +5135,7 @@ PrefabInstance:
     m_RemovedComponents:
     - {fileID: 7486483488993066797, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
     - {fileID: 3683593154494021682, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+    - {fileID: 5421373315633433924, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 8078697472073711468, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
@@ -7497,6 +7514,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   explanationText: {fileID: 925245565}
   explanationCanvas: {fileID: 1696689630}
+--- !u!114 &1490135911 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+  m_PrefabInstance: {fileID: 881118247}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 79058042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c95b54e0f334a914fbe0b0d79fefd9b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1510456821
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8196,6 +8224,14 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: threshold
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: raycastLength
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastDistance
       value: 3
@@ -8215,6 +8251,10 @@ PrefabInstance:
     - target: {fileID: 6406223690766117192, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: arrivalTolerance
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 7241834162508036707, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
@@ -10432,6 +10472,14 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: threshold
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: raycastLength
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 6295221857343116058, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastDistance
       value: 3
@@ -10451,6 +10499,10 @@ PrefabInstance:
     - target: {fileID: 6406223690766117192, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: arrivalTolerance
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 7241834162508036707, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer

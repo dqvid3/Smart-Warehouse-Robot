@@ -17,6 +17,8 @@ public class MovementWithAStar : MonoBehaviour
     private LineRenderer lineRenderer;
     public GameObject robotToMove;
     public float moveSpeed = 3.5f;
+    public float arrivalTolerance = 1f;
+    public float deviationAngle = 45f; // Angolo massimo di deviazione
 
     private void Start()
     {
@@ -31,6 +33,7 @@ public class MovementWithAStar : MonoBehaviour
 
     public IEnumerator MovementToPosition(Vector3 destination)
     {
+        EnableSensors();
         this.end = destination;
         this.start = robotToMove.transform.position;
 
@@ -38,6 +41,11 @@ public class MovementWithAStar : MonoBehaviour
 
         while (Vector3.Distance(robotToMove.transform.position, end) > 0.1f)
         {
+            if (Vector3.Distance(robotToMove.transform.position, end) <= arrivalTolerance && raycastManager.sensorsEnabled)
+            {
+                DisableSensors();
+            }
+
             yield return null;
         }
     }
@@ -104,12 +112,23 @@ public class MovementWithAStar : MonoBehaviour
 
             while (journey < 1f)
             {
+                if (Vector3.Distance(robotToMove.transform.position, end) <= arrivalTolerance && raycastManager.sensorsEnabled)
+                {
+                    DisableSensors();
+                }
+
                 string obstacleDirection = raycastManager.GetObstacleDirection();
                 if (obstacleDirection != null && (obstacleDirection == "Sinistra" || obstacleDirection == "Destra"))
                 {
-                    Debug.Log("Ostacolo rilevato. Applicando correzione.");
+                    Debug.Log("Ostacolo rilevato. Spostamento per evitare l'ostacolo.");
 
-                    yield return StartCoroutine(ApplyDeviationAndResumePath(path, i, obstacleDirection));
+                    Vector3 deviationPosition = CalculateDeviationPosition(robotToMove.transform.position, obstacleDirection, deviationAngle);
+
+                    yield return StartCoroutine(MoveToPosition(deviationPosition));
+
+                    Debug.Log("Ricalcolo del percorso dalla nuova posizione.");
+                    start = robotToMove.transform.position;
+                    PathRequestManager.RequestPath(start, end, OnPathFound);
                     yield break;
                 }
 
@@ -117,7 +136,6 @@ public class MovementWithAStar : MonoBehaviour
 
                 robotToMove.transform.position = Vector3.Lerp(startPosition, targetPosition, journey);
                 robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, targetRotation, Time.deltaTime * moveSpeed);
-                start = robotToMove.transform.position;
 
                 yield return null;
             }
@@ -125,64 +143,60 @@ public class MovementWithAStar : MonoBehaviour
             robotToMove.transform.position = targetPosition;
             robotToMove.transform.rotation = targetRotation;
         }
-
-        start = end;
     }
 
-    private IEnumerator ApplyDeviationAndResumePath(Vector3[] path, int currentIndex, string obstacleDirection)
+    private IEnumerator MoveToPosition(Vector3 targetPosition)
     {
-        Vector3[] modifiedPath = CreateDeviatedPath(path, currentIndex, obstacleDirection, 0.5f, 2f);
+        Vector3 startPosition = robotToMove.transform.position;
+        Quaternion startRotation = robotToMove.transform.rotation;
+        Quaternion targetRotation = Quaternion.LookRotation((targetPosition - startPosition).normalized);
 
-        if (modifiedPath == null || modifiedPath.Length < 2)
+        float journey = 0f;
+
+        while (journey < 1f)
         {
-            Debug.LogError("Percorso modificato non valido.");
-            yield break;
+            journey += Time.deltaTime * moveSpeed / Vector3.Distance(startPosition, targetPosition);
+
+            robotToMove.transform.position = Vector3.Lerp(startPosition, targetPosition, journey);
+            robotToMove.transform.rotation = Quaternion.Slerp(startRotation, targetRotation, journey);
+            yield return null;
         }
 
-        if (showPath)
-        {
-            DrawPath(modifiedPath);
-        }
-
-        yield return StartCoroutine(MoveAlongPath(modifiedPath));
+        robotToMove.transform.position = targetPosition;
+        robotToMove.transform.rotation = targetRotation;
     }
 
-    private Vector3[] CreateDeviatedPath(Vector3[] originalPath, int currentIndex, string direction, float deviationMin, float deviationMax)
+    private Vector3 CalculateDeviationPosition(Vector3 currentPosition, string direction, float angle)
     {
-        List<Vector3> modifiedPath = new List<Vector3>(originalPath);
-
-        if (currentIndex < 0 || currentIndex >= originalPath.Length - 1)
-        {
-            Debug.LogError("Indice non valido per la deviazione.");
-            return null;
-        }
-
-        Vector3 currentNode = originalPath[currentIndex];
-        Vector3 nextNode = originalPath[currentIndex + 1];
-        Vector3 directionVector = (nextNode - currentNode).normalized;
-
         Vector3 deviationDirection;
+
         if (direction == "Sinistra")
         {
-            deviationDirection = new Vector3(-directionVector.z, 0, directionVector.x);
+            deviationDirection = Quaternion.Euler(0, angle, 0) * robotToMove.transform.forward;
         }
         else if (direction == "Destra")
         {
-            deviationDirection = new Vector3(directionVector.z, 0, -directionVector.x);
+            deviationDirection = Quaternion.Euler(0, -angle, 0) * robotToMove.transform.forward;
         }
         else
         {
             Debug.LogError("Direzione ostacolo non valida.");
-            return null;
+            return currentPosition;
         }
 
-        float deviationAmount = Random.Range(deviationMin, deviationMax);
-        Vector3 deviation = deviationDirection * deviationAmount;
-        Vector3 newDeviatedNode = currentNode + deviation;
+        return currentPosition + deviationDirection.normalized * 1.5f; // Spostarsi di 1.5 unità nella direzione calcolata
+    }
 
-        modifiedPath.Insert(currentIndex + 1, newDeviatedNode);
+    private void DisableSensors()
+    {
+        raycastManager.sensorsEnabled = false;
+        Debug.Log("Sensori disabilitati.");
+    }
 
-        return modifiedPath.ToArray();
+    private void EnableSensors()
+    {
+        raycastManager.sensorsEnabled = true;
+        Debug.Log("Sensori abilitati.");
     }
 
     public Vector3 GetOdometry()

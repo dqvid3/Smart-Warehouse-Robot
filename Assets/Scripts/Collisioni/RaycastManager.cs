@@ -9,16 +9,25 @@ public class RaycastManager : MonoBehaviour
     public LayerMask layerMask; // Layer da ignorare (quello del robot)
 
     private RaycastHit hitInfo;
+    public bool sensorsEnabled = true;
 
     void Update()
     {
-        // Calcolare la direzione dell'ostacolo (se presente)
-        GetObstacleDirection();
+        // Calcolare la direzione dell'ostacolo solo se i sensori sono abilitati
+        if (sensorsEnabled)
+        {
+            GetObstacleDirection();
+        }
     }
 
     // Funzione per ottenere la direzione dell'ostacolo
     public string GetObstacleDirection()
     {
+        if (!sensorsEnabled)
+        {
+            return "Sensori disabilitati";
+        }
+
         int leftCount = 0, rightCount = 0;
 
         // Procediamo con i raggi su un arco di 90 gradi
@@ -62,10 +71,14 @@ public class RaycastManager : MonoBehaviour
             return Random.Range(0, 2) == 0 ? "Sinistra" : "Destra";
     }
 
-
     // Disegnare il raycast con il Gizmos
     private void OnDrawGizmos()
     {
+        if (!sensorsEnabled)
+        {
+            return; // Non disegnare nulla se i sensori sono disabilitati
+        }
+
         Vector3 origin = transform.position + Vector3.up * rayHeight; // Punto di partenza del raggio
         float halfAngle = 45f;
 
