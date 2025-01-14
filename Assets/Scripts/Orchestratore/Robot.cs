@@ -31,11 +31,15 @@ public class Robot : MonoBehaviour
         Idle,
         RechargeState,
         DeliveryState,
-        ShippingState
+        ShippingState,
+        DisposalState
     }
 
     private float batteryDrainInterval = 5f;
     private float batteryDrainTimer = 0f;
+
+    public string category = null;
+    public string timestamp = null;
 
     void Start()
     {
@@ -93,6 +97,9 @@ public class Robot : MonoBehaviour
                 explainability.ShowExplanation($"Sto consegnando un pacco al nastro trasportatore.");
                 StartCoroutine(HandleShippingTask());
                 break;
+            case RobotState.DisposalState:
+                StartCoroutine(HandleDisposalTask());
+                break;
         }
     }
 
@@ -133,6 +140,12 @@ public class Robot : MonoBehaviour
         robotManager.NotifyTaskCompletion(id);
     }
 
+    private IEnumerator HandleDisposalTask() 
+    {
+        yield return StartCoroutine(forkliftNavController.TakeParcelFromShelf(destination, id));   
+        yield return StartCoroutine(forkliftNavController.PlaceParcelOnShelf(category, id, timestamp));   
+        currentState = RobotState.Idle;
+    }
     public Vector3 GetEstimatedPosition()
     {
         return kalmanPosition.GetEstimatedPosition();

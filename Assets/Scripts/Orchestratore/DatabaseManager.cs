@@ -51,8 +51,7 @@ public class DatabaseManager : MonoBehaviour
         string query = @"
         MATCH (l:Landmark {id: $id})
         RETURN l.x AS x, l.z AS z
-        LIMIT 1
-    ";
+        LIMIT 1";
 
         // Esegui la query con il parametro id
         var parameters = new Dictionary<string, object>
@@ -173,16 +172,16 @@ public class DatabaseManager : MonoBehaviour
     public async Task<IList<IRecord>> GetOldestOrderWithParcelCountAsync()
     {
         string query = @"
-    MATCH (oldestOrder:Order)
-    WHERE EXISTS {
-        MATCH (oldestOrder)<-[:PART_OF]-(p:Parcel)<-[:CONTAINS]-(:Slot)
-    }
-    WITH oldestOrder
-    ORDER BY oldestOrder.timestamp ASC
-    LIMIT 1
-    MATCH (p:Parcel)-[:PART_OF]->(oldestOrder)
-    MATCH (p)<-[:CONTAINS]-(:Slot)
-    RETURN oldestOrder AS order, COUNT(p) AS parcelCount";
+        MATCH (oldestOrder:Order)
+        WHERE EXISTS {
+            MATCH (oldestOrder)<-[:PART_OF]-(p:Parcel)<-[:CONTAINS]-(:Slot)
+        }
+        WITH oldestOrder
+        ORDER BY oldestOrder.timestamp ASC
+        LIMIT 1
+        MATCH (p:Parcel)-[:PART_OF]->(oldestOrder)
+        MATCH (p)<-[:CONTAINS]-(:Slot)
+        RETURN oldestOrder AS order, COUNT(p) AS parcelCount";
         return await neo4jHelper.ExecuteReadListAsync(query);
     }
 
@@ -205,7 +204,7 @@ public class DatabaseManager : MonoBehaviour
 
         foreach (var record in result)
         {
-            Vector3 position = new Vector3(
+            Vector3 position = new(
                 record["x"].As<float>(),
                 record["y"].As<float>(),
                 record["z"].As<float>()
@@ -216,6 +215,31 @@ public class DatabaseManager : MonoBehaviour
         return parcelPositions;
     }
     
+    public async Task<List<(Vector3, string, string)>> GetExpiredParcelsInBackupShelf()
+    {
+        string query = @"
+        MATCH (s:Shelf {category: 'Backup'})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)-[:CONTAINS]->(p:Parcel)
+        WHERE p.expirationDuration < timestamp()
+        RETURN p, s.x + slot.x AS x, l.y AS y, s.z AS z, p.category AS category, p.timestamp as timestamp"; 
+
+        var result = await neo4jHelper.ExecuteReadListAsync(query);
+        var parcels = new List<(Vector3, string, string)>();
+
+        foreach (var record in result)
+        {
+            Vector3 position = new(
+                record["x"].As<float>(),
+                record["y"].As<float>(),
+                record["z"].As<float>()
+            );
+            string category = record["category"].As<string>();
+            string timestamp = record["category"].As<string>();
+            parcels.Add((position, category, timestamp));
+        }
+
+        return parcels;
+    }
+
     public async Task<IList<IRecord>> GetAvailableSlot(string category)
     {
         string query = @"

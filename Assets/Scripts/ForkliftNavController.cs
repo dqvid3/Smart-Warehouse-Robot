@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.AI;
 using System.Collections;
 using Neo4j.Driver;
 using System.Collections.Generic;
@@ -8,6 +7,7 @@ using System;
 
 public class ForkliftNavController : MonoBehaviour
 {
+    Vector3 slotPosition;
     public RobotManager robotManager;
     public MovementWithAStar movementWithAStar;
     [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels
@@ -20,18 +20,20 @@ public class ForkliftNavController : MonoBehaviour
     public Vector3 defaultPosition;
     private RobotExplainability explainability;
     private Rigidbody parcelRigidbody;
+    private Vector3 backupPosition;
 
     private void Awake()
     {
         defaultPosition = transform.position;
     }
 
-    void Start()
+    async void Start()
     {
         neo4jHelper = new Neo4jHelper("bolt://localhost:7687", "neo4j", "password");
         qrReader = GetComponent<QRCodeReader>();
         forkliftController = GetComponent<ForkliftController>();
         explainability = GetComponent<RobotExplainability>();
+        backupPosition = await neo4jHelper.GetBackupPosition();
     }
 
     public IEnumerator PickParcelFromDelivery(Vector3 parcelPosition, int robotId)
@@ -68,16 +70,38 @@ public class ForkliftNavController : MonoBehaviour
         parcelRigidbody = parcel.GetComponent<Rigidbody>();
         parcelRigidbody.isKinematic = true;
         parcelRigidbody.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
-
         explainability.ShowExplanation("Box prelevata. Mi sposto verso lo scaffale corretto.");
 
+        IRecord placedRecord = null;
+        bool usedBackupShelf = false; // Inizializzata a false
+
+        yield return StartCoroutine(PlaceParcelOnShelf(category, robotId, timestamp, (record, isBackup) => {
+            placedRecord = record;
+            usedBackupShelf = isBackup; 
+        }));
+
+        // Aggiornamento della posizione del pacco nel database
+        if (placedRecord != null)
+        {
+            float? expirationDuration = usedBackupShelf == true ? 5f : null;
+            _ = UpdateParcelLocation(timestamp, placedRecord["slotId"].As<long>(), expirationDuration);
+        }
+
+        if (!robotManager.AreThereTask())
+        {
+            yield return StartCoroutine(LiftMastToHeight(0));
+            yield return StartCoroutine(MoveToOriginPosition());
+        }
+    }
+
+    public IEnumerator PlaceParcelOnShelf(string category, int robotId, string timestamp, Action<IRecord, bool> onComplete = null)
+    {
         // Trova uno slot disponibile e senza ostacoli
         IRecord record = null;
-        float shelfHeight = 0;
         bool hasObstacle = true;
-        bool useBackupShelf = false; // Flag per indicare se stiamo usando lo scaffale di backup
-        // Cambio direzione per lo scaffale
-        qrCodeDirection = Vector3.forward;
+        bool useBackupShelf = false;
+        Vector3 qrCodeDirection = Vector3.forward;
+        Vector3 approachPosition = Vector3.zero;
         while (hasObstacle)
         {
             // Cerca uno slot disponibile
@@ -86,8 +110,15 @@ public class ForkliftNavController : MonoBehaviour
                 record = robotManager.AskSlot(category, robotId);
                 if (record == null)
                 {
-                    explainability.ShowExplanation("Nessun slot disponibile nello scaffale principale. Uso lo scaffale di backup.");
-                    useBackupShelf = true; // Passa allo scaffale di backup
+                    if (onComplete == null){ // se si sta facendo disposal allora non voglio riusare il backupshelf
+                        yield return GetParcelBack(robotId, timestamp);
+                        yield break;
+                    }
+                    else
+                    {
+                        explainability.ShowExplanation("Nessun slot disponibile nello scaffale principale. Uso lo scaffale di backup.");
+                        useBackupShelf = true;
+                    }
                     continue;
                 }
             }
@@ -96,47 +127,70 @@ public class ForkliftNavController : MonoBehaviour
                 record = robotManager.AskSlot("Backup", robotId);
                 if (record == null)
                 {
-                    explainability.ShowExplanation("Nessuno scaffale di backup disponibile. Impossibile completare il task.");
-                    yield break; // Esci dalla coroutine se non ci sono slot disponibili
+                    yield return GetParcelBack(robotId, timestamp);
+                    yield break;
                 }
             }
 
             // Ottieni la posizione dello slot
-            Vector3 slotPosition = GetSlotPosition(record);
-            shelfHeight = slotPosition.y;
-            slotPosition.y = transform.position.y;
+            slotPosition = GetSlotPosition(record);
             approachPosition = slotPosition + qrCodeDirection * approachDistance;
+            approachPosition.y = transform.position.y;
+
             // Spostamento verso lo scaffale
             yield return StartCoroutine(MoveToPosition(approachPosition));
             explainability.ShowExplanation("Sto raggiungendo lo scaffale per posare la box.");
 
             // Rotazione verso lo scaffale e controllo ostacoli
             yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
-            yield return StartCoroutine(LiftMastToHeight(shelfHeight - 1.5f));
+            yield return StartCoroutine(LiftMastToHeight(slotPosition.y - .95f));
 
-            // Controllo se c'è un ostacolo nello slot
-            slotPosition.y = shelfHeight;
+            // Controllo ostacoli
             hasObstacle = CheckForObstacle(slotPosition);
-            if (hasObstacle){
+            if (hasObstacle)
+            {
                 explainability.ShowExplanation("Trovato un ostacolo nello slot. Cerco un nuovo slot.");
             }
         }
-
-        // Posizionamento della box
-        yield return StartCoroutine(LiftMastToHeight(shelfHeight + 0.05f));
+        // Posizionamento del pacco
+        yield return StartCoroutine(LiftMastToHeight(slotPosition.y + 0.05f));
         yield return StartCoroutine(MoveTakeBoxDistance(approachPosition, -qrCodeDirection));
-        yield return StartCoroutine(LiftMastToHeight(shelfHeight - 0.05f));
+        yield return StartCoroutine(LiftMastToHeight(slotPosition.y - 0.05f));
+
+        // Stacco del pacco
+        GameObject parcel = grabPoint.GetChild(1).gameObject;
         parcel.transform.SetParent(null);
         parcelRigidbody = parcel.GetComponent<Rigidbody>();
         parcelRigidbody.isKinematic = false;
         parcelRigidbody.constraints = RigidbodyConstraints.None;
 
-        explainability.ShowExplanation("Box posata sullo scaffale. Sto tornando in posizione di standby.");
+        explainability.ShowExplanation("Box posata sullo scaffale.");
 
-        // Ritorno alla posizione originale
-        _ = UpdateParcelLocation(timestamp, record["slotId"].As<long>());
+        // Allontanamento dallo scaffale
         yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
         robotManager.NotifyTaskCompletion(robotId);
+        onComplete?.Invoke(record, useBackupShelf);
+    }
+
+    public IEnumerator GetParcelBack(int robotId, string timestamp){
+        explainability.ShowExplanation("Nessun slot disponibile nello scaffale principale. Mando il pacco indietro.");
+        yield return StartCoroutine(PlaceParcelOnConveyor(robotId, backupPosition));
+        _ = neo4jHelper.DeleteParcel(timestamp);
+        if (!robotManager.AreThereTask())
+        {
+            yield return StartCoroutine(LiftMastToHeight(0));
+            yield return StartCoroutine(MoveToOriginPosition());
+        }
+    }
+
+    public IEnumerator ShipParcel(Vector3 slotPosition, int robotId)
+    {
+
+        Vector3 conveyorDestination = robotManager.AskConveyorPosition();
+
+        yield return TakeParcelFromShelf(slotPosition, robotId);
+
+        yield return PlaceParcelOnConveyor(robotId, conveyorDestination);
 
         if (!robotManager.AreThereTask())
         {
@@ -144,55 +198,77 @@ public class ForkliftNavController : MonoBehaviour
             yield return StartCoroutine(MoveToOriginPosition());
         }
     }
-    public IEnumerator ShipParcel(Vector3 slotPosition, int robotId)
+
+    public IEnumerator TakeParcelFromShelf(Vector3 slotPosition, int robotId)
     {
         Vector3 qrCodeDirection = Vector3.forward;
         Vector3 approachPosition = slotPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
 
-        // Move to the approach position
+        // Spostamento verso la posizione di approccio
         yield return MoveToPosition(approachPosition);
-        // Rotate to face the parcel
-        yield return SmoothRotateToDirection(-qrCodeDirection);
+        explainability.ShowExplanation("Raggiungo lo scaffale per prelevare la box.");
 
-        // Find the parcel GameObject based on its position
+        // Rotazione per affrontare lo scaffale
+        yield return SmoothRotateToDirection(-qrCodeDirection);
+        explainability.ShowExplanation("Mi oriento verso lo scaffale.");
+
+        // Trova il GameObject del pacco basato sulla sua posizione
         GameObject parcel = GetParcel(slotPosition.y);
+
+        // Allineamento e sollevamento del pacco
         yield return LiftMastToHeight(slotPosition.y);
         yield return StartCoroutine(MoveTakeBoxDistance(approachPosition, -qrCodeDirection));
-        yield return StartCoroutine(SmoothRotateToDirection(-qrCodeDirection));
         yield return LiftMastToHeight(slotPosition.y + 0.05f);
+        explainability.ShowExplanation("Sto sollevando la box.");
 
+        // Aggancio del pacco al punto di presa
         parcel.transform.SetParent(grabPoint);
-        Rigidbody parcelRigidbody = parcel.GetComponent<Rigidbody>();
+        parcelRigidbody = parcel.GetComponent<Rigidbody>();
         parcelRigidbody.isKinematic = true;
         parcelRigidbody.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
-        yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
 
-        Vector3 conveyorDestination = robotManager.AskConveyorPosition();
-        qrCodeDirection = Vector3.right;
-        float heightConveyor = conveyorDestination.y;
-        conveyorDestination.y = 0;
-        approachPosition = conveyorDestination + qrCodeDirection * approachDistance;
-        yield return MoveToPosition(approachPosition);
-        robotManager.FreeSlotPosition(robotId, conveyorDestination);
+        // Allontanamento dallo scaffale
+        yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
+        explainability.ShowExplanation("Mi allontano dallo scaffale con la box.");
+        robotManager.FreeSlotPosition(robotId);
         _ = FreeSlot(slotPosition);
+    }
+
+    public IEnumerator PlaceParcelOnConveyor(int robotId, Vector3 conveyorDestination)
+    {
+        robotManager.AssignConveyorPosition(robotId, conveyorDestination);
+        // Direzione e posizione di approccio al nastro trasportatore
+        Vector3 qrCodeDirection = Vector3.right;
+        Vector3 approachPosition = conveyorDestination + qrCodeDirection * approachDistance;
+        approachPosition.y = transform.position.y;
+
+        // Spostamento verso la posizione di approccio
+        yield return MoveToPosition(approachPosition);
+        explainability.ShowExplanation("Raggiungo il nastro trasportatore per posare la box.");
+
+        // Rotazione per affrontare il nastro trasportatore
         yield return SmoothRotateToDirection(-qrCodeDirection);
-        //approachPosition.x -= takeBoxDistance;
+        explainability.ShowExplanation("Mi oriento verso il nastro trasportatore.");
+
+        // Allineamento e posizionamento del pacco
         yield return StartCoroutine(MoveTakeBoxDistance(approachPosition, -qrCodeDirection));
-        yield return StartCoroutine(LiftMastToHeight(heightConveyor));
+        yield return StartCoroutine(LiftMastToHeight(conveyorDestination.y));
+
+        // Stacco del pacco
+        GameObject parcel = grabPoint.GetChild(1).gameObject;
         parcel.transform.SetParent(null);
         parcelRigidbody = parcel.GetComponent<Rigidbody>();
         parcelRigidbody.isKinematic = false;
         parcelRigidbody.constraints = RigidbodyConstraints.None;
 
-        yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
-        robotManager.NotifyTaskCompletion(robotId);
+        explainability.ShowExplanation("Box posata sul nastro trasportatore.");
 
-        if (!robotManager.AreThereTask())
-        {
-            yield return StartCoroutine(LiftMastToHeight(0));
-            yield return StartCoroutine(MoveToOriginPosition());
-        }
+        // Allontanamento dal nastro trasportatore
+        yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
+
+        // Notifica al gestore dei robot che il task è completato
+        robotManager.NotifyTaskCompletion(robotId);
     }
 
     public IEnumerator MoveToOriginPosition()
@@ -264,16 +340,25 @@ public class ForkliftNavController : MonoBehaviour
         return null;
     }
 
-    private async Task UpdateParcelLocation(string parcelTimestamp, long slotId)
+    private async Task UpdateParcelLocation(string parcelTimestamp, long slotId, float? expirationDuration = null)
     {
         string query = @"
         MATCH (p:Parcel {timestamp: $parcelTimestamp})-[r:LOCATED_IN]->(d:Area {type: 'Delivery'})
         DELETE r
         WITH p
-        MATCH (s:Slot), (p:Parcel {timestamp: $parcelTimestamp})
-        WHERE ID(s) = $slotId
+        MATCH (s:Slot) WHERE ID(s) = $slotId
+        FOREACH (_ IN CASE WHEN $expirationDuration IS NOT NULL THEN [1] ELSE [] END |
+            SET p.expirationTime = timestamp() + $expirationDuration
+        )
         CREATE (s)-[:CONTAINS]->(p)";
-        var parameters = new Dictionary<string, object> { { "parcelTimestamp", parcelTimestamp }, { "slotId", slotId } };
+
+        var parameters = new Dictionary<string, object>
+        {
+            { "parcelTimestamp", parcelTimestamp },
+            { "slotId", slotId },
+            { "expirationDuration", expirationDuration.HasValue ? (long?)(expirationDuration.Value * 1000) : null }
+        };
+
         await neo4jHelper.ExecuteWriteAsync(query, parameters);
     }
 
@@ -305,17 +390,17 @@ public class ForkliftNavController : MonoBehaviour
 
     private bool CheckForObstacle(Vector3 slotPosition)
     {
-        Vector3 rayOrigin = slotPosition - Vector3.forward * .75f;
-        rayOrigin.y += 0.75f;
-        Vector3 rayDirection = Vector3.forward;
-        float rayLength = 1.5f; // Lunghezza del raggio
-        Debug.Log($"Origine del raggio: {rayOrigin}");
-        Debug.DrawRay(rayOrigin, rayDirection * rayLength, Color.red, 2f); // Debug per visualizzare il raggio
-        if (Physics.Raycast(rayOrigin, rayDirection, out RaycastHit hit, rayLength, layerMask))
-        {
-            Debug.Log($"Ostacolo trovato: {hit.collider.gameObject.name}");
-            return true;
-        }
-        return false;
+        // Definiamo il centro del box di controllo (basato sulla posizione dello slot)
+        Vector3 boxCenter = new Vector3(slotPosition.x, slotPosition.y, slotPosition.z);
+
+        // Definiamo le dimensioni del box (larghezza, altezza, profondità)
+        Vector3 boxSize = new Vector3(1.5f, 1.35f, 1.4f); // Regola le dimensioni in base alle necessità
+        slotPosition.y += boxSize.y / 2;
+
+        // Controlliamo se ci sono collider all'interno del box
+        Collider[] colliders = Physics.OverlapBox(boxCenter, boxSize / 2, Quaternion.identity, layerMask);
+
+        // Restituiamo true se ci sono oggetti nel box, altrimenti false
+        return colliders.Length > 0;
     }
 }
