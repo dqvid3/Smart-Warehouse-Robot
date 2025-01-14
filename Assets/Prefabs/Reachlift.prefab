@@ -965,6 +965,8 @@ MonoBehaviour:
   isPaused: 0
   kalmanPosition: {fileID: 8622431091526066733}
   speed: 0
+  category: 
+  timestamp: 
 --- !u!114 &5208561982904702695
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1122,8 +1124,9 @@ MonoBehaviour:
   raycastManager: {fileID: 6279132403188779417}
   start: {x: 0, y: 0, z: 0}
   robotToMove: {fileID: 8887462579480094166}
-  moveSpeed: 3.5
+  moveSpeed: 2
   arrivalTolerance: 1
+  deviationAngle: 45
 --- !u!208 &6646960972381987369
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -1152,10 +1155,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c95b54e0f334a914fbe0b0d79fefd9b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  raycastLength: 5
-  threshold: 3
-  rayHeight: 0.4
-  numberOfRays: 90
+  raycastLength: 3.5
+  threshold: 3.5
+  rayHeight: 1.5
+  numberOfRays: 360
   layerMask:
     serializedVersion: 2
     m_Bits: 0

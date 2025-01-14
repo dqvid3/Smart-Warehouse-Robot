@@ -16,7 +16,7 @@ public class MovementWithAStar : MonoBehaviour
 
     private LineRenderer lineRenderer;
     public GameObject robotToMove;
-    public float moveSpeed = 3.5f;
+    public float moveSpeed = 2f;
     public float arrivalTolerance = 1f;
     public float deviationAngle = 45f; // Angolo massimo di deviazione
 
@@ -184,7 +184,7 @@ public class MovementWithAStar : MonoBehaviour
             return currentPosition;
         }
 
-        return currentPosition + deviationDirection.normalized * 1.5f; // Spostarsi di 1.5 unità nella direzione calcolata
+        return currentPosition + deviationDirection.normalized * 1.5f; // Spostarsi di 1.5 unitï¿½ nella direzione calcolata
     }
 
     private void DisableSensors()

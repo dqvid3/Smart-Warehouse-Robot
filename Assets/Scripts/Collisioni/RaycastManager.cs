@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class RaycastManager : MonoBehaviour
 {
-    public float raycastLength = 5f; // Distanza massima per il raycast
-    public float threshold = 3f; // La soglia di distanza
-    public float rayHeight = 0.4f; // Altezza del raycast rispetto al robot
-    public int numberOfRays = 90; // Numero di raggi che simulano l'arco
+    public float raycastLength = 3.7f; // Distanza massima per il raycast
+    public float threshold = 3.7f; // La soglia di distanza
+    public float rayHeight = 1.5f; // Altezza del raycast rispetto al robot
+    public int numberOfRays =360; // Numero di raggi che simulano l'arco
     public LayerMask layerMask; // Layer da ignorare (quello del robot)
 
     private RaycastHit hitInfo;
