@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.Apple;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(LineRenderer))]
 public class MovementWithAStar : MonoBehaviour
@@ -8,6 +9,8 @@ public class MovementWithAStar : MonoBehaviour
     [Header("Controller")]
     public ForkliftNavController forkliftNavController;
     public bool showPath = false;
+
+    public RaycastManager raycastmanager;
 
     public Vector3 start;
     private Vector3 end;
@@ -40,25 +43,24 @@ public class MovementWithAStar : MonoBehaviour
         }
     }
 
-
-
     private void OnPathFound(Vector3[] path, bool success)
     {
         if (success)
         {
             Vector3[] fullPath = new Vector3[path.Length + 2];
-            fullPath[0] = start; // Primo punto � la posizione attuale
+            fullPath[0] = start; // Primo punto è la posizione attuale
             for (int i = 0; i < path.Length; i++)
             {
                 fullPath[i + 1] = path[i]; // Copia i punti intermedi
             }
-            fullPath[fullPath.Length - 1] = end; // Ultimo punto � la destinazione finale
+            fullPath[fullPath.Length - 1] = end; // Ultimo punto è la destinazione finale
 
             if (showPath)
             {
                 DrawPath(fullPath);
             }
 
+            AdjustPathWithRaycast(ref fullPath, raycastmanager);
             // Inizia a muovere l'oggetto
             StartCoroutine(MoveAlongPath(fullPath));
         }
@@ -124,8 +126,70 @@ public class MovementWithAStar : MonoBehaviour
         start = end; //Aggiornamento posizione iniziale
     }
 
+    private void ModifyPathWithDeviation(ref Vector3[] path, int startIndex, int endIndex, float deviationAmountRangeMin, float deviationAmountRangeMax, bool isLeft)
+    {
+        // Assicurati che il percorso abbia abbastanza nodi
+        if (path.Length > endIndex)
+        {
+            // Per ogni segmento di percorso da startIndex a endIndex
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                // Prendi il nodo corrente e il nodo successivo
+                Vector3 currentNode = path[i];
+                Vector3 nextNode = path[i + 1];
+
+                // Calcola la direzione tra il nodo corrente e il nodo successivo
+                Vector3 direction = (nextNode - currentNode).normalized;
+
+                // Trova il vettore perpendicolare a sinistra o destra rispetto alla direzione
+                Vector3 deviationDirection = isLeft ? new Vector3(-direction.z, 0, direction.x) : new Vector3(direction.z, 0, -direction.x);
+
+                // Applica una deviazione casuale nel range specificato
+                float deviationAmount = Random.Range(deviationAmountRangeMin, deviationAmountRangeMax); // La deviazione può essere più o meno grande
+                Vector3 deviation = deviationDirection * deviationAmount;
+
+                // Crea un nuovo nodo deviato
+                Vector3 newDeviatedNode = currentNode + deviation;
+
+                // Inserisci il nuovo nodo nella lista modificata del percorso
+                List<Vector3> modifiedPath = new List<Vector3>(path);
+                modifiedPath.Insert(i + 1, newDeviatedNode); // Inserisci dopo il nodo corrente
+
+                // Riassegna il percorso modificato
+                path = modifiedPath.ToArray();
+            }
+        }
+    }
+
+    private void AdjustPathWithRaycast(ref Vector3[] path, RaycastManager raycastManager)
+        {
+            // 1. Esegui il raycast per ottenere la lista di raggi sopra e sotto soglia
+            raycastManager.UpdateDirectionAndPath(ref path);  // Aggiorna la direzione principale (dirPrinc) e ostacoli
+
+            // 2. Determina il range di deviazione in base alla situazione
+            float deviationAmountRangeMin = -2f;
+            float deviationAmountRangeMax = 2f;
+
+            // Logica per determinare l'intensità della deviazione in base agli ostacoli
+            if (raycastManager.raysBelowThreshold.Count > 0)
+            {
+                // Se ci sono ostacoli sotto soglia, possiamo aumentare la deviazione
+                deviationAmountRangeMin = -3f;
+                deviationAmountRangeMax = 3f;
+            }
+
+            // 3. In base alla situazione, scegli se deviare a sinistra o a destra
+            bool isLeft = raycastManager.dirPrinc < raycastManager.dirOpp;
+
+            // 4. Usa la funzione ModifyPathWithDeviation per applicare la deviazione al percorso
+            ModifyPathWithDeviation(ref path, 0, path.Length - 1, deviationAmountRangeMin, deviationAmountRangeMax, isLeft);
+        }
+
+
+
     public Vector3 GetOdometry()
     {
         return robotToMove.transform.position;
     }
+
 }

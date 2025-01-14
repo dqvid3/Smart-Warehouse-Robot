@@ -68,189 +68,213 @@ dopo che il robot ha compiuto il giro su se stesso e si è piazzato lungo la nuo
 
 */
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class RaycastManager : MonoBehaviour
 {
-    private int dirPrinc = 90; // Direzione principale iniziale
-    private int dirOpp => (dirPrinc + 180) % 360; // Direzione opposta
-    private const int gradSterzata = 20; // Gradi di sterzata
+    public int rayCount = 360;  // Numero di raggi del raycast
+    public float distRaycast = 5f;  // Lunghezza massima dei raggi
+    public float threshold = 3f;  // Soglia sotto la quale i raggi diventano sotto soglia
+    public int steeringAngle = 20;  // Angolo di sterzata per determinare deviazione
+    public float rayHeight = 0.4f;  // Altezza del raggio di raycast
+    public int dirPrinc = 90;  // Direzione principale (inizialmente 90 gradi)
+    public int dirOpp = 270;   // Direzione opposta
+    public List<int> raysAboveThreshold = new List<int>();
+    public List<int> raysBelowThreshold = new List<int>();
 
-    public int DistRaycast { get; set; } = 10; // Lunghezza dei raggi del raycast
-    public int Soglia { get; set; } = 5; // Valore soglia per i raggi
-
-    private List<int> raggiSopraSoglia = new List<int>(Enumerable.Range(0, 360));
-    private List<int> raggiSottoSoglia = new List<int>();
-    private Dictionary<int, int> raycastDistances = new Dictionary<int, int>();
-
-    // Metodo per aggiornare i dati del raycast
-    public void UpdateRaycastData(Dictionary<int, int> raycastDistances)
+    private void Start()
     {
-        raggiSopraSoglia.Clear();
-        raggiSottoSoglia.Clear();
-
-        foreach (var kvp in raycastDistances)
-        {
-            if (kvp.Value >= Soglia)
-                raggiSopraSoglia.Add(kvp.Key);
-            else
-                raggiSottoSoglia.Add(kvp.Key);
-        }
-
-        Debug.Log("Dati del raycast aggiornati:");
-        Debug.Log($"Raggi sopra soglia: {string.Join(", ", raggiSopraSoglia)}");
-        Debug.Log($"Raggi sotto soglia: {string.Join(", ", raggiSottoSoglia)}");
+        // Simula l'inizializzazione del raycast (può essere integrato con il tuo sistema di sensori)
+        PerformRaycasts();
     }
 
-    // Metodo per raggruppare raggi consecutivi
-    private List<List<int>> GroupConsecutiveRays(List<int> rays)
+    private void PerformRaycasts()
     {
-        var grouped = new List<List<int>>();
-        var currentGroup = new List<int>();
+        raysAboveThreshold.Clear();
+        raysBelowThreshold.Clear();
 
-        foreach (var ray in rays.OrderBy(x => x))
+        // Simulazione dei raggi con veri raycast di Unity
+        for (int i = 0; i < rayCount; i++)
         {
-            if (currentGroup.Count == 0 || ray == currentGroup.Last() + 1)
+            // Calcola la direzione del raggio a 360 gradi
+            float angle = i * Mathf.Deg2Rad;
+            Vector3 rayDirection = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle));
+
+            // Posizione di partenza del raycast, leggermente sopra la superficie
+            Vector3 rayStartPosition = new Vector3(transform.position.x, transform.position.y + rayHeight, transform.position.z);
+
+            RaycastHit hit;
+            // Usa Physics.Raycast per fare il vero raycast
+            if (Physics.Raycast(rayStartPosition, rayDirection, out hit, distRaycast))
             {
-                currentGroup.Add(ray);
+                // Se il raycast colpisce qualcosa, confronta la distanza
+                if (hit.distance < threshold)
+                    raysBelowThreshold.Add(i);  // Aggiungi il raggio sotto soglia
+                else
+                    raysAboveThreshold.Add(i);  // Aggiungi il raggio sopra soglia
             }
             else
             {
-                grouped.Add(currentGroup);
-                currentGroup = new List<int> { ray };
+                raysAboveThreshold.Add(i);  // Se non c'è collisione, considera il raggio sopra soglia
             }
         }
+    }
 
-        if (currentGroup.Count > 0)
+    public void UpdateDirectionAndPath(ref Vector3[] path)
+    {
+        // Controlla se ci sono ostacoli rilevati prima di decidere la direzione
+        if (raysBelowThreshold.Count == 0)
         {
-            grouped.Add(currentGroup);
+            // Se non ci sono ostacoli sotto soglia, non cambiare la direzione
+            return;
         }
 
-        return grouped;
-    }
-
-    // Metodo per comporre gli array di direzione sx e dx
-    private (List<int> dirSx, List<int> dirDx) ComposeDirectionArrays(int start, int end)
-    {
-        var dirSx = new List<int>();
-        var dirDx = new List<int>();
-
-        for (int i = start; i != end; i = (i + 1) % 360)
-            dirSx.Add(i);
-
-        for (int i = start; i != end; i = (i - 1 + 360) % 360)
-            dirDx.Add(i);
-
-        dirDx.Reverse();
-        return (dirSx, dirDx);
-    }
-
-    // Metodo per calcolare la nuova direzione in base all'array di direzione
-    private int CalculateNewDirection(List<int> directionArray)
-    {
-        int index = gradSterzata / 2;
-        return directionArray[Math.Min(index, directionArray.Count - 1)];
-    }
-
-    // Metodo per aggiornare la direzione principale
-    private void UpdateDirection(List<int> dirSx, List<int> dirDx)
-    {
-        if (dirSx.Count < dirDx.Count || (dirSx.Count == dirDx.Count && UnityEngine.Random.Range(0, 2) == 0))
+        // Se ci sono ostacoli, aggiorna la direzione
+        if (raysBelowThreshold.Count == 1)
         {
-            dirPrinc = CalculateNewDirection(dirSx);
+            HandleSingleObstacle();
+        }
+        else if (raysBelowThreshold.Count > 1)
+        {
+            HandleMultipleObstacles();
+        }
+
+        // Ora che la direzione principale è aggiornata, modifica il percorso
+        ModifyPathWithDeviation(ref path, 0, path.Length - 1, -2f, 2f, dirPrinc < dirOpp);
+    }
+
+    private void HandleSingleObstacle()
+    {
+        // Gestisce il caso di un singolo ostacolo
+        List<int> dirSx = new List<int>();
+        List<int> dirDx = new List<int>();
+
+        // Creazione dei sotto array per dir_sx e dir_dx
+        foreach (int ray in raysBelowThreshold)
+        {
+            if (ray > dirPrinc)
+                dirSx.Add(ray);
+            else
+                dirDx.Add(ray);
+        }
+
+        // Decidi quale direzione è più corta (a sinistra o a destra)
+        if (dirSx.Count <= dirDx.Count)
+        {
+            dirPrinc = dirSx[dirSx.Count / 2]; // Scegli il punto medio della direzione sx
+            dirOpp = (dirPrinc + 180) % 360;  // Aggiorna la direzione opposta
         }
         else
         {
-            dirPrinc = CalculateNewDirection(dirDx);
+            dirPrinc = dirDx[dirDx.Count / 2]; // Scegli il punto medio della direzione dx
+            dirOpp = (dirPrinc + 180) % 360;  // Aggiorna la direzione opposta
         }
     }
 
-    // Metodo per decidere la nuova direzione
-    public void DecideDirection()
+    private void HandleMultipleObstacles()
     {
-        var groupedObstacles = GroupConsecutiveRays(raggiSottoSoglia);
-
-        if (groupedObstacles.Count == 1)
+        // Gestisce il caso di più ostacoli
+        if (raysBelowThreshold.Count == 2)
         {
-            var obstacle = groupedObstacles[0];
-            var (dirSx, dirDx) = ComposeDirectionArrays(obstacle.Last() + 1, obstacle.First());
-            UpdateDirection(dirSx, dirDx);
-        }
-        else if (groupedObstacles.Count == 2)
-        {
-            var gap = (groupedObstacles[1].First() - groupedObstacles[0].Last() + 360) % 360;
+            int startObstacle = raysBelowThreshold[0];
+            int endObstacle = raysBelowThreshold[1];
 
-            if (gap >= gradSterzata)
+            // Calcola la distanza tra gli ostacoli e controlla se c'è abbastanza spazio
+            if (Mathf.Abs(startObstacle - endObstacle) >= steeringAngle)
             {
-                dirPrinc = (groupedObstacles[0].Last() + gap / 2) % 360;
+                dirPrinc = (startObstacle + endObstacle) / 2;  // Punto medio
+                dirOpp = (dirPrinc + 180) % 360;
             }
             else
             {
-                var (dirSx, dirDx) = ComposeDirectionArrays(groupedObstacles[1].Last() + 1, groupedObstacles[0].First());
-                UpdateDirection(dirSx, dirDx);
-            }
-        }
-        else
-        {
-            foreach (var range in raggiSopraSoglia)
-            {
-                var consecutiveRays = GroupConsecutiveRays(raggiSopraSoglia).FirstOrDefault(g => g.Count >= gradSterzata);
-                if (consecutiveRays != null)
+                // Se non c'è abbastanza spazio, prendi la direzione più corta
+                int diffLeft = Mathf.Abs(dirPrinc - startObstacle);
+                int diffRight = Mathf.Abs(dirPrinc - endObstacle);
+
+                if (diffLeft < diffRight)
                 {
-                    dirPrinc = consecutiveRays[consecutiveRays.Count / 2];
+                    dirPrinc = startObstacle;
+                    dirOpp = (dirPrinc + 180) % 360;
+                }
+                else
+                {
+                    dirPrinc = endObstacle;
+                    dirOpp = (dirPrinc + 180) % 360;
+                }
+            }
+        }
+        else
+        {
+            // Nel caso ci siano più ostacoli, seleziona quello più lontano per cambiare direzione
+            List<int> possibleDirections = new List<int>();
+
+            foreach (int ray in raysBelowThreshold)
+            {
+                possibleDirections.Add(ray);
+            }
+
+            possibleDirections.Sort();
+
+            // Calcola la direzione migliore tra quelli liberi
+            for (int i = 0; i < possibleDirections.Count - 1; i++)
+            {
+                int midPoint = (possibleDirections[i] + possibleDirections[i + 1]) / 2;
+                if (Mathf.Abs(midPoint - dirPrinc) > steeringAngle)
+                {
+                    dirPrinc = midPoint;
+                    dirOpp = (dirPrinc + 180) % 360;
                     break;
                 }
             }
         }
     }
 
-    // Metodo per resettare la direzione principale
-    public void ResetDirection()
+    private void ModifyPathWithDeviation(ref Vector3[] path, int startIndex, int endIndex, float deviationAmountRangeMin, float deviationAmountRangeMax, bool isLeft)
     {
-        dirPrinc = 90;
-    }
-
-    // Metodo per generare i raggi del raycast
-    public void GenerateRaycasts()
-    {
-        raycastDistances.Clear();
-
-        for (int i = 0; i < 360; i++)
+        if (path.Length > endIndex)
         {
-            Vector3 direction = Quaternion.Euler(0, i, 0) * transform.forward;
-            if (Physics.Raycast(transform.position, direction, out RaycastHit hit, DistRaycast))
+            for (int i = startIndex; i < endIndex; i++)
             {
-                raycastDistances[i] = Mathf.FloorToInt(hit.distance);
-                Debug.DrawLine(transform.position, hit.point, Color.red);
-            }
-            else
-            {
-                raycastDistances[i] = DistRaycast;
-                Debug.DrawLine(transform.position, transform.position + direction * DistRaycast, Color.green);
+                Vector3 currentNode = path[i];
+                Vector3 nextNode = path[i + 1];
+
+                Vector3 direction = (nextNode - currentNode).normalized;
+                Vector3 deviationDirection = isLeft ? new Vector3(-direction.z, 0, direction.x) : new Vector3(direction.z, 0, -direction.x);
+
+                float deviationAmount = Random.Range(deviationAmountRangeMin, deviationAmountRangeMax);
+                Vector3 deviation = deviationDirection * deviationAmount;
+
+                Vector3 newDeviatedNode = currentNode + deviation;
+
+                List<Vector3> modifiedPath = new List<Vector3>(path);
+                modifiedPath.Insert(i + 1, newDeviatedNode);
+                path = modifiedPath.ToArray();
             }
         }
-
-        UpdateRaycastData(raycastDistances);
     }
 
-    // Metodo per disegnare i raggi del raycast con i colori appropriati
-    public void DrawRaycasts()
+    private void OnDrawGizmos()
     {
-        foreach (var kvp in raycastDistances)
+        PerformRaycasts();
+
+        Gizmos.color = Color.green;
+        foreach (int rayIndex in raysAboveThreshold)
         {
-            Vector3 direction = Quaternion.Euler(0, kvp.Key, 0) * transform.forward;
-            Color color = kvp.Value >= Soglia ? Color.green : Color.red;
-            Debug.DrawLine(transform.position, transform.position + direction * kvp.Value, color);
+            float angle = rayIndex * Mathf.Deg2Rad;
+            Vector3 direction = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * distRaycast;
+            Vector3 startPosition = new Vector3(transform.position.x, transform.position.y + rayHeight, transform.position.z);
+            Gizmos.DrawLine(startPosition, startPosition + direction);
         }
-    }
 
-    // Metodo per ottenere i parametri delle direzioni
-    public (int dirPrinc, int dirOpp, List<int> sopraSoglia, List<int> sottoSoglia) GetParameters()
-    {
-        return (dirPrinc, dirOpp, new List<int>(raggiSopraSoglia), new List<int>(raggiSottoSoglia));
+        Gizmos.color = Color.red;
+        foreach (int rayIndex in raysBelowThreshold)
+        {
+            float angle = rayIndex * Mathf.Deg2Rad;
+            Vector3 direction = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * distRaycast;
+            Vector3 startPosition = new Vector3(transform.position.x, transform.position.y + rayHeight, transform.position.z);
+            Gizmos.DrawLine(startPosition, startPosition + direction);
+        }
     }
 }
 
