@@ -262,7 +262,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -4543832893031423791, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: -4306932159154691424, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -667,6 +667,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6646960972381987369}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5421373315633433924}
     - targetCorrespondingSourceObject: {fileID: -4543832893031423791, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1630355590711519490}
@@ -841,7 +844,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
@@ -1137,6 +1140,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   forkliftNavController: {fileID: 3382456182264306211}
   showPath: 1
+  raycastManager: {fileID: 5421373315633433924}
   start: {x: 0, y: 0, z: 0}
   robotToMove: {fileID: 8887462579480094166}
   moveSpeed: 3.5
@@ -1156,6 +1160,25 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.5, z: 1}
   m_TimeToStationary: 0.5
+--- !u!114 &5421373315633433924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8887462579480094166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0bc8e7923f0414b589c3d3e6fefcf6e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  raycastLength: 4
+  threshold: 4
+  rayHeight: 0.4
+  numberOfRays: 90
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!1 &9171051550921637103 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 635547659545568360, guid: 3b7d2561de49f2d40b9a2d036cbb92f2, type: 3}
