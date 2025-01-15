@@ -13,7 +13,7 @@ public class ForkliftNavController : MonoBehaviour
     [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels
     [SerializeField] private Transform grabPoint;
     private ForkliftController forkliftController;
-    private float approachDistance = 3.2f;
+    private float approachDistance = 3.4f;
     private float takeBoxDistance = 1.3f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;

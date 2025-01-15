@@ -190,13 +190,11 @@ public class MovementWithAStar : MonoBehaviour
     private void DisableSensors()
     {
         raycastManager.sensorsEnabled = false;
-        Debug.Log("Sensori disabilitati.");
     }
 
     private void EnableSensors()
     {
         raycastManager.sensorsEnabled = true;
-        Debug.Log("Sensori abilitati.");
     }
 
     public Vector3 GetOdometry()
