@@ -21,6 +21,9 @@ public class Grid : MonoBehaviour {
 	int penaltyMin = int.MaxValue;
 	int penaltyMax = int.MinValue;
 
+	public List<Node> occupiedNodes = new List<Node>();
+	public int occupiedNodePenalty = 50;
+
 	void Awake() {
 		nodeDiameter = nodeRadius*2;
 		gridSizeX = Mathf.RoundToInt(gridWorldSize.x/nodeDiameter);
@@ -40,6 +43,30 @@ public class Grid : MonoBehaviour {
 		}
 	}
 
+	public void OccupyNodes(List<Node> nodes)
+    {
+        foreach (Node node in nodes)
+        {
+            //Controlla se il nodo era gia stato occupato
+            if (!occupiedNodes.Contains(node)) {
+                occupiedNodes.Add(node);
+                node.movementPenalty += occupiedNodePenalty;
+            }
+        }
+    }
+
+    public void ReleaseNodes(List<Node> nodes)
+    {
+        foreach (Node node in nodes)
+        {
+            if (occupiedNodes.Contains(node))
+            {
+                occupiedNodes.Remove(node);
+                node.movementPenalty -= occupiedNodePenalty;
+            }
+        }
+    }
+
 	void CreateGrid() {
 		grid = new Node[gridSizeX,gridSizeY];
 		Vector3 worldBottomLeft = transform.position - Vector3.right * gridWorldSize.x/2 - Vector3.forward * gridWorldSize.y/2;
@@ -48,9 +75,8 @@ public class Grid : MonoBehaviour {
 			for (int y = 0; y < gridSizeY; y ++) {
 				Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + nodeRadius) + Vector3.forward * (y * nodeDiameter + nodeRadius);
 				bool walkable = !Physics.CheckSphere(worldPoint,nodeRadius,unwalkableMask);
-
+				
 				int movementPenalty = 0;
-
 
 				Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
 				RaycastHit hit;

@@ -20,6 +20,9 @@ public class MovementWithAStar : MonoBehaviour
     public float arrivalTolerance = 1f;
     public float deviationAngle = 45f; // Angolo massimo di deviazione
 
+    public Grid grid; // Assegna questo riferimento nell'Inspector
+    private List<Node> currentPathNodes = new List<Node>();
+
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
@@ -66,6 +69,14 @@ public class MovementWithAStar : MonoBehaviour
             {
                 DrawPath(fullPath);
             }
+
+            currentPathNodes.Clear();
+            for (int i = 1; i < fullPath.Length - 1; i++)
+            {
+                Node node = grid.NodeFromWorldPoint(fullPath[i]);
+                currentPathNodes.Add(node);
+            }
+            grid.OccupyNodes(currentPathNodes);
 
             StartCoroutine(MoveAlongPath(fullPath));
         }
@@ -124,6 +135,10 @@ public class MovementWithAStar : MonoBehaviour
 
                     Vector3 deviationPosition = CalculateDeviationPosition(robotToMove.transform.position, obstacleDirection, deviationAngle);
 
+                    // Rilascia i nodi del percorso corrente
+                    grid.ReleaseNodes(currentPathNodes);
+                    currentPathNodes.Clear();
+
                     yield return StartCoroutine(MoveToPosition(deviationPosition));
 
                     Debug.Log("Ricalcolo del percorso dalla nuova posizione.");
@@ -137,14 +152,37 @@ public class MovementWithAStar : MonoBehaviour
                 robotToMove.transform.position = Vector3.Lerp(startPosition, targetPosition, journey);
                 robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, targetRotation, Time.deltaTime * moveSpeed);
 
+                // Rilascia il nodo precedente dopo averlo superato
+                if (i > 1)
+                {
+                    Node previousNode = grid.NodeFromWorldPoint(path[i - 2]);
+                    if (Vector3.Distance(robotToMove.transform.position, path[i - 1]) < grid.nodeRadius * 1.5f)
+                    {
+                        grid.ReleaseNodes(new List<Node> { previousNode });
+                        currentPathNodes.Remove(previousNode);
+                    }
+                }
+
                 yield return null;
             }
+
+            // Rilascia il nodo appena raggiunto quando si arriva al punto di destinazione del segmento corrente
+            Node currentNode = grid.NodeFromWorldPoint(path[i - 1]);
+            grid.ReleaseNodes(new List<Node> { currentNode });
+            currentPathNodes.Remove(currentNode);
 
             robotToMove.transform.position = targetPosition;
             robotToMove.transform.rotation = targetRotation;
         }
-    }
 
+        // Rilascia l'ultimo nodo (punto di destinazione finale)
+        if (path.Length > 1)
+        {
+            Node lastNode = grid.NodeFromWorldPoint(path[path.Length - 2]);
+            grid.ReleaseNodes(new List<Node> { lastNode });
+            currentPathNodes.Remove(lastNode);
+        }
+    }
     private IEnumerator MoveToPosition(Vector3 targetPosition)
     {
         Vector3 startPosition = robotToMove.transform.position;

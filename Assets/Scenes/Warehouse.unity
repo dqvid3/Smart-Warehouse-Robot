@@ -4949,11 +4949,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: threshold
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
@@ -4983,6 +4983,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: grid
+      value: 
+      objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastManager
       value: 
@@ -8182,11 +8186,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: threshold
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
@@ -8216,6 +8220,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: grid
+      value: 
+      objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
       value: 4
@@ -8949,6 +8957,7 @@ MonoBehaviour:
       m_Bits: 512
     terrainPenalty: 0
   obstacleProximityPenalty: 15
+  occupiedNodePenalty: 50
 --- !u!1001 &1658321865
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10508,11 +10517,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: threshold
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
@@ -10542,6 +10551,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: grid
+      value: 
+      objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
       value: 4
