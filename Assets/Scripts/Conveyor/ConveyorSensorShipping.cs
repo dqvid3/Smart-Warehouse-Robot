@@ -22,7 +22,7 @@ public class ConveyorSensorShipping : MonoBehaviour
         }
         else
         {
-            // Se non c'è un parent, distruggi solo l'oggetto che ha attivato il trigger
+            // Se non c'ï¿½ un parent, distruggi solo l'oggetto che ha attivato il trigger
             Destroy(other.gameObject);
         }
     }
