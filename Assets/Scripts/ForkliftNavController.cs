@@ -13,7 +13,7 @@ public class ForkliftNavController : MonoBehaviour
     [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels
     [SerializeField] private Transform grabPoint;
     private ForkliftController forkliftController;
-    private float approachDistance = 3.4f;
+    private float approachDistance = 3.2f;
     private float takeBoxDistance = 1.3f;
     private Neo4jHelper neo4jHelper;
     private QRCodeReader qrReader;
@@ -71,6 +71,7 @@ public class ForkliftNavController : MonoBehaviour
         parcelRigidbody.isKinematic = true;
         parcelRigidbody.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
         explainability.ShowExplanation("Box prelevata. Mi sposto verso lo scaffale corretto.");
+        yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
 
         IRecord placedRecord = null;
         bool usedBackupShelf = false; // Inizializzata a false
@@ -146,6 +147,7 @@ public class ForkliftNavController : MonoBehaviour
             yield return StartCoroutine(LiftMastToHeight(slotPosition.y - .95f));
 
             // Controllo ostacoli
+            yield return new WaitForSeconds(1f);
             hasObstacle = CheckForObstacle(slotPosition);
             if (hasObstacle)
             {
@@ -390,17 +392,50 @@ public class ForkliftNavController : MonoBehaviour
 
     private bool CheckForObstacle(Vector3 slotPosition)
     {
-        // Definiamo il centro del box di controllo (basato sulla posizione dello slot)
-        Vector3 boxCenter = new Vector3(slotPosition.x, slotPosition.y, slotPosition.z);
+        Vector3 boxSize = new(1.5f, 1.35f, 1.4f); // Regola le dimensioni in base alle necessità
 
-        // Definiamo le dimensioni del box (larghezza, altezza, profondità)
-        Vector3 boxSize = new Vector3(1.5f, 1.35f, 1.4f); // Regola le dimensioni in base alle necessità
-        slotPosition.y += boxSize.y / 2;
+        // Calcoliamo il centro del box correttamente
+        Vector3 boxCenter = new(slotPosition.x, slotPosition.y + boxSize.y / 2, slotPosition.z);
+
+        DrawBox(boxCenter, boxSize, Color.red, 1f);
 
         // Controlliamo se ci sono collider all'interno del box
         Collider[] colliders = Physics.OverlapBox(boxCenter, boxSize / 2, Quaternion.identity, layerMask);
-
         // Restituiamo true se ci sono oggetti nel box, altrimenti false
         return colliders.Length > 0;
+    }
+
+     private void DrawBox(Vector3 center, Vector3 size, Color color, float duration)
+    {
+        Vector3 halfSize = size / 2;
+
+        // Calcola gli 8 vertici del box
+        Vector3[] vertices = new Vector3[8]
+        {
+            center + new Vector3(-halfSize.x, -halfSize.y, -halfSize.z),
+            center + new Vector3(halfSize.x, -halfSize.y, -halfSize.z),
+            center + new Vector3(halfSize.x, halfSize.y, -halfSize.z),
+            center + new Vector3(-halfSize.x, halfSize.y, -halfSize.z),
+            center + new Vector3(-halfSize.x, -halfSize.y, halfSize.z),
+            center + new Vector3(halfSize.x, -halfSize.y, halfSize.z),
+            center + new Vector3(halfSize.x, halfSize.y, halfSize.z),
+            center + new Vector3(-halfSize.x, halfSize.y, halfSize.z)
+        };
+
+        // Disegna le linee del box
+        Debug.DrawLine(vertices[0], vertices[1], color, duration);
+        Debug.DrawLine(vertices[1], vertices[2], color, duration);
+        Debug.DrawLine(vertices[2], vertices[3], color, duration);
+        Debug.DrawLine(vertices[3], vertices[0], color, duration);
+
+        Debug.DrawLine(vertices[4], vertices[5], color, duration);
+        Debug.DrawLine(vertices[5], vertices[6], color, duration);
+        Debug.DrawLine(vertices[6], vertices[7], color, duration);
+        Debug.DrawLine(vertices[7], vertices[4], color, duration);
+
+        Debug.DrawLine(vertices[0], vertices[4], color, duration);
+        Debug.DrawLine(vertices[1], vertices[5], color, duration);
+        Debug.DrawLine(vertices[2], vertices[6], color, duration);
+        Debug.DrawLine(vertices[3], vertices[7], color, duration);
     }
 }

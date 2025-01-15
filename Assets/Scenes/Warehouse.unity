@@ -4949,11 +4949,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: threshold
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
@@ -8182,11 +8182,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: threshold
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
@@ -8942,13 +8942,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1024
   gridWorldSize: {x: 65, y: 65}
-  nodeRadius: 1.8
+  nodeRadius: 1.5
   walkableRegions:
   - terrainMask:
       serializedVersion: 2
       m_Bits: 512
     terrainPenalty: 0
-  obstacleProximityPenalty: 20
+  obstacleProximityPenalty: 15
 --- !u!1001 &1658321865
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10508,11 +10508,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: threshold
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
