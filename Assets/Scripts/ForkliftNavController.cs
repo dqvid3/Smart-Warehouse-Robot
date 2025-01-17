@@ -306,24 +306,39 @@ public class ForkliftNavController : MonoBehaviour
 
     private bool HasObstacleBehind()
     {
-        Vector3 boxSize = new Vector3(4f, 4f, 4f); // Larghezza, altezza, profondità. Scatola di controllo ostacolo dietro il robot
+        int rayCount = 10; // Numero di raggi
+        float rayLength = 2f; // Lunghezza massima dei raggi
+        float rayHeight = 0.5f; // Altezza dei raggi rispetto al suolo
+        float angleRange = 45f; // Angolo massimo da -45° a 45°
+        Vector3 origin = transform.position + Vector3.up * rayHeight; // Punto di origine dei raggi
 
-        // Posizione del centro della scatola (dietro il robot)
-        Vector3 boxCenter = transform.position - transform.forward * 0.8f; // Leggermente dietro al robot
-        boxCenter.y += boxSize.y / 2f; // Al centro dell'altezza
+        bool obstacleDetected = false;
 
-        // Debug visivo: disegna la scatola nella scena
-        Debug.DrawRay(boxCenter, Vector3.up * boxSize.y, Color.red, 0.1f); 
-        Debug.DrawRay(boxCenter, -transform.forward * boxSize.z, Color.red, 0.1f); // Linea dietro
+        for (int i = 0; i < rayCount; i++)
+        {
+            // Calcola l'angolo del raggio attuale all'interno del range
+            float angle = Mathf.Lerp(-angleRange, angleRange, i / (float)(rayCount - 1));
+            // Ruota la direzione del raggio rispetto alla direzione posteriore del robot
+            Vector3 direction = Quaternion.Euler(0, angle, 0) * -transform.forward;
 
-        // Controlla i collider all'interno della scatola
-        Collider[] colliders = Physics.OverlapBox(boxCenter, boxSize / 2, transform.rotation, layerMask);
+            // Esegui il Raycast
+            if (Physics.Raycast(origin, direction, out RaycastHit hitInfo, rayLength, layerMask))
+            {
+                obstacleDetected = true;
 
-        // Restituisce true se trova ostacoli
-        return colliders.Length > 0;
+                // Disegna il raggio in rosso se rileva un ostacolo
+                Debug.DrawRay(origin, direction * hitInfo.distance, Color.red, 0.1f);
+                break;
+            }
+            else
+            {
+                // Disegna il raggio in verde se non rileva ostacoli
+                Debug.DrawRay(origin, direction * rayLength, Color.green, 0.1f);
+            }
+        }
+
+        return obstacleDetected;
     }
-
-
 
     private IEnumerator MoveBackwards(Vector3 direction, float distance)
     {
