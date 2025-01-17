@@ -4957,7 +4957,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
-      value: 35
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
@@ -4999,6 +4999,10 @@ PrefabInstance:
       propertyPath: grid
       value: 
       objectReference: {fileID: 1627360915}
+    - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: deviationAngle
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastManager
       value: 
@@ -8206,7 +8210,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
-      value: 35
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
@@ -8248,6 +8252,10 @@ PrefabInstance:
       propertyPath: grid
       value: 
       objectReference: {fileID: 1627360915}
+    - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: deviationAngle
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
       value: 4
@@ -10549,7 +10557,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
-      value: 35
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
@@ -10591,6 +10599,10 @@ PrefabInstance:
       propertyPath: grid
       value: 
       objectReference: {fileID: 1627360915}
+    - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: deviationAngle
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
       value: 4
