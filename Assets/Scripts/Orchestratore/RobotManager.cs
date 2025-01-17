@@ -17,9 +17,8 @@ public class RobotManager : MonoBehaviour
     private float checkInterval = 2f; // Interval for checking tasks
     private float lastCheckTime = 0f; // Last time tasks were checked
     private int currentConveyorIndex = 0; // Index for cycling through conveyor positions
-    private float proximityCheckInterval = 1f; // Interval for checking robot proximity
-    private float lastProximityCheckTime = 0f; // Last time proximity was checked
-    private float proximityThreshold = 9f; // Distance threshold for stopping robots
+    private float proximityThreshold = 8f; // Distanza minima tra i robot per controllare la collisione
+    private float collisionImminenceThreshold = 5f; // Distanza dal punto di collisione per iniziare a fermarsi
 
     private async void Start()
     {
@@ -43,12 +42,8 @@ public class RobotManager : MonoBehaviour
             CheckPendingTasks();
         }
 
-        // Check robot proximity at regular intervals
-        if (Time.time - lastProximityCheckTime > proximityCheckInterval)
-        {
-            lastProximityCheckTime = Time.time;
-            CheckRobotProximity();
-        }
+        // Check robot proximity at each Update
+        CheckRobotProximity();
 
         // Toggle pause with the P key
         if (Input.GetKeyDown(KeyCode.P))
@@ -59,7 +54,6 @@ public class RobotManager : MonoBehaviour
 
     private void CheckRobotProximity()
     {
-        // Iterate through all pairs of robots
         for (int i = 0; i < robots.Count; i++)
         {
             for (int j = i + 1; j < robots.Count; j++)
@@ -71,10 +65,11 @@ public class RobotManager : MonoBehaviour
                 if (!robotA.isActive || !robotB.isActive || robotA.currentState == RobotState.Idle || robotB.currentState == RobotState.Idle)
                     continue;
 
-                // Get the estimated positions of the robots
                 Vector3 positionA = robotA.GetEstimatedPosition();
                 Vector3 positionB = robotB.GetEstimatedPosition();
+                float currentDistance = Vector3.Distance(positionA, positionB);
 
+                // Check if robots are going to their default position
                 if (!robotAssignments.ContainsKey(robotA.id) || !robotAssignments.ContainsKey(robotB.id))
                 {
                     // Get the default positions of the robots
@@ -90,38 +85,129 @@ public class RobotManager : MonoBehaviour
                         continue;
                 }
 
-                // Calculate the distance between the two robots
-                float distance = Vector3.Distance(positionA, positionB);
-                // If the robots are too close, stop the one further from its destination
-                if (distance < proximityThreshold)
+                // Controllo preliminare sulla distanza
+                if (currentDistance > proximityThreshold)
                 {
-                    float distanceA = Vector3.Distance(positionA, robotA.destination);
-                    float distanceB = Vector3.Distance(positionB, robotB.destination);
+                    continue;
+                }
 
-                    if (distanceA > distanceB)
+                // Check for potential collisions based on paths and distance to collision
+                if (WillRobotsCollide(robotA, robotB, out float distanceToCollisionA, out float distanceToCollisionB))
+                {
+                    // Se la collisione è imminente per uno dei due robot, ferma quello più lontano dal suo obiettivo
+                    if (distanceToCollisionA < collisionImminenceThreshold || distanceToCollisionB < collisionImminenceThreshold)
                     {
-                        Debug.Log($"Robot {robotA.id} fermato perché troppo vicino a Robot {robotB.id}.");
-                        StartCoroutine(StopRobot(robotA));
-                    }
-                    else
-                    {
-                        Debug.Log($"Robot {robotB.id} fermato perché troppo vicino a Robot {robotA.id}.");
-                        StartCoroutine(StopRobot(robotB));
+                        float distanceA = Vector3.Distance(positionA, robotA.destination);
+                        float distanceB = Vector3.Distance(positionB, robotB.destination);
+
+                        MovementWithAStar movementA = robotA.GetComponent<MovementWithAStar>();
+                        MovementWithAStar movementB = robotB.GetComponent<MovementWithAStar>();
+
+                        if (distanceA > distanceB)
+                        {
+                            // Controlla se il robot è già stato stoppato
+                            if (movementA.moveSpeed > 0)
+                            {
+                                Debug.Log($"Robot {robotA.id} fermato perché in rotta di collisione con Robot {robotB.id} (distanza collisione: {distanceToCollisionA}).");
+                                StartCoroutine(StopRobot(robotA));
+                            }
+                        }
+                        else
+                        {
+                            // Controlla se il robot è già stato stoppato
+                            if (movementB.moveSpeed > 0)
+                            {
+                                Debug.Log($"Robot {robotB.id} fermato perché in rotta di collisione con Robot {robotA.id} (distanza collisione: {distanceToCollisionB}).");
+                                StartCoroutine(StopRobot(robotB));
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
+    private bool WillRobotsCollide(Robot robotA, Robot robotB, out float distanceToCollisionA, out float distanceToCollisionB)
+    {
+        distanceToCollisionA = float.MaxValue;
+        distanceToCollisionB = float.MaxValue;
+
+        // Get the MovementWithAStar components
+        MovementWithAStar movementA = robotA.GetComponent<MovementWithAStar>();
+        MovementWithAStar movementB = robotB.GetComponent<MovementWithAStar>();
+
+        // Get the paths of the robots
+        List<Vector3> pathA = movementA.GetPath();
+        List<Vector3> pathB = movementB.GetPath();
+
+        // Check if paths are valid
+        if (pathA == null || pathB == null) return false;
+
+        // Define a threshold for considering nodes as overlapping
+        float nodeOverlapThreshold = movementA.grid.nodeRadius * 2;
+
+        // Iterate through the nodes of each path to check for overlap
+        foreach (Vector3 nodeA in pathA)
+        {
+            foreach (Vector3 nodeB in pathB)
+            {
+                if (Vector3.Distance(nodeA, nodeB) < nodeOverlapThreshold)
+                {
+                    // Calcola la distanza dei robot dal punto di collisione
+                    distanceToCollisionA = CalculateDistanceAlongPath(robotA.GetEstimatedPosition(), nodeA, pathA);
+                    distanceToCollisionB = CalculateDistanceAlongPath(robotB.GetEstimatedPosition(), nodeB, pathB);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // Calcola la distanza di un punto lungo un percorso
+    private float CalculateDistanceAlongPath(Vector3 start, Vector3 end, List<Vector3> path)
+    {
+        float distance = 0f;
+        int startIndex = -1;
+
+        // Trova l'indice del nodo più vicino al punto di partenza
+        for (int i = 0; i < path.Count; i++)
+        {
+            if (Vector3.Distance(start, path[i]) < 0.5f)
+            {
+                startIndex = i;
+                break;
+            }
+        }
+        if (startIndex == -1)
+        {
+            startIndex = 0;
+        }
+
+        // Somma le distanze tra i nodi dal punto di partenza al punto di collisione
+        for (int i = startIndex; i < path.Count - 1; i++)
+        {
+            distance += Vector3.Distance(path[i], path[i + 1]);
+            if (path[i + 1] == end)
+            {
+                break;
+            }
+        }
+
+        return distance;
+    }
+
     private IEnumerator StopRobot(Robot robot)
     {
-        float stopDuration = 4;
+        float stopDuration = 2;
+        RaycastManager raycastManager = robot.GetComponent<RaycastManager>();
+        raycastManager.sensorsEnabled = false;
         Debug.Log($"Robot {robot.id} fermo per {stopDuration} secondi.");
         MovementWithAStar robMov = robot.GetComponent<MovementWithAStar>();
         robMov.moveSpeed = 0; // Ferma il robot
         yield return new WaitForSeconds(stopDuration); // Aspetta
         robMov.moveSpeed = robot.speed; // Riprendi il movimento
-
+        raycastManager.sensorsEnabled = true;
         Debug.Log($"Robot {robot.id} riprende il movimento.");
     }
 
@@ -297,7 +383,8 @@ public class RobotManager : MonoBehaviour
         }
     }
 
-    public void AssignConveyorPosition(int robotId, Vector3 conveyorPosition){
+    public void AssignConveyorPosition(int robotId, Vector3 conveyorPosition)
+    {
         // Assign the robot to the new conveyor position
         Debug.Log($"Robot {robotId}: Nuova assegnazione per il conveyor {conveyorPosition}.");
         robotAssignments[robotId] = conveyorPosition; // Assign the robot to the new conveyor

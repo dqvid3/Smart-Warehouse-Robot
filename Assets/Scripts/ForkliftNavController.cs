@@ -88,9 +88,9 @@ public class ForkliftNavController : MonoBehaviour
             _ = UpdateParcelLocation(timestamp, placedRecord["slotId"].As<long>(), expirationDuration);
         }
 
+        yield return StartCoroutine(LiftMastToHeight(0));
         if (!robotManager.AreThereTask())
         {
-            yield return StartCoroutine(LiftMastToHeight(0));
             yield return StartCoroutine(MoveToOriginPosition());
         }
     }
@@ -178,9 +178,9 @@ public class ForkliftNavController : MonoBehaviour
         explainability.ShowExplanation("Nessun slot disponibile nello scaffale principale. Mando il pacco indietro.");
         yield return StartCoroutine(PlaceParcelOnConveyor(robotId, backupPosition));
         _ = neo4jHelper.DeleteParcel(timestamp);
+        yield return StartCoroutine(LiftMastToHeight(0));
         if (!robotManager.AreThereTask())
         {
-            yield return StartCoroutine(LiftMastToHeight(0));
             yield return StartCoroutine(MoveToOriginPosition());
         }
     }
@@ -194,9 +194,9 @@ public class ForkliftNavController : MonoBehaviour
 
         yield return PlaceParcelOnConveyor(robotId, conveyorDestination);
 
+        yield return StartCoroutine(LiftMastToHeight(0));
         if (!robotManager.AreThereTask())
         {
-            yield return StartCoroutine(LiftMastToHeight(0));
             yield return StartCoroutine(MoveToOriginPosition());
         }
     }

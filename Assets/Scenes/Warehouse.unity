@@ -4952,8 +4952,20 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: numberOfRays
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: frontRayAngle
+      value: 35
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: additionalRays
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
@@ -8189,8 +8201,20 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: numberOfRays
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: frontRayAngle
+      value: 35
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: additionalRays
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
@@ -8956,8 +8980,8 @@ MonoBehaviour:
       serializedVersion: 2
       m_Bits: 512
     terrainPenalty: 0
-  obstacleProximityPenalty: 15
-  occupiedNodePenalty: 50
+  obstacleProximityPenalty: 10
+  occupiedNodePenalty: 15
 --- !u!1001 &1658321865
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10520,8 +10544,20 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: numberOfRays
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: frontRayAngle
+      value: 35
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: additionalRays
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold

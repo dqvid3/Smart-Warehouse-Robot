@@ -9,6 +9,9 @@ public class RaycastManager : MonoBehaviour
     public int additionalRays = 20; // Additional rays for slots
     public float extendedWeight = 0.1f;
     public LayerMask layerMask; // Layer to ignore (robot's Layer)
+    
+    [Range(0f, 90f)]
+    public float frontRayAngle = 45f; // Angle covered by the front rays (green)
 
     private RaycastHit hitInfo;
     public bool sensorsEnabled = true;
@@ -38,7 +41,7 @@ public class RaycastManager : MonoBehaviour
         // Check front rays
         for (int i = 0; i < numberOfRays; i++)
         {
-            float angle = Mathf.Lerp(-45f, 45f, i / (float)(numberOfRays - 1)); // Angle distributed between -45° and +45°
+            float angle = Mathf.Lerp(-frontRayAngle, frontRayAngle, i / (float)(numberOfRays - 1)); // Angle distributed between -frontRayAngle and +frontRayAngle
             Vector3 direction = Quaternion.Euler(0, angle, 0) * transform.forward;
 
             if (Physics.SphereCast(origin, 0.2f, direction, out hitInfo, raycastLength))
@@ -60,7 +63,7 @@ public class RaycastManager : MonoBehaviour
         {
             for (int i = 0; i < additionalRays; i++)
             {
-                float angle = Mathf.Lerp(-90f, -45f, i / (float)(additionalRays - 1)); // Further left slot angles
+                float angle = Mathf.Lerp(-90f, -frontRayAngle, i / (float)(additionalRays - 1)); // Further left slot angles
                 Vector3 direction = Quaternion.Euler(0, angle, 0) * transform.forward;
 
                 if (Physics.SphereCast(origin, 0.2f, direction, out hitInfo, raycastLength))
@@ -74,7 +77,7 @@ public class RaycastManager : MonoBehaviour
 
             for (int i = 0; i < additionalRays; i++)
             {
-                float angle = Mathf.Lerp(45f, 90f, i / (float)(additionalRays - 1)); // Further right slot angles
+                float angle = Mathf.Lerp(frontRayAngle, 90f, i / (float)(additionalRays - 1)); // Further right slot angles
                 Vector3 direction = Quaternion.Euler(0, angle, 0) * transform.forward;
 
                 if (Physics.SphereCast(origin, 0.2f, direction, out hitInfo, raycastLength))
@@ -91,18 +94,16 @@ public class RaycastManager : MonoBehaviour
         {
             return "Nessun ostacolo";
         }
-        float totalLeft = leftCount + leftSlotCount* extendedWeight;
-        float totalRight = rightCount + rightSlotCount*extendedWeight;
-;
+        float totalLeft = leftCount + leftSlotCount * extendedWeight;
+        float totalRight = rightCount + rightSlotCount * extendedWeight;
 
         if (totalLeft > totalRight)
             return "Sinistra";
-        else if (rightCount + rightSlotCount > leftCount + leftSlotCount)
+        else if (totalRight > totalLeft)
             return "Destra";
         else
             return Random.Range(0, 2) == 0 ? "Sinistra" : "Destra";
     }
-
 
     private void OnDrawGizmos()
     {
@@ -112,11 +113,10 @@ public class RaycastManager : MonoBehaviour
         }
 
         Vector3 origin = transform.position + Vector3.up * rayHeight; // Ray origin point
-        float halfAngle = 45f;
 
         for (int i = 0; i < numberOfRays; i++)
         {
-            float angle = Mathf.Lerp(-halfAngle, halfAngle, i / (float)(numberOfRays - 1)); // Angle from -45° to +45°
+            float angle = Mathf.Lerp(-frontRayAngle, frontRayAngle, i / (float)(numberOfRays - 1)); // Angle from -frontRayAngle to +frontRayAngle
             Vector3 direction = Quaternion.Euler(0, angle, 0) * transform.forward;
 
             if (Physics.SphereCast(origin, 0.2f, direction, out hitInfo, raycastLength))
@@ -138,8 +138,8 @@ public class RaycastManager : MonoBehaviour
             Gizmos.DrawRay(origin, direction * raycastLength);
         }
 
-        DrawSlotGizmos(origin, -90f, -45f, additionalRays); // Further left slot rays
-        DrawSlotGizmos(origin, 90f, 45f, additionalRays); // Further right slot rays
+        DrawSlotGizmos(origin, -90f, -frontRayAngle, additionalRays); // Further left slot rays
+        DrawSlotGizmos(origin, 90f, frontRayAngle, additionalRays); // Further right slot rays
     }
 
     private void DrawSlotGizmos(Vector3 origin, float minAngle, float maxAngle, int slotCount)
@@ -153,16 +153,16 @@ public class RaycastManager : MonoBehaviour
             {
                 if (hitInfo.distance < threshold)
                 {
-                    Gizmos.color = Color.yellow; // Below threshold, show ray in red
+                    Gizmos.color = Color.yellow; // Below threshold, show ray in yellow
                 }
                 else
                 {
-                    Gizmos.color = Color.blue; // Above threshold, show ray in green
+                    Gizmos.color = Color.blue; // Above threshold, show ray in blue
                 }
             }
             else
             {
-                Gizmos.color = Color.blue; // No obstacle detected, color green
+                Gizmos.color = Color.blue; // No obstacle detected, color blue
             }
 
             Gizmos.DrawRay(origin, direction * raycastLength);
