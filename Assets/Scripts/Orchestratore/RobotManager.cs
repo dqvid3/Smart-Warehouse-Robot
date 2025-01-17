@@ -306,6 +306,7 @@ public class RobotManager : MonoBehaviour
             case "Disposal":
                 availableRobot.currentState = RobotState.DisposalState;
                 availableRobot.category = category; // Pass the category to the robot
+                availableRobot.timestamp = timestamp;
                 break;
             default:
                 Debug.LogWarning($"Tipo di task sconosciuto: {taskType}");

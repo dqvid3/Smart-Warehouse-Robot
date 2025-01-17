@@ -4953,7 +4953,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: numberOfRays
-      value: 90
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
@@ -4964,12 +4964,12 @@ PrefabInstance:
       value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
-      propertyPath: extendedWeight
-      value: 0.4
-      objectReference: {fileID: 0}
-    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: additionalRays
       value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: extendedWeight
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
@@ -5005,7 +5005,7 @@ PrefabInstance:
       objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: deviationAngle
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastManager
@@ -8211,7 +8211,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: numberOfRays
-      value: 90
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
@@ -8222,12 +8222,12 @@ PrefabInstance:
       value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
-      propertyPath: extendedWeight
-      value: 0.4
-      objectReference: {fileID: 0}
-    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: additionalRays
       value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: extendedWeight
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
@@ -8263,7 +8263,7 @@ PrefabInstance:
       objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: deviationAngle
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
@@ -10563,7 +10563,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: numberOfRays
-      value: 90
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
@@ -10574,12 +10574,12 @@ PrefabInstance:
       value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
-      propertyPath: extendedWeight
-      value: 0.4
-      objectReference: {fileID: 0}
-    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: additionalRays
       value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: extendedWeight
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: extendedThreshold
@@ -10615,7 +10615,7 @@ PrefabInstance:
       objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: deviationAngle
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
