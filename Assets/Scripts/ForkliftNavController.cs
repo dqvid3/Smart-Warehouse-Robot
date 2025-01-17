@@ -304,17 +304,71 @@ public class ForkliftNavController : MonoBehaviour
         yield return forkliftController.LiftMastToHeight(height);
     }
 
+    private bool HasObstacleBehind()
+    {
+        Vector3 boxSize = new Vector3(4f, 4f, 4f); // Larghezza, altezza, profondità. Scatola di controllo ostacolo dietro il robot
+
+        // Posizione del centro della scatola (dietro il robot)
+        Vector3 boxCenter = transform.position - transform.forward * 0.8f; // Leggermente dietro al robot
+        boxCenter.y += boxSize.y / 2f; // Al centro dell'altezza
+
+        // Debug visivo: disegna la scatola nella scena
+        Debug.DrawRay(boxCenter, Vector3.up * boxSize.y, Color.red, 0.1f); 
+        Debug.DrawRay(boxCenter, -transform.forward * boxSize.z, Color.red, 0.1f); // Linea dietro
+
+        // Controlla i collider all'interno della scatola
+        Collider[] colliders = Physics.OverlapBox(boxCenter, boxSize / 2, transform.rotation, layerMask);
+
+        // Restituisce true se trova ostacoli
+        return colliders.Length > 0;
+    }
+
+
+
     private IEnumerator MoveBackwards(Vector3 direction, float distance)
     {
+        // 1) Aspetta mezzo secondo per vedere possibili ostacoli dietro
+        explainability.ShowExplanation("Controllo ostacoli dietro...");
+        yield return new WaitForSeconds(2f);
+
+        // Controllo iniziale: se c'è qualcosa dietro, aspetta
+        while (HasObstacleBehind())
+        {
+            explainability.ShowExplanation("Ostacolo rilevato dietro. Aspetto che si liberi...");
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        // 2) Calcolo del target
         Vector3 startPosition = transform.position;
         Vector3 targetPosition = startPosition - direction * distance;
         float speed = 3f;
+
+        // 3) Movimento effettivo
         while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
+            // Controllo durante il movimento
+            if (HasObstacleBehind())
+            {
+                explainability.ShowExplanation("Ostacolo improvviso dietro. Mi fermo...");
+                while (HasObstacleBehind())
+                {
+                    yield return new WaitForSeconds(0.5f);
+                }
+                explainability.ShowExplanation("Zona dietro libera. Riprendo la retromarcia.");
+            }
+
+            // Movimento verso la posizione target
+            transform.position = Vector3.MoveTowards(
+                transform.position,
+                targetPosition,
+                speed * Time.deltaTime
+            );
+
             yield return new WaitForFixedUpdate();
         }
     }
+
+
 
     public IEnumerator MoveTakeBoxDistance(Vector3 approachPosition, Vector3 qrCodeDirection, float speed = 2f)
     {
