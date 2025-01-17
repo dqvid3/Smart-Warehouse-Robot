@@ -17,8 +17,11 @@ public class RobotManager : MonoBehaviour
     private float checkInterval = 2f; // Interval for checking tasks
     private float lastCheckTime = 0f; // Last time tasks were checked
     private int currentConveyorIndex = 0; // Index for cycling through conveyor positions
-    private float proximityThreshold = 8f; // Distanza minima tra i robot per controllare la collisione
-    private float collisionImminenceThreshold = 5f; // Distanza dal punto di collisione per iniziare a fermarsi
+
+    // Distanza minima tra i robot per valutare potenziali collisioni
+    private float proximityThreshold = 8f;
+    // Distanza dal punto di collisione per iniziare a fermarsi
+    private float collisionImminenceThreshold = 5f;
 
     private async void Start()
     {
@@ -62,7 +65,8 @@ public class RobotManager : MonoBehaviour
                 Robot robotB = robots[j];
 
                 // Skip if either robot is not active or is idle
-                if (!robotA.isActive || !robotB.isActive || robotA.currentState == RobotState.Idle || robotB.currentState == RobotState.Idle)
+                if (!robotA.isActive || !robotB.isActive ||
+                    robotA.currentState == RobotState.Idle || robotB.currentState == RobotState.Idle)
                     continue;
 
                 Vector3 positionA = robotA.GetEstimatedPosition();
@@ -95,7 +99,8 @@ public class RobotManager : MonoBehaviour
                 if (WillRobotsCollide(robotA, robotB, out float distanceToCollisionA, out float distanceToCollisionB))
                 {
                     // Se la collisione è imminente per uno dei due robot, ferma quello più lontano dal suo obiettivo
-                    if (distanceToCollisionA < collisionImminenceThreshold || distanceToCollisionB < collisionImminenceThreshold)
+                    if (distanceToCollisionA < collisionImminenceThreshold ||
+                        distanceToCollisionB < collisionImminenceThreshold)
                     {
                         float distanceA = Vector3.Distance(positionA, robotA.destination);
                         float distanceB = Vector3.Distance(positionB, robotB.destination);
@@ -105,7 +110,7 @@ public class RobotManager : MonoBehaviour
 
                         if (distanceA > distanceB)
                         {
-                            // Controlla se il robot è già stato stoppato
+                            // Controlla se il robot è già fermo
                             if (movementA.moveSpeed > 0)
                             {
                                 Debug.Log($"Robot {robotA.id} fermato perché in rotta di collisione con Robot {robotB.id} (distanza collisione: {distanceToCollisionA}).");
@@ -114,7 +119,7 @@ public class RobotManager : MonoBehaviour
                         }
                         else
                         {
-                            // Controlla se il robot è già stato stoppato
+                            // Controlla se il robot è già fermo
                             if (movementB.moveSpeed > 0)
                             {
                                 Debug.Log($"Robot {robotB.id} fermato perché in rotta di collisione con Robot {robotA.id} (distanza collisione: {distanceToCollisionB}).");
@@ -127,7 +132,8 @@ public class RobotManager : MonoBehaviour
         }
     }
 
-    private bool WillRobotsCollide(Robot robotA, Robot robotB, out float distanceToCollisionA, out float distanceToCollisionB)
+    private bool WillRobotsCollide(Robot robotA, Robot robotB,
+        out float distanceToCollisionA, out float distanceToCollisionB)
     {
         distanceToCollisionA = float.MaxValue;
         distanceToCollisionB = float.MaxValue;
@@ -200,15 +206,45 @@ public class RobotManager : MonoBehaviour
     private IEnumerator StopRobot(Robot robot)
     {
         float stopDuration = 2;
+
+        // Nuove righe di explainability (se presente il componente)
+        var explainability = robot.GetComponent<RobotExplainability>();
+        if (explainability != null)
+        {
+            explainability.ShowExplanation(
+                $"Collisione imminente! Ferma Robot {robot.id} per {stopDuration} secondi."
+            );
+        }
+
         RaycastManager raycastManager = robot.GetComponent<RaycastManager>();
         raycastManager.sensorsEnabled = false;
         Debug.Log($"Robot {robot.id} fermo per {stopDuration} secondi.");
+
         MovementWithAStar robMov = robot.GetComponent<MovementWithAStar>();
         robMov.moveSpeed = 0; // Ferma il robot
-        yield return new WaitForSeconds(stopDuration); // Aspetta
-        robMov.moveSpeed = robot.speed; // Riprendi il movimento
+
+        // Altra explainability sul “wait”
+        if (explainability != null)
+        {
+            explainability.ShowExplanation(
+                "In attesa che la situazione si risolva, i sensori sono disabilitati."
+            );
+        }
+
+        // Aspetta lo stopDuration
+        yield return new WaitForSeconds(stopDuration);
+
+        // Riprendi il movimento
+        robMov.moveSpeed = robot.speed;
         raycastManager.sensorsEnabled = true;
         Debug.Log($"Robot {robot.id} riprende il movimento.");
+
+        if (explainability != null)
+        {
+            explainability.ShowExplanation(
+                $"Robot {robot.id} torna in movimento. Sensori riattivati."
+            );
+        }
     }
 
     private async void CheckForShippingOrders()
@@ -236,20 +272,22 @@ public class RobotManager : MonoBehaviour
         IList<IRecord> result = await databaseManager.GetParcelsInDeliveryArea();
         foreach (var record in result)
         {
-            Vector3 parcelPosition = new(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
-            if (robotAssignments.ContainsValue(parcelPosition)) continue; // Skip if conveyor is already assigned
-            pendingTasks.Enqueue((parcelPosition, "Delivery", null, null)); // Category is not needed for Delivery
+            Vector3 parcelPosition = new(record["x"].As<float>(),
+                                         record["y"].As<float>(),
+                                         record["z"].As<float>());
+            if (robotAssignments.ContainsValue(parcelPosition)) continue;
+            pendingTasks.Enqueue((parcelPosition, "Delivery", null, null));
         }
     }
 
     private async void CheckForExpiredParcelsInBackup()
     {
-        // Fetch parcels in the delivery area
+        // Fetch parcels in the backup shelf
         var slotPositions = await databaseManager.GetExpiredParcelsInBackupShelf();
         foreach (var (slot, category, timestamp) in slotPositions)
         {
-            if (robotAssignments.ContainsValue(slot)) continue; // Skip if slot is already assigned
-            pendingTasks.Enqueue((slot, "Disposal", category, timestamp)); // Category is needed for Disposal
+            if (robotAssignments.ContainsValue(slot)) continue;
+            pendingTasks.Enqueue((slot, "Disposal", category, timestamp));
         }
     }
 
@@ -305,7 +343,7 @@ public class RobotManager : MonoBehaviour
                 break;
             case "Disposal":
                 availableRobot.currentState = RobotState.DisposalState;
-                availableRobot.category = category; // Pass the category to the robot
+                availableRobot.category = category;
                 availableRobot.timestamp = timestamp;
                 break;
             default:
@@ -364,12 +402,12 @@ public class RobotManager : MonoBehaviour
         {
             Vector3 currentPosition = robotAssignments[robotId];
             Debug.Log($"Robot {robotId}: Rimozione assegnazione corrente per la posizione {currentPosition}.");
-            robotAssignments.Remove(robotId); // Remove the current assignment
+            robotAssignments.Remove(robotId);
         }
 
         // Assign the robot to the new slot position
         Debug.Log($"Robot {robotId}: Nuova assegnazione per lo slot {slotPosition}.");
-        robotAssignments[robotId] = slotPosition; // Assign the robot to the new slot
+        robotAssignments[robotId] = slotPosition;
         return record;
     }
 
@@ -380,20 +418,18 @@ public class RobotManager : MonoBehaviour
         {
             Vector3 currentPosition = robotAssignments[robotId];
             Debug.Log($"Robot {robotId}: Rimozione assegnazione corrente per la posizione {currentPosition}.");
-            robotAssignments.Remove(robotId); // Remove the current assignment
+            robotAssignments.Remove(robotId);
         }
     }
 
     public void AssignConveyorPosition(int robotId, Vector3 conveyorPosition)
     {
-        // Assign the robot to the new conveyor position
         Debug.Log($"Robot {robotId}: Nuova assegnazione per il conveyor {conveyorPosition}.");
-        robotAssignments[robotId] = conveyorPosition; // Assign the robot to the new conveyor
+        robotAssignments[robotId] = conveyorPosition;
     }
 
     public Vector3 AskConveyorPosition()
     {
-        // Get the next conveyor position in a round-robin fashion
         Vector3 selectedPosition = shippingConveyorPositions[currentConveyorIndex];
         currentConveyorIndex = (currentConveyorIndex + 1) % shippingConveyorPositions.Count;
         return selectedPosition;
@@ -401,15 +437,13 @@ public class RobotManager : MonoBehaviour
 
     public bool AreThereTask()
     {
-        // Check if there are any pending tasks
         return pendingTasks.Count > 0;
     }
 
     private void TogglePause()
     {
-        // Toggle pause state
         isPaused = !isPaused;
-        Time.timeScale = isPaused ? 0 : 1; // Pause or resume the scene
+        Time.timeScale = isPaused ? 0 : 1;
 
         // Show/hide explanations for all robots
         foreach (var robot in robots)
@@ -417,7 +451,7 @@ public class RobotManager : MonoBehaviour
             var explainability = robot.GetComponent<RobotExplainability>();
             if (explainability != null)
             {
-                explainability.ToggleExplanation(isPaused); // Show/hide explanations
+                explainability.ToggleExplanation(isPaused);
             }
         }
     }
