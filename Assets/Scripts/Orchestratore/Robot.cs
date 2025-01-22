@@ -1,19 +1,14 @@
 using System.Collections;
 using UnityEngine;
-using Neo4j.Driver;
-using UnityEngine.AI;
 
 public class Robot : MonoBehaviour
 {
     [Header("Caratteristiche Robot")]
     public int id;
-    public RobotManager robotManager;
     public Vector3 destination;
     public float batteryLevel = 100f;
     public RobotState currentState = RobotState.Idle;
     public string currentTask = "None";
-    public bool isActive = true;
-    public bool isPaused = false;
 
     [Header("Script posizione stimata Robot")]
     public RobotKalmanPosition kalmanPosition;
@@ -37,19 +32,33 @@ public class Robot : MonoBehaviour
 
     private float batteryDrainInterval = 5f;
     private float batteryDrainTimer = 0f;
+    public bool isPaused = false;
 
     public string category = null;
     public string timestamp = null;
+    public GameObject collisionWarningIndicator; 
+    public MovementWithAStar movementWithAStar;
 
     void Start()
     {
+        collisionWarningIndicator.SetActive(false);
         forkliftNavController = GetComponent<ForkliftNavController>();
         explainability = GetComponent<RobotExplainability>();
-        speed = GetComponent<MovementWithAStar>().moveSpeed;
+        movementWithAStar = GetComponent<MovementWithAStar>();
+        speed = movementWithAStar.moveSpeed;
+    }
+
+    public void ShowCollisionWarning(bool show)
+    {
+        collisionWarningIndicator.SetActive(show);
     }
 
     void Update()
     {
+        if (isPaused) 
+            movementWithAStar.moveSpeed = 0;
+        else
+            movementWithAStar.moveSpeed = speed;
         if (Vector3.Distance(transform.position, forkliftNavController.defaultPosition) > 0.1f)
         {
             batteryDrainTimer += Time.deltaTime;
@@ -121,7 +130,6 @@ public class Robot : MonoBehaviour
 
         explainability.ShowExplanation("Ricarica completata. Torno operativo.");
         batteryLevel = 100f;
-        isActive = true;
         currentState = previousState;
         destination = previousDestination;
         currentTask = previousTask;
@@ -137,7 +145,6 @@ public class Robot : MonoBehaviour
     {
         yield return StartCoroutine(forkliftNavController.ShipParcel(destination, id));
         currentState = RobotState.Idle;
-        robotManager.NotifyTaskCompletion(id);
     }
 
     private IEnumerator HandleDisposalTask() 

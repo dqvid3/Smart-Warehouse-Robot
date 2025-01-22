@@ -34,26 +34,20 @@ public class MovementWithAStar : MonoBehaviour
         this.start = forkliftNavController.defaultPosition;
     }
 
-    public List<Vector3> GetPath()
+    public List<Node> GetNextNodes(int count)
     {
-        if (currentPathNodes == null || currentPathNodes.Count == 0)
-        {
-            return null;
-        }
+        List<Node> nextNodes = new List<Node>();
+        Vector3 currentPos = robotToMove.transform.position;
 
-        List<Vector3> path = new List<Vector3>();
-        foreach (Node node in currentPathNodes)
-        {
-            path.Add(node.worldPosition);
-        }
+        // Trova il nodo corrente nel percorso
+        int currentIndex = currentPathNodes.FindIndex(n => grid.NodeFromWorldPoint(currentPos) == n);
+        if (currentIndex == -1) return nextNodes;
 
-        // Aggiungi la posizione finale del robot al percorso
-        if (path.Count > 0)
+        for (int i = currentIndex; i < Mathf.Min(currentIndex + count, currentPathNodes.Count); i++)
         {
-            path.Add(end);
+            nextNodes.Add(currentPathNodes[i]);
         }
-
-        return path;
+        return nextNodes;
     }
 
     public IEnumerator MovementToPosition(Vector3 destination)

@@ -4,408 +4,265 @@ using Neo4j.Driver;
 using System.Linq;
 using System.Threading.Tasks;
 using static Robot;
-using System.Collections;
 
 public class RobotManager : MonoBehaviour
 {
-    public List<Robot> robots = new(); // List of all robots
-    private bool isPaused = false; // Pause state
-    public DatabaseManager databaseManager; // Database manager for querying data
-    private Dictionary<int, Vector3> robotAssignments = new(); // Tracks robot assignments (ID -> Position)
-    private Queue<(Vector3 Position, string Type, string Category, string Timestamp)> pendingTasks = new(); // Queue for pending tasks (position + type + category)
-    private List<Vector3> shippingConveyorPositions; // List of conveyor positions
-    private float checkInterval = 2f; // Interval for checking tasks
-    private float lastCheckTime = 0f; // Last time tasks were checked
-    private int currentConveyorIndex = 0; // Index for cycling through conveyor positions
-
-    // Distanza minima tra i robot per valutare potenziali collisioni
-    private float proximityThreshold = 8f;
-    // Distanza dal punto di collisione per iniziare a fermarsi
-    private float collisionImminenceThreshold = 5f;
+    public List<Robot> robots = new();
+    private bool isPaused = false;
+    public DatabaseManager databaseManager;
+    private Dictionary<int, Vector3> robotAssignments = new();
+    private Queue<(Vector3 Position, string Type, string Category, string Timestamp)> pendingTasks = new();
+    private List<Vector3> shippingConveyorPositions;
+    private float checkInterval = 0.5f;
+    private float lastCheckTime = 0f;
+    private int currentConveyorIndex = 0;
+    public float collisionCheckRadius = 7f;
+    public float collisionAvoidancePauseTime = 4f;
+    public float pathConflictDistanceThreshold = 3f;
+    public int nextNodeCheckCount = 8;
+    private Dictionary<int, float> robotPauseTimers = new();
 
     private async void Start()
     {
-        // Log all connected robots
-        string robotList = string.Join(", ", robots.Select(r => "ID: " + r.id + ", Stato: " + r.currentState).ToArray());
-        Debug.Log("RobotManager avviato.\nRobot collegati: [" + robotList + "]");
-
-        // Fetch conveyor positions from the database
+        Debug.Log($"RobotManager avviato.\nRobot collegati: [{string.Join(", ", robots.Select(r => $"ID: {r.id}, Stato: {r.currentState}"))}]");
         shippingConveyorPositions = await databaseManager.GetConveyorPositions();
     }
 
-    private void Update()
+    private async void Update()
     {
-        // Check for tasks at regular intervals
+        CheckForCollisions();
         if (Time.time - lastCheckTime > checkInterval)
         {
             lastCheckTime = Time.time;
-            CheckForShippingOrders();
-            CheckForDeliveries();
-            CheckForExpiredParcelsInBackup();
+            await CheckForTasks();
             CheckPendingTasks();
         }
 
-        // Check robot proximity at each Update
-        CheckRobotProximity();
+        if (Input.GetKeyDown(KeyCode.P)) TogglePause();
 
-        // Toggle pause with the P key
-        if (Input.GetKeyDown(KeyCode.P))
+        UpdateRobotPauseTimers();
+    }
+
+    private void UpdateRobotPauseTimers()
+    {
+        List<int> robotsToRemove = new();
+        List<int> keysToRemove = robotPauseTimers.Keys.ToList(); // Create a copy of the keys
+        foreach (var robotId in keysToRemove) // Iterate over the copy of keys
         {
-            TogglePause();
+            if (robotPauseTimers.ContainsKey(robotId)) // Check if the key still exists before accessing
+            {
+                robotPauseTimers[robotId] -= Time.deltaTime;
+                if (robotPauseTimers[robotId] <= 0)
+                {
+                    robotsToRemove.Add(robotId);
+                }
+            }
+        }
+
+        foreach (var robotId in robotsToRemove)
+        {
+            robotPauseTimers.Remove(robotId);
+            Robot robot = robots.Find(r => r.id == robotId);
+            if (robot != null)
+            {
+                robot.isPaused = false;
+                robot.ShowCollisionWarning(false);
+                Debug.Log($"Robot {robotId}: Collision pause ended, resuming movement.");
+            }
         }
     }
 
-    private void CheckRobotProximity()
+    private void CheckForCollisions()
     {
-        for (int i = 0; i < robots.Count; i++)
+        for(int i = 0; i < robots.Count; i++)
         {
-            for (int j = i + 1; j < robots.Count; j++)
+            if(robots[i].currentState == RobotState.Idle || robots[i].isPaused) continue;
+
+            for(int j = i + 1; j < robots.Count; j++)
             {
-                Robot robotA = robots[i];
-                Robot robotB = robots[j];
+                if(robots[j].currentState == RobotState.Idle || robots[j].isPaused) continue;
 
-                // Skip if either robot is not active or is idle
-                if (!robotA.isActive || !robotB.isActive ||
-                    robotA.currentState == RobotState.Idle || robotB.currentState == RobotState.Idle)
-                    continue;
+                // Controllo collisione diretta
+                float distance = Vector3.Distance(robots[i].GetEstimatedPosition(), robots[j].GetEstimatedPosition());
+                bool directCollision = distance <= collisionCheckRadius;
 
-                Vector3 positionA = robotA.GetEstimatedPosition();
-                Vector3 positionB = robotB.GetEstimatedPosition();
-                float currentDistance = Vector3.Distance(positionA, positionB);
+                // Controllo conflitto di percorso
+                bool pathConflict = CheckForPathConflicts(robots[i], robots[j]);
 
-                // Check if robots are going to their default position
-                if (!robotAssignments.ContainsKey(robotA.id) || !robotAssignments.ContainsKey(robotB.id))
+                if(directCollision && pathConflict)
                 {
-                    // Get the default positions of the robots
-                    Vector3 defaultPositionA = robotA.GetComponent<ForkliftNavController>().defaultPosition;
-                    Vector3 defaultPositionB = robotB.GetComponent<ForkliftNavController>().defaultPosition;
-
-                    // Calculate the distance between the robots and their default positions
-                    float distanceFromDefaultA = Vector3.Distance(positionA, defaultPositionA);
-                    float distanceFromDefaultB = Vector3.Distance(positionB, defaultPositionB);
-
-                    // Skip if either robot is too close from its default position
-                    if (distanceFromDefaultA < 5 || distanceFromDefaultB < 5)
-                        continue;
-                }
-
-                // Controllo preliminare sulla distanza
-                if (currentDistance > proximityThreshold)
-                {
-                    continue;
-                }
-
-                // Check for potential collisions based on paths and distance to collision
-                if (WillRobotsCollide(robotA, robotB, out float distanceToCollisionA, out float distanceToCollisionB))
-                {
-                    // Se la collisione è imminente per uno dei due robot, ferma quello più lontano dal suo obiettivo
-                    if (distanceToCollisionA < collisionImminenceThreshold ||
-                        distanceToCollisionB < collisionImminenceThreshold)
-                    {
-                        float distanceA = Vector3.Distance(positionA, robotA.destination);
-                        float distanceB = Vector3.Distance(positionB, robotB.destination);
-
-                        MovementWithAStar movementA = robotA.GetComponent<MovementWithAStar>();
-                        MovementWithAStar movementB = robotB.GetComponent<MovementWithAStar>();
-
-                        if (distanceA > distanceB)
-                        {
-                            // Controlla se il robot è già fermo
-                            if (movementA.moveSpeed > 0)
-                            {
-                                Debug.Log($"Robot {robotA.id} fermato perché in rotta di collisione con Robot {robotB.id} (distanza collisione: {distanceToCollisionA}).");
-                                StartCoroutine(StopRobot(robotA));
-                            }
-                        }
-                        else
-                        {
-                            // Controlla se il robot è già fermo
-                            if (movementB.moveSpeed > 0)
-                            {
-                                Debug.Log($"Robot {robotB.id} fermato perché in rotta di collisione con Robot {robotA.id} (distanza collisione: {distanceToCollisionB}).");
-                                StartCoroutine(StopRobot(robotB));
-                            }
-                        }
-                    }
+                    HandlePotentialCollision(robots[i], robots[j]);
                 }
             }
         }
     }
 
-    private bool WillRobotsCollide(Robot robotA, Robot robotB,
-        out float distanceToCollisionA, out float distanceToCollisionB)
+    private bool CheckForPathConflicts(Robot robotA, Robot robotB)
     {
-        distanceToCollisionA = float.MaxValue;
-        distanceToCollisionB = float.MaxValue;
+        // Ottieni i prossimi nodi per entrambi i robot
+        var pathA = robotA.movementWithAStar.GetNextNodes(nextNodeCheckCount);
+        var pathB = robotB.movementWithAStar.GetNextNodes(nextNodeCheckCount);
 
-        // Get the MovementWithAStar components
-        MovementWithAStar movementA = robotA.GetComponent<MovementWithAStar>();
-        MovementWithAStar movementB = robotB.GetComponent<MovementWithAStar>();
-
-        // Get the paths of the robots
-        List<Vector3> pathA = movementA.GetPath();
-        List<Vector3> pathB = movementB.GetPath();
-
-        // Check if paths are valid
-        if (pathA == null || pathB == null) return false;
-
-        // Define a threshold for considering nodes as overlapping
-        float nodeOverlapThreshold = movementA.grid.nodeRadius * 2;
-
-        // Iterate through the nodes of each path to check for overlap
-        foreach (Vector3 nodeA in pathA)
+        // Controlla sovrapposizioni dirette
+        foreach (var nodeA in pathA)
         {
-            foreach (Vector3 nodeB in pathB)
+            foreach (var nodeB in pathB)
             {
-                if (Vector3.Distance(nodeA, nodeB) < nodeOverlapThreshold)
-                {
-                    // Calcola la distanza dei robot dal punto di collisione
-                    distanceToCollisionA = CalculateDistanceAlongPath(robotA.GetEstimatedPosition(), nodeA, pathA);
-                    distanceToCollisionB = CalculateDistanceAlongPath(robotB.GetEstimatedPosition(), nodeB, pathB);
+                if (nodeA == nodeB || Vector3.Distance(nodeA.worldPosition, nodeB.worldPosition) < pathConflictDistanceThreshold)
                     return true;
-                }
             }
         }
 
         return false;
     }
 
-    // Calcola la distanza di un punto lungo un percorso
-    private float CalculateDistanceAlongPath(Vector3 start, Vector3 end, List<Vector3> path)
+    private void HandlePotentialCollision(Robot robotA, Robot robotB)
     {
-        float distance = 0f;
-        int startIndex = -1;
-
-        // Trova l'indice del nodo più vicino al punto di partenza
-        for (int i = 0; i < path.Count; i++)
+        if (!robotA.isPaused && !robotB.isPaused)
         {
-            if (Vector3.Distance(start, path[i]) < 0.5f)
-            {
-                startIndex = i;
-                break;
-            }
-        }
-        if (startIndex == -1)
-        {
-            startIndex = 0;
-        }
+            Vector3 destinationA = Vector3.zero;
+            Vector3 destinationB = Vector3.zero;
 
-        // Somma le distanze tra i nodi dal punto di partenza al punto di collisione
-        for (int i = startIndex; i < path.Count - 1; i++)
-        {
-            distance += Vector3.Distance(path[i], path[i + 1]);
-            if (path[i + 1] == end)
-            {
-                break;
-            }
-        }
+            if (robotAssignments.ContainsKey(robotA.id))
+                destinationA = robotAssignments[robotA.id];
+            if (robotAssignments.ContainsKey(robotB.id))
+                destinationB = robotAssignments[robotB.id];
 
-        return distance;
-    }
+            float distanceToDestinationA = Vector3.Distance(robotA.GetEstimatedPosition(), destinationA);
+            float distanceToDestinationB = Vector3.Distance(robotB.GetEstimatedPosition(), destinationB);
 
-    private IEnumerator StopRobot(Robot robot)
-    {
-        float stopDuration = 2;
+            Robot robotToPause = (distanceToDestinationA > distanceToDestinationB) ? robotB : robotA;
 
-        // Nuove righe di explainability (se presente il componente)
-        var explainability = robot.GetComponent<RobotExplainability>();
-        if (explainability != null)
-        {
-            explainability.ShowExplanation(
-                $"Collisione imminente! Ferma Robot {robot.id} per {stopDuration} secondi."
-            );
-        }
-
-        RaycastManager raycastManager = robot.GetComponent<RaycastManager>();
-        raycastManager.sensorsEnabled = false;
-        Debug.Log($"Robot {robot.id} fermo per {stopDuration} secondi.");
-
-        MovementWithAStar robMov = robot.GetComponent<MovementWithAStar>();
-        robMov.moveSpeed = 0; // Ferma il robot
-
-        // Altra explainability sul “wait”
-        if (explainability != null)
-        {
-            explainability.ShowExplanation(
-                "In attesa che la situazione si risolva, i sensori sono disabilitati."
-            );
-        }
-
-        // Aspetta lo stopDuration
-        yield return new WaitForSeconds(stopDuration);
-
-        // Riprendi il movimento
-        robMov.moveSpeed = robot.speed;
-        raycastManager.sensorsEnabled = true;
-        Debug.Log($"Robot {robot.id} riprende il movimento.");
-
-        if (explainability != null)
-        {
-            explainability.ShowExplanation(
-                $"Robot {robot.id} torna in movimento. Sensori riattivati."
-            );
+            robotToPause.isPaused = true;
+            robotPauseTimers[robotToPause.id] = collisionAvoidancePauseTime;
+            Debug.LogWarning($"Collision potential detected between:\n" +
+            $"Robot {robotA.id} (Position: {robotA.GetEstimatedPosition()}, Destination: {destinationA})\n" +
+            $"Robot {robotB.id} (Position: {robotB.GetEstimatedPosition()}, Destination: {destinationB})\n" +
+            $"Pausing Robot {robotToPause.id} ({(distanceToDestinationA > distanceToDestinationB ? "closer to" : "further from")} destination)");
+            // Visual feedback
+            robotToPause.ShowCollisionWarning(true);
         }
     }
 
-    private async void CheckForShippingOrders()
+    private async Task CheckForTasks()
     {
-        // Fetch the oldest order with parcel count
+        await CheckForShippingOrders();
+        await CheckForDeliveries();
+        await CheckForExpiredParcelsInBackup();
+    }
+
+    private async Task CheckForShippingOrders()
+    {
         var result = await databaseManager.GetOldestOrderWithParcelCountAsync();
         foreach (var record in result)
         {
-            var order = record["order"].As<INode>();
-            string orderId = order.Properties["orderId"].As<string>();
-
-            // Get parcel positions for the order
+            var orderId = record["order"].As<INode>().Properties["orderId"].As<string>();
             var slotPositions = await databaseManager.GetParcelPositionsForOrderAsync(orderId);
-            foreach (var slot in slotPositions)
-            {
-                if (robotAssignments.ContainsValue(slot)) continue; // Skip if slot is already assigned
-                pendingTasks.Enqueue((slot, "Shipping", null, null)); // Category is not needed for Shipping
-            }
+            EnqueueTasks(slotPositions, "Shipping");
         }
     }
 
-    private async void CheckForDeliveries()
+    private async Task CheckForDeliveries()
     {
-        // Fetch parcels in the delivery area
-        IList<IRecord> result = await databaseManager.GetParcelsInDeliveryArea();
+        var result = await databaseManager.GetParcelsInDeliveryArea();
         foreach (var record in result)
         {
-            Vector3 parcelPosition = new(record["x"].As<float>(),
-                                         record["y"].As<float>(),
-                                         record["z"].As<float>());
-            if (robotAssignments.ContainsValue(parcelPosition)) continue;
-            pendingTasks.Enqueue((parcelPosition, "Delivery", null, null));
+            var parcelPosition = new Vector3(record["x"].As<float>(), record["y"].As<float>(), record["z"].As<float>());
+            EnqueueTask(parcelPosition, "Delivery");
         }
     }
 
-    private async void CheckForExpiredParcelsInBackup()
+    private async Task CheckForExpiredParcelsInBackup()
     {
-        // Fetch parcels in the backup shelf
         var slotPositions = await databaseManager.GetExpiredParcelsInBackupShelf();
         foreach (var (slot, category, timestamp) in slotPositions)
         {
-            if (robotAssignments.ContainsValue(slot)) continue;
-            pendingTasks.Enqueue((slot, "Disposal", category, timestamp));
+            EnqueueTask(slot, "Disposal", category, timestamp);
+        }
+    }
+
+    private void EnqueueTasks(IEnumerable<Vector3> positions, string type, string category = null, string timestamp = null)
+    {
+        foreach (var position in positions)
+        {
+            EnqueueTask(position, type, category, timestamp);
+        }
+    }
+
+    private void EnqueueTask(Vector3 position, string type, string category = null, string timestamp = null)
+    {
+        if (!IsPositionAssigned(position))
+        {
+            pendingTasks.Enqueue((position, type, category, timestamp));
         }
     }
 
     private void CheckPendingTasks()
     {
-        // Check if there are available robots before assigning tasks
-        bool robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
-
-        if (robotsAvailable)
+        while (pendingTasks.Count > 0 && robots.Any(r => r.currentState == RobotState.Idle && !r.isPaused))
         {
-            // Assign tasks if there are available robots
-            while (pendingTasks.Count > 0 && robotsAvailable)
-            {
-                var nextTask = pendingTasks.Dequeue();
-                AssignTask(nextTask.Position, nextTask.Type, nextTask.Category);
-                robotsAvailable = robots.Any(r => r.isActive && r.currentState == RobotState.Idle);
-            }
+            var nextTask = pendingTasks.Dequeue();
+            AssignTask(nextTask.Position, nextTask.Type, nextTask.Category, nextTask.Timestamp);
         }
     }
 
-    private void AssignTask(Vector3 taskPosition, string taskType, string category = null, string timestamp = null)
+    private void AssignTask(Vector3 taskPosition, string taskType, string category, string timestamp)
     {
-        // Skip if the task is already assigned
-        if (robotAssignments.ContainsValue(taskPosition))
-        {
-            Debug.Log($"Task per la posizione {taskPosition} è già stato assegnato.");
-            return;
-        }
-
-        // Find an available robot
-        Robot availableRobot = FindAvailableRobot(taskPosition);
+        var availableRobot = FindAvailableRobot(taskPosition);
         if (availableRobot == null)
         {
-            // Re-add to queue with the correct category if no robot is available
-            if (!pendingTasks.Any(t => t.Position == taskPosition && t.Type == taskType))
-            {
-                pendingTasks.Enqueue((taskPosition, taskType, category, timestamp));
-                Debug.LogWarning($"Nessun robot disponibile. Compito riaggiunto in coda. ({taskPosition})");
-            }
+            pendingTasks.Enqueue((taskPosition, taskType, category, timestamp));
+            Debug.LogWarning($"Nessun robot disponibile (o non in pausa per collisione). Compito riaggiunto in coda. ({taskPosition})");
             return;
         }
 
         Debug.Log($"Assegnato task di {taskType} per la posizione {taskPosition} al Robot {availableRobot.id}.");
         availableRobot.destination = taskPosition;
-
-        switch (taskType)
-        {
-            case "Delivery":
-                availableRobot.currentState = RobotState.DeliveryState;
-                break;
-            case "Shipping":
-                availableRobot.currentState = RobotState.ShippingState;
-                break;
-            case "Disposal":
-                availableRobot.currentState = RobotState.DisposalState;
-                availableRobot.category = category;
-                availableRobot.timestamp = timestamp;
-                break;
-            default:
-                Debug.LogWarning($"Tipo di task sconosciuto: {taskType}");
-                break;
-        }
-        robotAssignments[availableRobot.id] = taskPosition; // Track the assignment
+        availableRobot.currentState = GetRobotState(taskType);
+        availableRobot.category = category;
+        availableRobot.timestamp = timestamp;
+        robotAssignments[availableRobot.id] = taskPosition;
     }
 
-    private Robot FindAvailableRobot(Vector3 taskPosition)
+    private RobotState GetRobotState(string taskType) => taskType switch
     {
-        Robot closestRobot = null;
-        float shortestDistance = float.MaxValue;
+        "Delivery" => RobotState.DeliveryState,
+        "Shipping" => RobotState.ShippingState,
+        "Disposal" => RobotState.DisposalState,
+        _ => throw new System.ArgumentException($"Tipo di task sconosciuto: {taskType}")
+    };
 
-        // Find the closest idle robot
-        foreach (Robot robot in robots)
-        {
-            if (!robot.isActive || robot.currentState != RobotState.Idle) continue;
-            Vector3 robotPosition = robot.GetEstimatedPosition();
-            float distanceToTask = Vector3.Distance(robotPosition, taskPosition);
-            if (distanceToTask < shortestDistance)
-            {
-                shortestDistance = distanceToTask;
-                closestRobot = robot;
-            }
-        }
-        return closestRobot;
-    }
+    private Robot FindAvailableRobot(Vector3 taskPosition) =>
+        robots
+            .Where(r => r.currentState == RobotState.Idle && !r.isPaused)
+            .OrderBy(r => Vector3.Distance(r.GetEstimatedPosition(), taskPosition))
+            .FirstOrDefault();
+
+    private bool IsPositionAssigned(Vector3 position) =>
+        robotAssignments.ContainsValue(position) || pendingTasks.Any(task => task.Position.Equals(position));
 
     public void NotifyTaskCompletion(int robotId)
     {
-        // Remove the robot's assignment when the task is completed
-        if (robotAssignments.TryGetValue(robotId, out Vector3 taskPosition))
+        if (robotAssignments.Remove(robotId))
         {
-            Debug.Log($"Robot {robotId}: Rimozione assegnazione per la posizione {taskPosition} completata.");
-            robotAssignments.Remove(robotId);
+            Debug.Log($"Robot {robotId}: Rimozione assegnazione completata.");
         }
     }
 
     public IRecord AskSlot(string category, int robotId)
     {
-        // Get an available slot from the database
-        IList<IRecord> result = Task.Run(() => databaseManager.GetAvailableSlot(category)).Result;
-
-        if (result == null)
-            return null; // Return null to indicate no slot was found
+        var result = Task.Run(() => databaseManager.GetAvailableSlot(category)).Result;
+        if (result == null) return null;
 
         var record = result[0];
-        float x = record[0].As<float>();
-        float y = record[1].As<float>();
-        float z = record[2].As<float>();
-        Vector3 slotPosition = new(x, y, z);
+        var slotPosition = new Vector3(record[0].As<float>(), record[1].As<float>(), record[2].As<float>());
 
-        // Remove the robot's current assignment (if any)
         if (robotAssignments.ContainsKey(robotId))
         {
-            Vector3 currentPosition = robotAssignments[robotId];
-            Debug.Log($"Robot {robotId}: Rimozione assegnazione corrente per la posizione {currentPosition}.");
+            Debug.Log($"Robot {robotId}: Rimozione assegnazione corrente per la posizione {robotAssignments[robotId]}.");
             robotAssignments.Remove(robotId);
         }
 
-        // Assign the robot to the new slot position
         Debug.Log($"Robot {robotId}: Nuova assegnazione per lo slot {slotPosition}.");
         robotAssignments[robotId] = slotPosition;
         return record;
@@ -413,12 +270,9 @@ public class RobotManager : MonoBehaviour
 
     public void FreeSlotPosition(int robotId)
     {
-        // Remove the robot's current assignment (if any)
-        if (robotAssignments.ContainsKey(robotId))
+        if (robotAssignments.Remove(robotId, out var currentPosition))
         {
-            Vector3 currentPosition = robotAssignments[robotId];
             Debug.Log($"Robot {robotId}: Rimozione assegnazione corrente per la posizione {currentPosition}.");
-            robotAssignments.Remove(robotId);
         }
     }
 
@@ -430,15 +284,12 @@ public class RobotManager : MonoBehaviour
 
     public Vector3 AskConveyorPosition()
     {
-        Vector3 selectedPosition = shippingConveyorPositions[currentConveyorIndex];
+        var selectedPosition = shippingConveyorPositions[currentConveyorIndex];
         currentConveyorIndex = (currentConveyorIndex + 1) % shippingConveyorPositions.Count;
         return selectedPosition;
     }
 
-    public bool AreThereTask()
-    {
-        return pendingTasks.Count > 0;
-    }
+    public bool AreThereTask() => pendingTasks.Count > 0;
 
     private void TogglePause()
     {
@@ -451,6 +302,7 @@ public class RobotManager : MonoBehaviour
             var explainability = robot.GetComponent<RobotExplainability>();
             if (explainability != null)
             {
+                explainability.ToggleExplanation(isPaused); // Show/hide explanations
                 explainability.ToggleExplanation(isPaused);
             }
         }

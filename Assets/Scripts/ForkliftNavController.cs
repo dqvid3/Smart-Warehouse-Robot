@@ -38,6 +38,8 @@ public class ForkliftNavController : MonoBehaviour
 
     public IEnumerator PickParcelFromDelivery(Vector3 parcelPosition, int robotId)
     {
+        if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
+
         Vector3 qrCodeDirection = Vector3.left;
         Vector3 approachPosition = parcelPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
@@ -97,6 +99,8 @@ public class ForkliftNavController : MonoBehaviour
 
     public IEnumerator PlaceParcelOnShelf(string category, int robotId, string timestamp, Action<IRecord, bool> onComplete = null)
     {
+        if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
+
         // Trova uno slot disponibile e senza ostacoli
         IRecord record = null;
         bool hasObstacle = true;
@@ -105,6 +109,8 @@ public class ForkliftNavController : MonoBehaviour
         Vector3 approachPosition = Vector3.zero;
         while (hasObstacle)
         {
+            if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
+
             // Cerca uno slot disponibile
             if (!useBackupShelf)
             {
@@ -174,7 +180,10 @@ public class ForkliftNavController : MonoBehaviour
         onComplete?.Invoke(record, useBackupShelf);
     }
 
-    public IEnumerator GetParcelBack(int robotId, string timestamp){
+    public IEnumerator GetParcelBack(int robotId, string timestamp)
+    {
+        if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
+
         explainability.ShowExplanation("Nessun slot disponibile nello scaffale principale. Mando il pacco indietro.");
         yield return StartCoroutine(PlaceParcelOnConveyor(robotId, backupPosition));
         _ = neo4jHelper.DeleteParcel(timestamp);
@@ -187,6 +196,7 @@ public class ForkliftNavController : MonoBehaviour
 
     public IEnumerator ShipParcel(Vector3 slotPosition, int robotId)
     {
+        if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
 
         Vector3 conveyorDestination = robotManager.AskConveyorPosition();
 
@@ -203,6 +213,8 @@ public class ForkliftNavController : MonoBehaviour
 
     public IEnumerator TakeParcelFromShelf(Vector3 slotPosition, int robotId)
     {
+        if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
+
         Vector3 qrCodeDirection = Vector3.forward;
         Vector3 approachPosition = slotPosition + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
@@ -216,6 +228,7 @@ public class ForkliftNavController : MonoBehaviour
         explainability.ShowExplanation("Mi oriento verso lo scaffale.");
 
         // Trova il GameObject del pacco basato sulla sua posizione
+        yield return new WaitForSeconds(.5f);
         GameObject parcel = GetParcel(slotPosition.y);
 
         // Allineamento e sollevamento del pacco
@@ -239,6 +252,8 @@ public class ForkliftNavController : MonoBehaviour
 
     public IEnumerator PlaceParcelOnConveyor(int robotId, Vector3 conveyorDestination)
     {
+        if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
+
         robotManager.AssignConveyorPosition(robotId, conveyorDestination);
         // Direzione e posizione di approccio al nastro trasportatore
         Vector3 qrCodeDirection = Vector3.right;
@@ -275,23 +290,36 @@ public class ForkliftNavController : MonoBehaviour
 
     public IEnumerator MoveToOriginPosition()
     {
+        if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
+
         yield return MoveToPosition(defaultPosition);
         yield return StartCoroutine(SmoothRotateToDirection(Vector3.back));
     }
 
     public IEnumerator MoveToPosition(Vector3 position)
     {
+        while (GetComponent<Robot>().isPaused)
+        {
+            yield return null; // Aspetta finché non viene tolta la pausa
+        }
         yield return movementWithAStar.MovementToPosition(position);
     }
 
-
     public IEnumerator SmoothRotateToDirection(Vector3 targetForward, float rotationSpeed = 1f)
     {
+        while (GetComponent<Robot>().isPaused)
+        {
+            yield return null; // Aspetta finché non viene tolta la pausa
+        }
         Quaternion startRotation = transform.rotation;
         Quaternion finalRotation = Quaternion.LookRotation(targetForward, Vector3.up);
         float t = 0f;
         while (t < 1f)
         {
+            while (GetComponent<Robot>().isPaused)
+            {
+                yield return null; // Aspetta finché non viene tolta la pausa
+            }
             t += Time.deltaTime * rotationSpeed;
             transform.rotation = Quaternion.Slerp(startRotation, finalRotation, t);
             yield return new WaitForFixedUpdate();
@@ -301,6 +329,10 @@ public class ForkliftNavController : MonoBehaviour
 
     private IEnumerator LiftMastToHeight(float height)
     {
+        while (GetComponent<Robot>().isPaused)
+        {
+            yield return null; // Aspetta finché non viene tolta la pausa
+        }
         yield return forkliftController.LiftMastToHeight(height);
     }
 
@@ -342,9 +374,14 @@ public class ForkliftNavController : MonoBehaviour
 
     private IEnumerator MoveBackwards(Vector3 direction, float distance)
     {
+        while (GetComponent<Robot>().isPaused)
+        {
+            yield return null; // Aspetta finché non viene tolta la pausa
+        }
+
         // 1) Aspetta mezzo secondo per vedere possibili ostacoli dietro
         explainability.ShowExplanation("Controllo ostacoli dietro...");
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1f);
 
         // Controllo iniziale: se c'è qualcosa dietro, aspetta
         while (HasObstacleBehind())
@@ -383,10 +420,13 @@ public class ForkliftNavController : MonoBehaviour
         }
     }
 
-
-
     public IEnumerator MoveTakeBoxDistance(Vector3 approachPosition, Vector3 qrCodeDirection, float speed = 2f)
     {
+        while (GetComponent<Robot>().isPaused)
+        {
+            yield return null; // Aspetta finché non viene tolta la pausa
+        }
+
         Vector3 targetPosition = approachPosition + (qrCodeDirection * takeBoxDistance);
 
         while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
@@ -397,7 +437,6 @@ public class ForkliftNavController : MonoBehaviour
         transform.position = targetPosition;
     }
 
-
     private GameObject GetParcel(float height)
     {
         // Definisci l'origine del raggio (ad esempio, la posizione del forklift + un offset in avanti)
@@ -405,7 +444,7 @@ public class ForkliftNavController : MonoBehaviour
         // Definisci la direzione del raggio (avanti rispetto al forklift)
         Vector3 rayDirection = transform.forward;
         // Definisci la lunghezza massima del raggio
-        rayOrigin.y = height;
+        rayOrigin.y = height; 
         if (Physics.Raycast(rayOrigin, rayDirection, out RaycastHit hit, 3f, layerMask))
             return hit.collider.gameObject.transform.root.gameObject;
         return null;
@@ -474,7 +513,7 @@ public class ForkliftNavController : MonoBehaviour
         return colliders.Length > 0;
     }
 
-     private void DrawBox(Vector3 center, Vector3 size, Color color, float duration)
+    private void DrawBox(Vector3 center, Vector3 size, Color color, float duration)
     {
         Vector3 halfSize = size / 2;
 

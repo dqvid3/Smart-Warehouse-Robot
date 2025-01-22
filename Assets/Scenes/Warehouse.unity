@@ -4948,8 +4948,12 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: rayHeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: threshold
-      value: 2.5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: numberOfRays
@@ -4957,11 +4961,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
-      value: 30
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
-      value: 2.5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: additionalRays
@@ -5005,7 +5009,7 @@ PrefabInstance:
       objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: deviationAngle
-      value: 20
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastManager
@@ -8206,8 +8210,12 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: rayHeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: threshold
-      value: 2.5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: numberOfRays
@@ -8215,11 +8223,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
-      value: 30
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
-      value: 2.5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: additionalRays
@@ -8263,7 +8271,7 @@ PrefabInstance:
       objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: deviationAngle
-      value: 20
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
@@ -8838,6 +8846,10 @@ MonoBehaviour:
   - {fileID: 1221965577}
   - {fileID: 8829896}
   databaseManager: {fileID: 1613119135}
+  collisionCheckRadius: 6
+  collisionAvoidancePauseTime: 2
+  pathConflictDistanceThreshold: 2
+  nextNodeCheckCount: 8
 --- !u!114 &1613119135
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10558,8 +10570,12 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
+      propertyPath: rayHeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: threshold
-      value: 2.5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: numberOfRays
@@ -10567,11 +10583,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
-      value: 30
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
-      value: 2.5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: additionalRays
@@ -10615,7 +10631,7 @@ PrefabInstance:
       objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: deviationAngle
-      value: 20
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
