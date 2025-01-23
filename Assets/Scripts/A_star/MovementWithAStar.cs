@@ -23,6 +23,10 @@ public class MovementWithAStar : MonoBehaviour
     public Grid grid; // Assegna questo riferimento nell'Inspector
     private List<Node> currentPathNodes = new List<Node>();
 
+    private Vector3? lastAvoidedObstaclePosition = null;
+    private float obstacleAvoidanceCooldown = 2f; // Tempo in cui l'ostacolo è considerato "attivo"
+    private float lastAvoidanceTime = 0f;
+
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
@@ -73,6 +77,21 @@ public class MovementWithAStar : MonoBehaviour
     {
         if (success)
         {
+            // Se c'è un ostacolo evitato di recente, verifica che il nuovo percorso non ci passi vicino
+            if (lastAvoidedObstaclePosition.HasValue && Time.time - lastAvoidanceTime < obstacleAvoidanceCooldown)
+            {
+                foreach (Vector3 point in path)
+                {
+                    if (Vector3.Distance(point, lastAvoidedObstaclePosition.Value) < 2f) // Distanza di sicurezza
+                    {
+                        Debug.Log("Il percorso passa vicino all'ostacolo evitato. Ricalcolo...");
+                        PathRequestManager.RequestPath(start, end, OnPathFound);
+                        return;
+                    }
+                }
+            }
+
+            // Prosegui con il percorso trovato
             Vector3[] fullPath = new Vector3[path.Length + 2];
             fullPath[0] = start;
             for (int i = 0; i < path.Length; i++)
@@ -238,7 +257,11 @@ public class MovementWithAStar : MonoBehaviour
             return currentPosition;
         }
 
-        return currentPosition + deviationDirection.normalized * 1.5f; // Spostarsi di 1.5 unit� nella direzione calcolata
+        // Memorizza la posizione dell'ostacolo evitato
+        lastAvoidedObstaclePosition = currentPosition + robotToMove.transform.forward * 1.5f; // Posizione approssimativa dell'ostacolo
+        lastAvoidanceTime = Time.time;
+
+        return currentPosition + deviationDirection.normalized * 1.5f; // Spostarsi di 1.5 unità nella direzione calcolata
     }
 
     private void DisableSensors()
