@@ -105,6 +105,7 @@ public class MovementWithAStar : MonoBehaviour
         {
             Debug.LogError("Impossibile trovare il percorso.");
         }
+        ResetModifiedNodeWeights();
     }
 
     private void DrawPath(Vector3[] path)
@@ -122,26 +123,20 @@ public class MovementWithAStar : MonoBehaviour
         Vector3 initialDirection = (path[1] - path[0]).normalized;
         Quaternion initialRotation = Quaternion.LookRotation(initialDirection);
 
-        // Ruota inizialmente il robot verso la direzione del primo segmento
         while (Quaternion.Angle(robotToMove.transform.rotation, initialRotation) > 0.1f)
         {
             robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, initialRotation, Time.deltaTime * moveSpeed);
             yield return null;
         }
 
-        string lastObstacleDirection = "Nessun ostacolo"; // Variabile per tracciare l'ultimo ostacolo
+        string lastObstacleDirection = "Nessun ostacolo";
 
         for (int i = 1; i < path.Length; i++)
         {
             Vector3 startPosition = robotToMove.transform.position;
             Vector3 targetPosition = path[i];
             Vector3 direction = (targetPosition - startPosition).normalized;
-            Quaternion targetRotation = Quaternion.identity;
-
-            if (direction != Vector3.zero)
-            {
-                targetRotation = Quaternion.LookRotation(direction);
-            }
+            Quaternion targetRotation = direction != Vector3.zero ? Quaternion.LookRotation(direction) : Quaternion.identity;
 
             float journey = 0f;
 
@@ -149,54 +144,32 @@ public class MovementWithAStar : MonoBehaviour
             {
                 string currentObstacleDirection = raycastManager.GetObstacleDirection();
 
-                // Se rileva un ostacolo, ruota su se stesso e modifica i pesi dei nodi vicini all'ostacolo
                 if (currentObstacleDirection != null && currentObstacleDirection != "Nessun ostacolo" && currentObstacleDirection != "Pausa" && currentObstacleDirection != "Sensori disabilitati")
                 {
-                    Debug.Log($"Ostacolo rilevato: {currentObstacleDirection}. Rotazione per evitare l'ostacolo.");
+                    Debug.Log($"Ostacolo rilevato: {currentObstacleDirection}. Modifica pesi nodi e ricalcolo percorso.");
 
-                    // Calcola la posizione stimata dell'ostacolo
-                    Vector3 obstacleEstimate = EstimateObstaclePosition(robotToMove.transform.position, currentObstacleDirection, deviationAngle);
-
-                    // Modifica i pesi dei nodi vicini alla posizione stimata dell'ostacolo
-                    //ModifyNodeWeightsNearObstacle(obstacleEstimate);
-
-                    // Calcola la direzione di rotazione
-                    float rotationAngle = currentObstacleDirection == "Sinistra" ? deviationAngle : -deviationAngle;
-                    Quaternion deviationRotation = Quaternion.Euler(0, rotationAngle, 0) * robotToMove.transform.rotation;
-
-                    // Ruota su se stesso
-                    while (Quaternion.Angle(robotToMove.transform.rotation, deviationRotation) > 0.1f)
-                    {
-                        robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, deviationRotation, Time.deltaTime * moveSpeed);
-                        yield return null;
-                    }
-
-                    lastObstacleDirection = currentObstacleDirection;
+                    // Modifica pesi nodi davanti
+                    ModifyNextNodesWeight();
+                    
+                    // Richiedi nuovo percorso
+                    start = robotToMove.transform.position;
+                    PathRequestManager.RequestPath(start, end, OnPathFound);
+                    
+                    // Interrompi movimento corrente
+                    yield break;
                 }
                 else if (currentObstacleDirection == "Nessun ostacolo" && (lastObstacleDirection == "Sinistra" || lastObstacleDirection == "Destra"))
                 {
-                    // Ricalcola il percorso se non ci sono più ostacoli
-                    Debug.Log("Ostacolo rimosso. Ricalcolo del percorso dalla posizione corrente.");
                     start = robotToMove.transform.position;
-
-                    // Richiedi un nuovo percorso
                     PathRequestManager.RequestPath(start, end, OnPathFound);
-
-                    // Aggiorna l'ultimo ostacolo rilevato
-                    lastObstacleDirection = currentObstacleDirection;
-
-                    // Interrompi il ciclo per attendere il nuovo percorso
                     yield break;
                 }
                 else
                 {
-                    // Se non ci sono ostacoli, prosegui verso il punto successivo
                     journey += Time.deltaTime * moveSpeed / Vector3.Distance(startPosition, targetPosition);
-
                     robotToMove.transform.position = Vector3.Lerp(startPosition, targetPosition, journey);
                     robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, targetRotation, Time.deltaTime * moveSpeed);
 
-                    // Rilascia il nodo precedente dopo averlo superato
                     if (i > 1)
                     {
                         Node previousNode = grid.NodeFromWorldPoint(path[i - 2]);
@@ -211,22 +184,49 @@ public class MovementWithAStar : MonoBehaviour
                 }
             }
 
-            // Rilascia il nodo appena raggiunto quando si arriva al punto di destinazione del segmento corrente
             Node currentNode = grid.NodeFromWorldPoint(path[i - 1]);
             grid.ReleaseNodes(new List<Node> { currentNode });
             currentPathNodes.Remove(currentNode);
-
             robotToMove.transform.position = targetPosition;
             robotToMove.transform.rotation = targetRotation;
         }
 
-        // Rilascia l'ultimo nodo (punto di destinazione finale)
         if (path.Length > 1)
         {
             Node lastNode = grid.NodeFromWorldPoint(path[path.Length - 2]);
             grid.ReleaseNodes(new List<Node> { lastNode });
             currentPathNodes.Remove(lastNode);
         }
+    }
+
+    private void ModifyNextNodesWeight()
+    {
+        Vector3 currentPos = robotToMove.transform.position;
+        Node currentNode = grid.NodeFromWorldPoint(currentPos);
+        int currentIndex = currentPathNodes.IndexOf(currentNode);
+
+        if (currentIndex == -1) return;
+
+        // Modifica i prossimi 2 nodi nel percorso
+        int endIndex = Mathf.Min(currentIndex + 2, currentPathNodes.Count - 1);
+        for (int i = currentIndex + 1; i <= endIndex; i++)
+        {
+            Node node = currentPathNodes[i];
+            if (!nodesWithModifiedWeight.Contains(node))
+            {
+                node.movementPenalty += (int)obstacleWeight;
+                nodesWithModifiedWeight.Add(node);
+            }
+        }
+    }
+
+    private void ResetModifiedNodeWeights()
+    {
+        foreach (Node node in nodesWithModifiedWeight)
+        {
+            node.movementPenalty -= (int)obstacleWeight;
+        }
+        nodesWithModifiedWeight.Clear();
     }
 
 

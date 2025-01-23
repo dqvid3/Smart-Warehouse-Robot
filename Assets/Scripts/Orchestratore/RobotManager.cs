@@ -93,7 +93,7 @@ public class RobotManager : MonoBehaviour
                 float distance = Vector3.Distance(posA, posB);
 
                 // Controllo collisione diretta
-                if (distance < collisionCheckRadius - 5)
+                if (distance < collisionCheckRadius - 4)
                 {
                     Debug.Log($"Collisione imminente per prossimità: Robot {robots[i].id} e {robots[j].id} " +
                             $"a {distance.ToString("F2")} unità di distanza");
