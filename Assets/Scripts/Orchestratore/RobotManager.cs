@@ -17,9 +17,10 @@ public class RobotManager : MonoBehaviour
     private float lastCheckTime = 0f;
     private int currentConveyorIndex = 0;
     public float collisionCheckRadius = 9f;
-    public float collisionAvoidancePauseTime = 4f;
-    public float pathConflictDistanceThreshold = 4f;
+    public float collisionAvoidancePauseTime = 2f;
+    public float pathConflictDistanceThreshold = 2f;
     public int nextNodeCheckCount = 8;
+    public float nearGoalThreshold = 4f;
     private Dictionary<int, float> robotPauseTimers = new();
 
     private async void Start()
@@ -72,51 +73,80 @@ public class RobotManager : MonoBehaviour
         }
     }
 
+    public bool drawConflictGizmos = true;
+    public float gizmoDisplayTime = 3f;
+    private Dictionary<Vector3, float> conflictGizmos = new();
+    private enum CollisionType { Proximity, PathConflict }
+
     private void CheckForCollisions()
     {
-        for(int i = 0; i < robots.Count; i++)
+        for (int i = 0; i < robots.Count; i++)
         {
-            if(robots[i].currentState == RobotState.Idle || robots[i].isPaused) continue;
+            if (robots[i].currentState == RobotState.Idle || robots[i].isPaused) continue;
 
-            for(int j = i + 1; j < robots.Count; j++)
+            for (int j = i + 1; j < robots.Count; j++)
             {
-                if(robots[j].currentState == RobotState.Idle || robots[j].isPaused) continue;
+                if (robots[j].currentState == RobotState.Idle || robots[j].isPaused) continue;
+
+                Vector3 posA = robots[i].GetEstimatedPosition();
+                Vector3 posB = robots[j].GetEstimatedPosition();
+                float distance = Vector3.Distance(posA, posB);
 
                 // Controllo collisione diretta
-                float distance = Vector3.Distance(robots[i].GetEstimatedPosition(), robots[j].GetEstimatedPosition());
-                bool directCollision = distance <= collisionCheckRadius;
+                if (distance < collisionCheckRadius - 5)
+                {
+                    Debug.Log($"Collisione imminente per prossimità: Robot {robots[i].id} e {robots[j].id} " +
+                            $"a {distance.ToString("F2")} unità di distanza");
+                    HandlePotentialCollision(robots[i], robots[j], CollisionType.Proximity);
+                    AddCollisionGizmos(posA, posB);
+                }
 
                 // Controllo conflitto di percorso
-                bool pathConflict = CheckForPathConflicts(robots[i], robots[j]);
-
-                if(directCollision && pathConflict)
+                var (hasConflict, conflictingNodes) = CheckForPathConflicts(robots[i], robots[j]);
+                if (distance < collisionCheckRadius && hasConflict)
                 {
-                    HandlePotentialCollision(robots[i], robots[j]);
+                    string nodeList = string.Join("\n- ", conflictingNodes.Select(n =>
+                        $"Nodo A[{n.nodeA.gridX},{n.nodeA.gridY}] ({n.positionA}) ↔ " +
+                        $"Nodo B[{n.nodeB.gridX},{n.nodeB.gridY}] ({n.positionB})"));
+
+                    Debug.Log($"Conflitto di percorso tra Robot {robots[i].id} e {robots[j].id}:\n" +
+                                $"Distanza: {distance.ToString("F2")}\n" +
+                                $"Nodi in conflitto:\n- {nodeList}");
+
+                    HandlePotentialCollision(robots[i], robots[j], CollisionType.PathConflict);
+                    AddPathConflictGizmos(conflictingNodes);
                 }
             }
         }
     }
 
-    private bool CheckForPathConflicts(Robot robotA, Robot robotB)
+    private (bool hasConflict, List<(Node nodeA, Vector3 positionA, Node nodeB, Vector3 positionB)>) CheckForPathConflicts(Robot robotA, Robot robotB)
     {
-        // Ottieni i prossimi nodi per entrambi i robot
+        var conflictingNodes = new List<(Node, Vector3, Node, Vector3)>();
+
         var pathA = robotA.movementWithAStar.GetNextNodes(nextNodeCheckCount);
         var pathB = robotB.movementWithAStar.GetNextNodes(nextNodeCheckCount);
 
-        // Controlla sovrapposizioni dirette
         foreach (var nodeA in pathA)
         {
             foreach (var nodeB in pathB)
             {
-                if (nodeA == nodeB || Vector3.Distance(nodeA.worldPosition, nodeB.worldPosition) < pathConflictDistanceThreshold)
-                    return true;
+                float nodeDistance = Vector3.Distance(nodeA.worldPosition, nodeB.worldPosition);
+                if (nodeA == nodeB || nodeDistance < pathConflictDistanceThreshold)
+                {
+                    conflictingNodes.Add((
+                        nodeA,
+                        nodeA.worldPosition,
+                        nodeB,
+                        nodeB.worldPosition
+                    ));
+                }
             }
         }
-
-        return false;
+        return (conflictingNodes.Count > 0, conflictingNodes);
     }
 
-    private void HandlePotentialCollision(Robot robotA, Robot robotB)
+    private void HandlePotentialCollision(Robot robotA, Robot robotB, CollisionType collisionType)
     {
         if (!robotA.isPaused && !robotB.isPaused)
         {
@@ -128,22 +158,98 @@ public class RobotManager : MonoBehaviour
             if (robotAssignments.ContainsKey(robotB.id))
                 destinationB = robotAssignments[robotB.id];
 
-            float distanceToDestinationA = Vector3.Distance(robotA.GetEstimatedPosition(), destinationA);
-            float distanceToDestinationB = Vector3.Distance(robotB.GetEstimatedPosition(), destinationB);
+            // Calculate distances to each other's destinations
+            float distanceAtoBDest = Vector3.Distance(robotA.GetEstimatedPosition(), destinationB);
+            float distanceBtoADest = Vector3.Distance(robotB.GetEstimatedPosition(), destinationA);
 
-            Robot robotToPause = (distanceToDestinationA > distanceToDestinationB) ? robotB : robotA;
+            bool aNearBDest = distanceAtoBDest < nearGoalThreshold;
+            bool bNearADest = distanceBtoADest < nearGoalThreshold;
 
+            Robot robotToPause;
+
+            // Determine which robot to pause based on proximity to other's destination
+            if (aNearBDest)
+            {
+                robotToPause = robotB; // Pause B since A is near B's destination
+            }
+            else if (bNearADest)
+            {
+                robotToPause = robotA; // Pause A since B is near A's destination
+            }
+            else
+            {
+                // Fallback to original distance comparison
+                float distanceToDestinationA = Vector3.Distance(robotA.GetEstimatedPosition(), destinationA);
+                float distanceToDestinationB = Vector3.Distance(robotB.GetEstimatedPosition(), destinationB);
+                robotToPause = (distanceToDestinationA > distanceToDestinationB) ? robotA : robotB;
+            }
+
+            // Apply pause and update timers
             robotToPause.isPaused = true;
             robotPauseTimers[robotToPause.id] = collisionAvoidancePauseTime;
             Debug.LogWarning($"Collision potential detected between:\n" +
-            $"Robot {robotA.id} (Position: {robotA.GetEstimatedPosition()}, Destination: {destinationA})\n" +
-            $"Robot {robotB.id} (Position: {robotB.GetEstimatedPosition()}, Destination: {destinationB})\n" +
-            $"Pausing Robot {robotToPause.id} ({(distanceToDestinationA > distanceToDestinationB ? "closer to" : "further from")} destination)");
-            // Visual feedback
+                $"Robot {robotA.id} (Position: {robotA.GetEstimatedPosition()}, Destination: {destinationA})\n" +
+                $"Robot {robotB.id} (Position: {robotB.GetEstimatedPosition()}, Destination: {destinationB})\n" +
+                $"Pausing Robot {robotToPause.id} based on proximity rules.");
             robotToPause.ShowCollisionWarning(true);
+            string collisionReason = collisionType switch
+            {
+                CollisionType.Proximity => $"Troppo vicini (distanza: {Vector3.Distance(robotA.GetEstimatedPosition(), robotB.GetEstimatedPosition()).ToString("F2")})",
+                CollisionType.PathConflict => "Conflitto di percorso",
+                _ => "Sconosciuto"
+            };
+            Debug.LogWarning($"Motivo pausa: {collisionReason}\n" +
+                            $"Robot {robotToPause.id} in pausa per {collisionAvoidancePauseTime} secondi");
         }
     }
 
+    private void AddCollisionGizmos(Vector3 posA, Vector3 posB)
+    {
+        if (!drawConflictGizmos) return;
+
+        conflictGizmos[posA] = Time.time + gizmoDisplayTime;
+        conflictGizmos[posB] = Time.time + gizmoDisplayTime;
+    }
+
+    private void AddPathConflictGizmos(List<(Node nodeA, Vector3 positionA, Node nodeB, Vector3 positionB)> nodes)
+    {
+        if (!drawConflictGizmos) return;
+
+        foreach (var node in nodes)
+        {
+            conflictGizmos[node.positionA] = Time.time + gizmoDisplayTime;
+            conflictGizmos[node.positionB] = Time.time + gizmoDisplayTime;
+
+            // Aggiungi linee tra i nodi in conflitto
+            Debug.DrawLine(node.positionA, node.positionB, Color.red, gizmoDisplayTime);
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!drawConflictGizmos) return;
+
+        var currentTime = Time.time;
+        var keysToRemove = new List<Vector3>();
+
+        foreach (var kvp in conflictGizmos)
+        {
+            if (currentTime > kvp.Value)
+            {
+                keysToRemove.Add(kvp.Key);
+                continue;
+            }
+
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawSphere(kvp.Key, 0.3f);
+            Gizmos.DrawWireSphere(kvp.Key, 0.5f);
+        }
+
+        foreach (var key in keysToRemove)
+        {
+            conflictGizmos.Remove(key);
+        }
+    }
     private async Task CheckForTasks()
     {
         await CheckForShippingOrders();
