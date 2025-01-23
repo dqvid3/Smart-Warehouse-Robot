@@ -23,6 +23,11 @@ public class MovementWithAStar : MonoBehaviour
     public Grid grid; // Assegna questo riferimento nell'Inspector
     private List<Node> currentPathNodes = new List<Node>();
 
+    private List<Node> nodesWithModifiedWeight = new List<Node>();
+    private float obstacleWeight = 20f; // Peso temporaneo per i nodi vicini all'ostacolo
+    private float weightResetTime = 3f; // Tempo dopo il quale i pesi vengono ripristinati
+
+
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
@@ -157,6 +162,9 @@ public class MovementWithAStar : MonoBehaviour
 
                     yield return StartCoroutine(MoveToPosition(deviationPosition));
 
+                    Vector3 obstaclePosition = robotToMove.transform.position + robotToMove.transform.forward * 1.5f;
+                    ModifyNodeWeightsNearObstacle(obstaclePosition);
+
                     Debug.Log("Ricalcolo del percorso dalla nuova posizione.");
                     start = robotToMove.transform.position;
                     PathRequestManager.RequestPath(start, end, OnPathFound);
@@ -240,6 +248,33 @@ public class MovementWithAStar : MonoBehaviour
 
         return currentPosition + deviationDirection.normalized * 1.5f; // Spostarsi di 1.5 unit� nella direzione calcolata
     }
+
+    private void ModifyNodeWeightsNearObstacle(Vector3 obstaclePosition)
+    {
+        List<Node> nearbyNodes = grid.GetNeighbours(grid.NodeFromWorldPoint(obstaclePosition));
+        foreach (Node node in nearbyNodes)
+        {
+            if (!nodesWithModifiedWeight.Contains(node))
+            {
+                nodesWithModifiedWeight.Add(node);
+                node.movementPenalty += (int)obstacleWeight;
+            }
+        }
+        StartCoroutine(ResetNodeWeights());
+    }
+
+    private IEnumerator ResetNodeWeights()
+    {
+        yield return new WaitForSeconds(weightResetTime);
+
+        foreach (Node node in nodesWithModifiedWeight)
+        {
+            node.movementPenalty -= (int)obstacleWeight;
+        }
+        nodesWithModifiedWeight.Clear();
+    }
+
+
 
     private void DisableSensors()
     {
