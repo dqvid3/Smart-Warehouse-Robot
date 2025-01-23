@@ -248,6 +248,7 @@ public class ForkliftNavController : MonoBehaviour
         explainability.ShowExplanation("Mi allontano dallo scaffale con la box.");
         robotManager.FreeSlotPosition(robotId);
         _ = FreeSlot(slotPosition);
+        robotManager.NotifyTaskCompletion(robotId);
     }
 
     public IEnumerator PlaceParcelOnConveyor(int robotId, Vector3 conveyorDestination)

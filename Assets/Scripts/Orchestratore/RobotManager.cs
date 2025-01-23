@@ -16,9 +16,9 @@ public class RobotManager : MonoBehaviour
     private float checkInterval = 0.5f;
     private float lastCheckTime = 0f;
     private int currentConveyorIndex = 0;
-    public float collisionCheckRadius = 7f;
+    public float collisionCheckRadius = 9f;
     public float collisionAvoidancePauseTime = 4f;
-    public float pathConflictDistanceThreshold = 3f;
+    public float pathConflictDistanceThreshold = 4f;
     public int nextNodeCheckCount = 8;
     private Dictionary<int, float> robotPauseTimers = new();
 
