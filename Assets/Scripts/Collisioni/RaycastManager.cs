@@ -100,23 +100,39 @@ public class RaycastManager : MonoBehaviour
         {
             robot.isPaused = true;
             Invoke("ResumeRobot", 3f); // Call ResumeRobot after 3 seconds
-            return "Pausa: Troppi ostacoli rilevati";
+            return "Pausa";
         }
 
-        if (!frontObstacleDetected && leftSlotCount == 0 && rightSlotCount == 0)
+        // Se nessun ostacolo rilevato
+        if (!frontObstacleDetected)
         {
             return "Nessun ostacolo";
         }
+
+        /* Se il lato sinistro è completamente libero
+        if (leftSlotCount == 0 && rightSlotCount > 0)
+        {
+            return "SX libera";
+        }
+
+        // Se il lato destro è completamente libero
+        if (rightSlotCount == 0 && leftSlotCount > 0)
+        {
+            return "DX libera";
+        }*/
+
+        // Analisi dei pesi per scegliere tra Sinistra e Destra
         float totalLeft = leftCount + leftSlotCount * extendedWeight;
         float totalRight = rightCount + rightSlotCount * extendedWeight;
 
         if (totalLeft > totalRight)
-            return "Sinistra";
+            return "Sinistra"; // Più ostacoli a destra
         else if (totalRight > totalLeft)
-            return "Destra";
+            return "Destra"; // Più ostacoli a sinistra
         else
-            return Random.Range(0, 2) == 0 ? "Sinistra" : "Destra";
+            return Random.Range(0, 2) == 0 ? "Sinistra" : "Destra"; // In caso di parità, scelta casuale
     }
+
 
     private void ResumeRobot()
     {
