@@ -1,4 +1,5 @@
 using UnityEngine;
+using static Cinemachine.CinemachineFreeLook;
 
 [RequireComponent(typeof(RobotExplainability))] // Assicuriamoci di avere il componente RobotExplainability
 public class RaycastManager : MonoBehaviour
@@ -9,7 +10,7 @@ public class RaycastManager : MonoBehaviour
     public int numberOfRays = 90; // Number of rays simulating the arc
     public int additionalRays = 20; // Additional rays for slots
     public float extendedWeight = 0.1f;
-    public LayerMask layerMask; // Layer to ignore (robot's Layer)
+    public Robot robot;
     
     [Range(0f, 90f)]
     public float frontRayAngle = 45f; // Angle covered by the front rays (green)
@@ -91,6 +92,17 @@ public class RaycastManager : MonoBehaviour
             }
         }
 
+        int totalRays = numberOfRays + 2 * additionalRays; // Total number of rays
+        int totalObstacles = leftCount + rightCount + leftSlotCount + rightSlotCount; // Total obstacles detected
+
+        // Check if 60% or more of the rays detect obstacles
+        if ((float)totalObstacles / totalRays >= 0.6f)
+        {
+            robot.isPaused = true;
+            Invoke("ResumeRobot", 3f); // Call ResumeRobot after 3 seconds
+            return "Pausa: Troppi ostacoli rilevati";
+        }
+
         if (!frontObstacleDetected && leftSlotCount == 0 && rightSlotCount == 0)
         {
             return "Nessun ostacolo";
@@ -104,6 +116,11 @@ public class RaycastManager : MonoBehaviour
             return "Destra";
         else
             return Random.Range(0, 2) == 0 ? "Sinistra" : "Destra";
+    }
+
+    private void ResumeRobot()
+    {
+        robot.isPaused = false;
     }
 
     private void OnDrawGizmos()

@@ -1276,9 +1276,7 @@ MonoBehaviour:
   numberOfRays: 360
   additionalRays: 20
   extendedWeight: 0.1
-  layerMask:
-    serializedVersion: 2
-    m_Bits: 0
+  robot: {fileID: 401018539474953004}
   frontRayAngle: 45
   sensorsEnabled: 1
 --- !u!114 &3671811544877180690

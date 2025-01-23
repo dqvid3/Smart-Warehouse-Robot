@@ -165,4 +165,14 @@ public class RobotKalmanPosition : MonoBehaviour
     {
         return estimatedPosition;
     }
+
+    private void OnDrawGizmos()
+    {
+        if (Application.isPlaying)
+        {
+            Gizmos.color = new Color(0, 1, 0);
+
+            Gizmos.DrawSphere(estimatedPosition, 0.2f);
+        }
+    }
 }
