@@ -98,7 +98,6 @@ public class RobotManager : MonoBehaviour
                     Debug.Log($"Collisione imminente per prossimità: Robot {robots[i].id} e {robots[j].id} " +
                             $"a {distance.ToString("F2")} unità di distanza");
                     HandlePotentialCollision(robots[i], robots[j], CollisionType.Proximity);
-                    AddCollisionGizmos(posA, posB);
                 }
 
                 // Controllo conflitto di percorso
@@ -114,7 +113,6 @@ public class RobotManager : MonoBehaviour
                                 $"Nodi in conflitto:\n- {nodeList}");
 
                     HandlePotentialCollision(robots[i], robots[j], CollisionType.PathConflict);
-                    AddPathConflictGizmos(conflictingNodes);
                 }
             }
         }
@@ -203,53 +201,6 @@ public class RobotManager : MonoBehaviour
         }
     }
 
-    private void AddCollisionGizmos(Vector3 posA, Vector3 posB)
-    {
-        if (!drawConflictGizmos) return;
-
-        conflictGizmos[posA] = Time.time + gizmoDisplayTime;
-        conflictGizmos[posB] = Time.time + gizmoDisplayTime;
-    }
-
-    private void AddPathConflictGizmos(List<(Node nodeA, Vector3 positionA, Node nodeB, Vector3 positionB)> nodes)
-    {
-        if (!drawConflictGizmos) return;
-
-        foreach (var node in nodes)
-        {
-            conflictGizmos[node.positionA] = Time.time + gizmoDisplayTime;
-            conflictGizmos[node.positionB] = Time.time + gizmoDisplayTime;
-
-            // Aggiungi linee tra i nodi in conflitto
-            Debug.DrawLine(node.positionA, node.positionB, Color.red, gizmoDisplayTime);
-        }
-    }
-
-    private void OnDrawGizmos()
-    {
-        if (!drawConflictGizmos) return;
-
-        var currentTime = Time.time;
-        var keysToRemove = new List<Vector3>();
-
-        foreach (var kvp in conflictGizmos)
-        {
-            if (currentTime > kvp.Value)
-            {
-                keysToRemove.Add(kvp.Key);
-                continue;
-            }
-
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawSphere(kvp.Key, 0.3f);
-            Gizmos.DrawWireSphere(kvp.Key, 0.5f);
-        }
-
-        foreach (var key in keysToRemove)
-        {
-            conflictGizmos.Remove(key);
-        }
-    }
     private async Task CheckForTasks()
     {
         await CheckForShippingOrders();
