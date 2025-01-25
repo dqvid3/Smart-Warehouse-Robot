@@ -77,7 +77,6 @@ public class MovementWithAStar : MonoBehaviour
             lineRenderer.positionCount = 0;
         }
     }
-
     private void OnPathFound(Vector3[] path, bool success)
     {
         if (success)
@@ -90,6 +89,9 @@ public class MovementWithAStar : MonoBehaviour
                 fullPath[i + 1] = path[i];
             }
             fullPath[fullPath.Length - 1] = end;
+
+            // Correggi il percorso per eliminare piccole deviazioni finali
+            fullPath = CorrectFinalPath(fullPath);
 
             // Disegna inizialmente il path completo
             if (showPath)
@@ -113,8 +115,30 @@ public class MovementWithAStar : MonoBehaviour
         {
             Debug.LogError("Impossibile trovare il percorso.");
         }
+
         // Reimposta i pesi eventualmente modificati
         ResetModifiedNodeWeights();
+    }
+
+
+    private Vector3[] CorrectFinalPath(Vector3[] path)
+    {
+        if (path.Length < 3)
+            return path;
+
+        // Calcola i vettori degli ultimi due segmenti
+        Vector3 lastSegment = (path[path.Length - 1] - path[path.Length - 2]).normalized;
+        Vector3 secondLastSegment = (path[path.Length - 2] - path[path.Length - 3]).normalized;
+
+        // Se i segmenti formano un angolo acuto, rimuovi il nodo intermedio
+        if (Vector3.Dot(lastSegment, secondLastSegment) < 0.95f) // Regola la soglia secondo necessità
+        {
+            List<Vector3> correctedPath = new List<Vector3>(path);
+            correctedPath.RemoveAt(correctedPath.Count - 2); // Rimuovi il penultimo nodo
+            return correctedPath.ToArray();
+        }
+
+        return path;
     }
 
     private void DrawPath(Vector3[] path)
