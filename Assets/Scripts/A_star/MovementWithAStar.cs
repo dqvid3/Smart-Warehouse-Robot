@@ -17,15 +17,13 @@ public class MovementWithAStar : MonoBehaviour
     private LineRenderer lineRenderer;
     public GameObject robotToMove;
     public float moveSpeed = 2f;
-    public float arrivalTolerance = 1f;
-    public float deviationAngle = 45f; // Angolo massimo di deviazione
+    public float arrivalTolerance = .5f;
 
     public Grid grid; // Assegna questo riferimento nell'Inspector
     private List<Node> currentPathNodes = new List<Node>();
 
     private List<Node> nodesWithModifiedWeight = new List<Node>();
-    private float obstacleWeight = 2f; // Peso temporaneo per i nodi vicini all'ostacolo
-    private float weightResetTime = 3f; // Tempo dopo il quale i pesi vengono ripristinati
+    private float obstacleWeight = 100f; // Peso temporaneo per i nodi vicini all'ostacolo
 
 
     private void Start()
@@ -129,8 +127,6 @@ public class MovementWithAStar : MonoBehaviour
             yield return null;
         }
 
-        string lastObstacleDirection = "Nessun ostacolo";
-
         for (int i = 1; i < path.Length; i++)
         {
             Vector3 startPosition = robotToMove.transform.position;
@@ -142,46 +138,44 @@ public class MovementWithAStar : MonoBehaviour
 
             while (journey < 1f)
             {
-                string currentObstacleDirection = raycastManager.GetObstacleDirection();
-
-                if (currentObstacleDirection != null && currentObstacleDirection != "Nessun ostacolo" && currentObstacleDirection != "Pausa" && currentObstacleDirection != "Sensori disabilitati")
+                if(raycastManager.sensorsEnabled)
                 {
-                    Debug.Log($"Ostacolo rilevato: {currentObstacleDirection}. Modifica pesi nodi e ricalcolo percorso.");
+                    string currentObstacleDirection = raycastManager.GetObstacleDirection();
 
-                    // Modifica pesi nodi davanti
-                    ModifyNextNodesWeight();
-                    
-                    // Richiedi nuovo percorso
-                    start = robotToMove.transform.position;
-                    PathRequestManager.RequestPath(start, end, OnPathFound);
-                    
-                    // Interrompi movimento corrente
-                    yield break;
-                }
-                else if (currentObstacleDirection == "Nessun ostacolo" && (lastObstacleDirection == "Sinistra" || lastObstacleDirection == "Destra"))
-                {
-                    start = robotToMove.transform.position;
-                    PathRequestManager.RequestPath(start, end, OnPathFound);
-                    yield break;
-                }
-                else
-                {
-                    journey += Time.deltaTime * moveSpeed / Vector3.Distance(startPosition, targetPosition);
-                    robotToMove.transform.position = Vector3.Lerp(startPosition, targetPosition, journey);
-                    robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, targetRotation, Time.deltaTime * moveSpeed);
-
-                    if (i > 1)
+                    if(currentObstacleDirection == "Pausa")
                     {
-                        Node previousNode = grid.NodeFromWorldPoint(path[i - 2]);
-                        if (Vector3.Distance(robotToMove.transform.position, path[i - 1]) < grid.nodeRadius * 1.5f)
-                        {
-                            grid.ReleaseNodes(new List<Node> { previousNode });
-                            currentPathNodes.Remove(previousNode);
-                        }
+                        Debug.Log("Ostacoli su tutti i lati - Pausa del robot");
+                        yield return new WaitForSeconds(3f);
+                        start = robotToMove.transform.position;
+                        PathRequestManager.RequestPath(start, end, OnPathFound);
+                        yield break;
                     }
-
-                    yield return null;
+                    else if(currentObstacleDirection != "Nessun ostacolo" && 
+                        currentObstacleDirection != "Sensori disabilitati")
+                    {
+                        Debug.Log($"Ostacolo: {currentObstacleDirection}. Ricalcolo percorso.");
+                        ModifyNextNodesWeight(currentObstacleDirection);
+                        yield break;
+                    }
                 }
+
+                // Movimento regolare
+                journey += Time.deltaTime * moveSpeed / Vector3.Distance(startPosition, targetPosition);
+                robotToMove.transform.position = Vector3.Lerp(startPosition, targetPosition, journey);
+                robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, targetRotation, Time.deltaTime * moveSpeed);
+
+                // Rilascio nodi precedenti
+                if (i > 1)
+                {
+                    Node previousNode = grid.NodeFromWorldPoint(path[i - 2]);
+                    if (Vector3.Distance(robotToMove.transform.position, path[i - 1]) < grid.nodeRadius * 1.5f)
+                    {
+                        grid.ReleaseNodes(new List<Node> { previousNode });
+                        currentPathNodes.Remove(previousNode);
+                    }
+                }
+
+                yield return null;
             }
 
             Node currentNode = grid.NodeFromWorldPoint(path[i - 1]);
@@ -199,24 +193,53 @@ public class MovementWithAStar : MonoBehaviour
         }
     }
 
-    private void ModifyNextNodesWeight()
+    private void ModifyNextNodesWeight(string obstacleDirection)
     {
         Vector3 currentPos = robotToMove.transform.position;
         Node currentNode = grid.NodeFromWorldPoint(currentPos);
         int currentIndex = currentPathNodes.IndexOf(currentNode);
 
-        if (currentIndex == -1) return;
+        if (currentIndex == -1 || currentIndex >= currentPathNodes.Count - 1) return;
 
-        // Modifica i prossimi 2 nodi nel percorso
-        int endIndex = Mathf.Min(currentIndex + 2, currentPathNodes.Count - 1);
-        for (int i = currentIndex + 1; i <= endIndex; i++)
+        // Resetta tutti i pesi precedenti
+        ResetModifiedNodeWeights();
+
+        // Penalizza primo nodo frontale
+        Node firstFrontNode = currentPathNodes[currentIndex + 1];
+        ModifyNode(firstFrontNode);
+
+        Vector3 directionVector = Vector3.zero;
+
+        Vector3 checkDirection = obstacleDirection == "Sinistra" ? 
+                                -robotToMove.transform.right : 
+                                robotToMove.transform.right;       
+
+        // Calcoliamo le posizioni dei nodi da penalizzare
+        float nodeSize = grid.nodeRadius * 2; // Diametro del nodo
+
+        // 1. Penalizza nodo adiacente alla posizione corrente
+        Vector3 currentPenaltyPos = currentPos + directionVector * nodeSize;
+        Node currentPenaltyNode = grid.NodeFromWorldPoint(currentPenaltyPos);
+        ModifyNode(currentPenaltyNode);
+
+        // 2. Penalizza nodo adiacente al prossimo nodo nel percorso
+        Node frontNode = currentPathNodes[currentIndex + 1];
+        Vector3 frontPenaltyPos = frontNode.worldPosition + directionVector * nodeSize;
+        Node frontPenaltyNode = grid.NodeFromWorldPoint(frontPenaltyPos);
+        ModifyNode(frontPenaltyNode);
+
+        // Richiedi nuovo percorso immediatamente
+        start = currentPos;
+        PathRequestManager.RequestPath(start, end, OnPathFound);
+    }
+
+
+    private void ModifyNode(Node node)
+    {
+        if (node != null && node.walkable && !nodesWithModifiedWeight.Contains(node))
         {
-            Node node = currentPathNodes[i];
-            if (!nodesWithModifiedWeight.Contains(node))
-            {
-                node.movementPenalty += (int)obstacleWeight;
-                nodesWithModifiedWeight.Add(node);
-            }
+            node.movementPenalty += (int)obstacleWeight;
+            nodesWithModifiedWeight.Add(node);
         }
     }
 
@@ -228,44 +251,6 @@ public class MovementWithAStar : MonoBehaviour
         }
         nodesWithModifiedWeight.Clear();
     }
-
-
-    private Vector3 EstimateObstaclePosition(Vector3 currentPosition, string direction, float angle)
-    {
-        // Calcola la direzione di deviazione basata su sinistra o destra
-        Vector3 deviationDirection = direction == "Sinistra"
-            ? Quaternion.Euler(0, angle, 0) * robotToMove.transform.forward
-            : Quaternion.Euler(0, -angle, 0) * robotToMove.transform.forward;
-
-        // La posizione stimata è a una distanza di 2 unità nella direzione calcolata
-        return currentPosition + deviationDirection.normalized * 2f;
-    }
-
-    private void ModifyNodeWeightsNearObstacle(Vector3 obstaclePosition)
-    {
-        List<Node> nearbyNodes = grid.GetNeighbours(grid.NodeFromWorldPoint(obstaclePosition));
-        foreach (Node node in nearbyNodes)
-        {
-            if (!nodesWithModifiedWeight.Contains(node))
-            {
-                nodesWithModifiedWeight.Add(node);
-                node.movementPenalty += (int)obstacleWeight;
-            }
-        }
-        StartCoroutine(ResetNodeWeights());
-    }
-
-    private IEnumerator ResetNodeWeights()
-    {
-        yield return new WaitForSeconds(weightResetTime);
-
-        foreach (Node node in nodesWithModifiedWeight)
-        {
-            node.movementPenalty -= (int)obstacleWeight;
-        }
-        nodesWithModifiedWeight.Clear();
-    }
-
     private void DisableSensors()
     {
         raycastManager.sensorsEnabled = false;
@@ -278,8 +263,8 @@ public class MovementWithAStar : MonoBehaviour
 
     public Vector3 GetOdometry()
     {
-        float noiseX = Random.Range(-0.1f, 0.1f); 
-        float noiseZ = Random.Range(-0.1f, 0.1f); 
+        float noiseX = Random.Range(-0.1f, 0.1f);
+        float noiseZ = Random.Range(-0.1f, 0.1f);
 
         Vector3 noisyPosition = new Vector3(
             robotToMove.transform.position.x + noiseX,

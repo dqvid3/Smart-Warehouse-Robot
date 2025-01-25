@@ -5069,7 +5069,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
-      value: 25
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
@@ -5125,7 +5125,7 @@ PrefabInstance:
       objectReference: {fileID: 1490135911}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7226365742750972302, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Mass
@@ -8332,7 +8332,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
-      value: 25
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
@@ -8384,7 +8384,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7241834162508036707, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer
@@ -9123,7 +9123,7 @@ MonoBehaviour:
       m_Bits: 512
     terrainPenalty: 0
   obstacleProximityPenalty: 15
-  occupiedNodePenalty: 40
+  occupiedNodePenalty: 35
 --- !u!1001 &1658321865
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10695,7 +10695,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: frontRayAngle
-      value: 25
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6279132403188779417, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: raycastLength
@@ -10747,7 +10747,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: arrivalTolerance
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7241834162508036707, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: m_Layer

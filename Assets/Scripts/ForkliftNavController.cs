@@ -501,15 +501,15 @@ public class ForkliftNavController : MonoBehaviour
 
     private bool CheckForObstacle(Vector3 slotPosition)
     {
-        Vector3 boxSize = new(1.5f, 1.35f, 1.4f); // Regola le dimensioni in base alle necessità
+        Vector3 boxSize = new(1.5f, 1f, 1.4f); // Regola le dimensioni in base alle necessità
 
         // Calcoliamo il centro del box correttamente
-        Vector3 boxCenter = new(slotPosition.x, slotPosition.y + boxSize.y / 2, slotPosition.z);
+        Vector3 boxCenter = new(slotPosition.x, slotPosition.y + boxSize.y / 2 + .1f, slotPosition.z);
 
         DrawBox(boxCenter, boxSize, Color.red, 1f);
 
         // Controlliamo se ci sono collider all'interno del box
-        Collider[] colliders = Physics.OverlapBox(boxCenter, boxSize / 2, Quaternion.identity, layerMask);
+        Collider[] colliders = Physics.OverlapBox(boxCenter, boxSize / 2, Quaternion.identity);
         // Restituiamo true se ci sono oggetti nel box, altrimenti false
         return colliders.Length > 0;
     }
