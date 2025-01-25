@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using static Robot;
 
 public class RobotManager : MonoBehaviour
-{
+{ 
     public List<Robot> robots = new();
     private bool isPaused = false;
     public DatabaseManager databaseManager;
