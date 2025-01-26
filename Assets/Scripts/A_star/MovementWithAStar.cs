@@ -19,7 +19,7 @@ public class MovementWithAStar : MonoBehaviour
     public float moveSpeed = 2f;
     public float arrivalTolerance = .5f;
 
-    public Grid grid; 
+    public Grid grid; // Assegna questo riferimento nell'Inspector
     private List<Node> currentPathNodes = new List<Node>();
 
     private List<Node> nodesWithModifiedWeight = new List<Node>();
@@ -70,6 +70,7 @@ public class MovementWithAStar : MonoBehaviour
         // Attende finché il robot non si avvicina alla destinazione
         while (Vector3.Distance(robotToMove.transform.position, end) > 0.1f)
         {
+            // Se siamo vicinissimi, disabilitiamo i sensori (non è questo il problema specifico, ma la logica resta)
             if (Vector3.Distance(robotToMove.transform.position, end) <= arrivalTolerance && raycastManager.sensorsEnabled)
             {
                 DisableSensors();
@@ -123,11 +124,25 @@ public class MovementWithAStar : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Impossibile trovare il percorso.");
+            Debug.LogError($"Impossibile trovare il percorso. Riprovo tra 2 secondi... (Start: {start}, End: {end})");
+            StartCoroutine(RetryPath(2f));
         }
 
         // Reimposta i pesi eventualmente modificati
         ResetModifiedNodeWeights();
+    }
+
+    /// <summary>
+    /// Se il path non è stato trovato, aspetta un attimo e riprova.
+    /// </summary>
+    private IEnumerator RetryPath(float waitTime)
+    {
+        yield return new WaitForSeconds(waitTime);
+        // Reinviamo la richiesta di path dalla posizione attuale (start) all'end
+        // Nota: aggiorniamo "start" in caso il robot si sia mosso un minimo (o se stava già lì)
+        this.start = robotToMove.transform.position;
+
+        PathRequestManager.RequestPath(start, end, OnPathFound);
     }
 
     /// <summary>
@@ -142,7 +157,7 @@ public class MovementWithAStar : MonoBehaviour
         Vector3 lastSegment = (path[path.Length - 1] - path[path.Length - 2]).normalized;
         Vector3 secondLastSegment = (path[path.Length - 2] - path[path.Length - 3]).normalized;
 
-        // Se i segmenti formano un angolo "troppo aperto" o acuto, rimuovi il nodo intermedio
+        // Se i segmenti formano un angolo troppo "acuto", rimuovi il nodo intermedio
         if (Vector3.Dot(lastSegment, secondLastSegment) < 0.95f) // Soglia regolabile
         {
             List<Vector3> correctedPath = new List<Vector3>(path);
@@ -178,7 +193,11 @@ public class MovementWithAStar : MonoBehaviour
 
             while (Quaternion.Angle(robotToMove.transform.rotation, initialRotation) > 0.1f)
             {
-                robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, initialRotation, Time.deltaTime * moveSpeed);
+                robotToMove.transform.rotation = Quaternion.Slerp(
+                    robotToMove.transform.rotation,
+                    initialRotation,
+                    Time.deltaTime * moveSpeed
+                );
                 yield return null;
             }
         }
@@ -191,7 +210,9 @@ public class MovementWithAStar : MonoBehaviour
             Vector3 direction = (targetPosition - startPosition).normalized;
 
             // Calcoliamo la rotazione target
-            Quaternion targetRotation = direction != Vector3.zero ? Quaternion.LookRotation(direction) : Quaternion.identity;
+            Quaternion targetRotation = direction != Vector3.zero
+                ? Quaternion.LookRotation(direction)
+                : Quaternion.identity;
 
             float journey = 0f;
             float distance = Vector3.Distance(startPosition, targetPosition);
@@ -204,19 +225,14 @@ public class MovementWithAStar : MonoBehaviour
                 {
                     string currentObstacleDirection = raycastManager.GetObstacleDirection();
 
-                    // ------------------------------------------------------------
-                    // Aggiunta: controlla se il robot sta andando in retromarcia
-                    // ------------------------------------------------------------
-                    // Se il dotProduct < 0 significa che la direzione (targetPosition - startPosition)
-                    // è opposta a quella in cui "guarda" il robot (robotToMove.transform.forward),
-                    // quindi stiamo andando indietro.
+                    // Verifica se il robot sta andando in retromarcia
                     float dotProduct = Vector3.Dot(robotToMove.transform.forward, direction);
                     bool isReversing = dotProduct < 0f;
 
                     // Se c'è un blocco su tutti i lati -> "Pausa"
                     if (currentObstacleDirection == "Pausa")
                     {
-                        Debug.Log("Ostacoli su tutti i lati - Pausa del robot");
+                        Debug.Log("Ostacoli su tutti i lati - Pausa del robot.");
                         yield return new WaitForSeconds(3f);
                         start = robotToMove.transform.position;
                         PathRequestManager.RequestPath(start, end, OnPathFound);
@@ -232,12 +248,11 @@ public class MovementWithAStar : MonoBehaviour
                             yield break;
                         }
                         // Se non è "Dietro", ignoriamo la presenza di ostacoli dietro
-                        // e continuiamo eventualmente a gestire gli altri ostacoli (sinistra, destra) come in precedenza.
+                        // e continuiamo eventualmente a gestire gli altri ostacoli
                         else if (currentObstacleDirection != "Nessun ostacolo" &&
                                  currentObstacleDirection != "Sensori disabilitati" &&
                                  currentObstacleDirection != "Dietro")
                         {
-                            // Qui gestiamo ostacoli davanti, sinistra, destra, ecc. come volevi prima
                             Debug.Log($"Ostacolo: {currentObstacleDirection}. Ricalcolo percorso.");
                             ModifyNextNodesWeight(currentObstacleDirection);
                             yield break;
@@ -248,7 +263,11 @@ public class MovementWithAStar : MonoBehaviour
                 // Avanza gradualmente il robot
                 journey += Time.deltaTime * moveSpeed / distance;
                 robotToMove.transform.position = Vector3.Lerp(startPosition, targetPosition, journey);
-                robotToMove.transform.rotation = Quaternion.Slerp(robotToMove.transform.rotation, targetRotation, Time.deltaTime * moveSpeed);
+                robotToMove.transform.rotation = Quaternion.Slerp(
+                    robotToMove.transform.rotation,
+                    targetRotation,
+                    Time.deltaTime * moveSpeed
+                );
 
                 // Rilascio nodi precedenti
                 if (i > 1)
@@ -338,8 +357,6 @@ public class MovementWithAStar : MonoBehaviour
 
         Vector3 directionVector = Vector3.zero;
 
-        // Piccolo esempio di come potresti gestire "Dietro", "Sinistra", "Destra", ecc.
-        // Al momento usiamo "checkDirection" solo per sinistra/destra (come in precedenza).
         if (obstacleDirection == "Sinistra")
             directionVector = -robotToMove.transform.right;
         else if (obstacleDirection == "Destra")

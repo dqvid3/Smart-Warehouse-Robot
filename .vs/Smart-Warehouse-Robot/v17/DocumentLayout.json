@@ -3,16 +3,36 @@
   "WorkspaceRootPath": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\MovementWithAStar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\A_star\\MovementWithAStar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\ForkliftNavController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\RobotManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\Orchestratore\\RobotManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\MovementWithAStar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\A_star\\MovementWithAStar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\Robot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\Orchestratore\\Robot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\StarterAssets\\ThirdPersonController\\Scripts\\BasicRigidBodyPush.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\StarterAssets\\ThirdPersonController\\Scripts\\BasicRigidBodyPush.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\Grid.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\A_star\\Grid.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\Pathfinding.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\A_star\\Pathfinding.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\StarterAssets\\ThirdPersonController\\Scripts\\ThirdPersonController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\StarterAssets\\ThirdPersonController\\Scripts\\ThirdPersonController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\Node.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -21,14 +41,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\PathRequestManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\A_star\\PathRequestManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\Pathfinding.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\A_star\\Pathfinding.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\Grid.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\A_star\\Grid.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,23 +50,63 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
+              "Title": "ForkliftNavController.cs",
+              "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\ForkliftNavController.cs",
+              "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\ForkliftNavController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\ForkliftNavController.cs",
+              "ViewState": "AgIAAIwBAAAAAAAAAAAkwKYBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-26T09:29:30.225Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ThirdPersonController.cs",
+              "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\StarterAssets\\ThirdPersonController\\Scripts\\ThirdPersonController.cs",
+              "RelativeDocumentMoniker": "Assets\\StarterAssets\\ThirdPersonController\\Scripts\\ThirdPersonController.cs",
+              "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\StarterAssets\\ThirdPersonController\\Scripts\\ThirdPersonController.cs",
+              "RelativeToolTip": "Assets\\StarterAssets\\ThirdPersonController\\Scripts\\ThirdPersonController.cs",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAkwGYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-26T09:02:37.544Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "BasicRigidBodyPush.cs",
+              "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\StarterAssets\\ThirdPersonController\\Scripts\\BasicRigidBodyPush.cs",
+              "RelativeDocumentMoniker": "Assets\\StarterAssets\\ThirdPersonController\\Scripts\\BasicRigidBodyPush.cs",
+              "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\StarterAssets\\ThirdPersonController\\Scripts\\BasicRigidBodyPush.cs",
+              "RelativeToolTip": "Assets\\StarterAssets\\ThirdPersonController\\Scripts\\BasicRigidBodyPush.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-26T09:02:14.418Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "Robot.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\Robot.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Orchestratore\\Robot.cs",
               "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\Robot.cs",
               "RelativeToolTip": "Assets\\Scripts\\Orchestratore\\Robot.cs",
-              "ViewState": "AgIAAHYAAAAAAAAAAAAkwJ8AAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-25T18:01:29.192Z"
+              "WhenOpened": "2025-01-25T18:01:29.192Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 8,
               "Title": "Node.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\Node.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\A_star\\Node.cs",
@@ -66,7 +118,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 9,
               "Title": "PathRequestManager.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\PathRequestManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\A_star\\PathRequestManager.cs",
@@ -78,7 +130,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "Pathfinding.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\Pathfinding.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\A_star\\Pathfinding.cs",
@@ -86,17 +138,18 @@
               "RelativeToolTip": "Assets\\Scripts\\A_star\\Pathfinding.cs",
               "ViewState": "AgIAACoAAAAAAAAAAAAkwFMAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-25T18:01:08.361Z"
+              "WhenOpened": "2025-01-25T18:01:08.361Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "MovementWithAStar.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\MovementWithAStar.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\A_star\\MovementWithAStar.cs",
               "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\MovementWithAStar.cs",
               "RelativeToolTip": "Assets\\Scripts\\A_star\\MovementWithAStar.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAWAAAAAAAAAA==",
+              "ViewState": "AgIAAIIBAAAAAAAAAAAkwKsBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-01-25T12:42:23.91Z",
               "EditorCaption": ""
@@ -109,21 +162,23 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\Orchestratore\\RobotManager.cs",
               "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\Orchestratore\\RobotManager.cs",
               "RelativeToolTip": "Assets\\Scripts\\Orchestratore\\RobotManager.cs",
-              "ViewState": "AgIAAEUBAAAAAAAAAAAkwFsBAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAFEBAAAAAAAAAAAkwLEAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-25T18:01:34.208Z"
+              "WhenOpened": "2025-01-25T18:01:34.208Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 5,
               "Title": "Grid.cs",
               "DocumentMoniker": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\Grid.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\A_star\\Grid.cs",
               "ToolTip": "C:\\Users\\sergio\\Desktop\\Smart-Warehouse-Robot\\Assets\\Scripts\\A_star\\Grid.cs",
               "RelativeToolTip": "Assets\\Scripts\\A_star\\Grid.cs",
-              "ViewState": "AgIAAJ4AAAAAAAAAAAAkwMcAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAJ4AAAAAAAAAAAAkwLMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-25T18:00:55.121Z"
+              "WhenOpened": "2025-01-25T18:00:55.121Z",
+              "EditorCaption": ""
             }
           ]
         }

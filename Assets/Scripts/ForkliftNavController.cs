@@ -375,6 +375,14 @@ public class ForkliftNavController : MonoBehaviour
 
     private IEnumerator MoveBackwards(Vector3 direction, float distance)
     {
+        // Controlla se il movimento è effettivamente una retromarcia
+        float dotProduct = Vector3.Dot(transform.forward, direction.normalized);
+        if (dotProduct > 0f) // Se il dotProduct > 0, la direzione non è "dietro" rispetto al forward del robot
+        {
+            Debug.LogWarning("Movimento indietro non valido: direzione non coerente con la retromarcia.");
+            yield break; // Interrompe l'azione perché il movimento non è coerente
+        }
+
         while (GetComponent<Robot>().isPaused)
         {
             yield return null; // Aspetta finché non viene tolta la pausa
