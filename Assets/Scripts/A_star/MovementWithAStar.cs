@@ -225,10 +225,6 @@ public class MovementWithAStar : MonoBehaviour
                 {
                     string currentObstacleDirection = raycastManager.GetObstacleDirection();
 
-                    // Verifica se il robot sta andando in retromarcia
-                    float dotProduct = Vector3.Dot(robotToMove.transform.forward, direction);
-                    bool isReversing = dotProduct < 0f;
-
                     // Se c'� un blocco su tutti i lati -> "Pausa"
                     if (currentObstacleDirection == "Pausa")
                     {
@@ -240,19 +236,7 @@ public class MovementWithAStar : MonoBehaviour
                     }
                     else
                     {
-                        // Se stiamo andando in retromarcia, controlliamo SOLO se l'ostacolo � dietro
-                        if (isReversing && currentObstacleDirection == "Dietro")
-                        {
-                            Debug.Log($"Robot {robot.id}: Ostacolo dietro in retromarcia. Ricalcolo percorso o fermo il robot.");
-                            ModifyNextNodesWeight("Dietro");
-                            start = robotToMove.transform.position;
-                            PathRequestManager.RequestPath(start, end, OnPathFound);
-                            ResetModifiedNodeWeights();
-                            yield break;
-                        }
-                        // Se non � "Dietro", ignoriamo la presenza di ostacoli dietro
-                        // e continuiamo eventualmente a gestire gli altri ostacoli
-                        else if (currentObstacleDirection != "Nessun ostacolo" &&
+                        if (currentObstacleDirection != "Nessun ostacolo" &&
                                  currentObstacleDirection != "Sensori disabilitati" &&
                                  currentObstacleDirection != "Dietro")
                         {
