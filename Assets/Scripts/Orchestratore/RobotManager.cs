@@ -67,15 +67,13 @@ public class RobotManager : MonoBehaviour
             if (robot != null)
             {
                 robot.isPaused = false;
+                robot.GetComponent<RaycastManager>().sensorsEnabled = true;
                 robot.ShowCollisionWarning(false);
                 Debug.Log($"Robot {robotId}: Collision pause ended, resuming movement.");
             }
         }
     }
 
-    public bool drawConflictGizmos = true;
-    public float gizmoDisplayTime = 3f;
-    private Dictionary<Vector3, float> conflictGizmos = new();
     private enum CollisionType { Proximity, PathConflict }
 
     private void CheckForCollisions()
@@ -184,6 +182,7 @@ public class RobotManager : MonoBehaviour
 
             // Apply pause and update timers
             robotToPause.isPaused = true;
+            robotToPause.GetComponent<RaycastManager>().sensorsEnabled = false;
             robotPauseTimers[robotToPause.id] = collisionAvoidancePauseTime;
             Debug.LogWarning($"Collision potential detected between:\n" +
                 $"Robot {robotA.id} (Position: {robotA.GetEstimatedPosition()}, Destination: {destinationA})\n" +

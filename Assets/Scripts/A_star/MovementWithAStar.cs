@@ -25,8 +25,11 @@ public class MovementWithAStar : MonoBehaviour
     private List<Node> nodesWithModifiedWeight = new List<Node>();
     private float obstacleWeight = 100f; // Peso temporaneo per i nodi vicini all'ostacolo
 
+    private Robot robot;
+
     private void Start()
     {
+        robot = GetComponent<Robot>();
         lineRenderer = GetComponent<LineRenderer>();
 
         lineRenderer.startWidth = 0.2f;
@@ -67,10 +70,10 @@ public class MovementWithAStar : MonoBehaviour
         // Richiede il calcolo del path
         PathRequestManager.RequestPath(start, end, OnPathFound);
 
-        // Attende finché il robot non si avvicina alla destinazione
+        // Attende finchï¿½ il robot non si avvicina alla destinazione
         while (Vector3.Distance(robotToMove.transform.position, end) > 0.1f)
         {
-            // Se siamo vicinissimi, disabilitiamo i sensori (non è questo il problema specifico, ma la logica resta)
+            // Se siamo vicinissimi, disabilitiamo i sensori (non ï¿½ questo il problema specifico, ma la logica resta)
             if (Vector3.Distance(robotToMove.transform.position, end) <= arrivalTolerance && raycastManager.sensorsEnabled)
             {
                 DisableSensors();
@@ -127,26 +130,23 @@ public class MovementWithAStar : MonoBehaviour
             Debug.LogError($"Impossibile trovare il percorso. Riprovo tra 2 secondi... (Start: {start}, End: {end})");
             StartCoroutine(RetryPath(2f));
         }
-
-        // Reimposta i pesi eventualmente modificati
-        ResetModifiedNodeWeights();
     }
 
     /// <summary>
-    /// Se il path non è stato trovato, aspetta un attimo e riprova.
+    /// Se il path non ï¿½ stato trovato, aspetta un attimo e riprova.
     /// </summary>
     private IEnumerator RetryPath(float waitTime)
     {
         yield return new WaitForSeconds(waitTime);
         // Reinviamo la richiesta di path dalla posizione attuale (start) all'end
-        // Nota: aggiorniamo "start" in caso il robot si sia mosso un minimo (o se stava già lì)
+        // Nota: aggiorniamo "start" in caso il robot si sia mosso un minimo (o se stava giï¿½ lï¿½)
         this.start = robotToMove.transform.position;
 
         PathRequestManager.RequestPath(start, end, OnPathFound);
     }
 
     /// <summary>
-    /// Rimuove eventuale "nodo di mezzo" se l'angolo formato con l'ultimo tratto è troppo stretto.
+    /// Rimuove eventuale "nodo di mezzo" se l'angolo formato con l'ultimo tratto ï¿½ troppo stretto.
     /// </summary>
     private Vector3[] CorrectFinalPath(Vector3[] path)
     {
@@ -229,10 +229,10 @@ public class MovementWithAStar : MonoBehaviour
                     float dotProduct = Vector3.Dot(robotToMove.transform.forward, direction);
                     bool isReversing = dotProduct < 0f;
 
-                    // Se c'è un blocco su tutti i lati -> "Pausa"
+                    // Se c'ï¿½ un blocco su tutti i lati -> "Pausa"
                     if (currentObstacleDirection == "Pausa")
                     {
-                        Debug.Log("Ostacoli su tutti i lati - Pausa del robot.");
+                        Debug.Log($"Robot {robot.id}: Ostacoli su tutti i lati - Pausa del robot.");
                         yield return new WaitForSeconds(3f);
                         start = robotToMove.transform.position;
                         PathRequestManager.RequestPath(start, end, OnPathFound);
@@ -240,21 +240,27 @@ public class MovementWithAStar : MonoBehaviour
                     }
                     else
                     {
-                        // Se stiamo andando in retromarcia, controlliamo SOLO se l'ostacolo è dietro
+                        // Se stiamo andando in retromarcia, controlliamo SOLO se l'ostacolo ï¿½ dietro
                         if (isReversing && currentObstacleDirection == "Dietro")
                         {
-                            Debug.Log("Ostacolo dietro in retromarcia. Ricalcolo percorso o fermo il robot.");
+                            Debug.Log($"Robot {robot.id}: Ostacolo dietro in retromarcia. Ricalcolo percorso o fermo il robot.");
                             ModifyNextNodesWeight("Dietro");
+                            start = robotToMove.transform.position;
+                            PathRequestManager.RequestPath(start, end, OnPathFound);
+                            ResetModifiedNodeWeights();
                             yield break;
                         }
-                        // Se non è "Dietro", ignoriamo la presenza di ostacoli dietro
+                        // Se non ï¿½ "Dietro", ignoriamo la presenza di ostacoli dietro
                         // e continuiamo eventualmente a gestire gli altri ostacoli
                         else if (currentObstacleDirection != "Nessun ostacolo" &&
                                  currentObstacleDirection != "Sensori disabilitati" &&
                                  currentObstacleDirection != "Dietro")
                         {
-                            Debug.Log($"Ostacolo: {currentObstacleDirection}. Ricalcolo percorso.");
+                            Debug.Log($"Robot {robot.id}: Ostacolo: {currentObstacleDirection}. Ricalcolo percorso.");
                             ModifyNextNodesWeight(currentObstacleDirection);
+                            start = robotToMove.transform.position;
+                            PathRequestManager.RequestPath(start, end, OnPathFound);
+                            ResetModifiedNodeWeights();
                             yield break;
                         }
                     }
@@ -315,7 +321,7 @@ public class MovementWithAStar : MonoBehaviour
     }
 
     /// <summary>
-    /// Aggiornamento dinamico del LineRenderer durante il movimento, per far “scomparire” il tragitto già percorso.
+    /// Aggiornamento dinamico del LineRenderer durante il movimento, per far ï¿½scomparireï¿½ il tragitto giï¿½ percorso.
     /// </summary>
     private void UpdateLineDuringMovement(Vector3[] path, int currentIndex, float journey, Vector3 startPosition, Vector3 targetPosition)
     {
@@ -327,7 +333,7 @@ public class MovementWithAStar : MonoBehaviour
         lineRenderer.positionCount = positionCount;
         if (positionCount == 0) return;
 
-        // Il primo punto è la posizione corrente del robot
+        // Il primo punto ï¿½ la posizione corrente del robot
         lineRenderer.SetPosition(0, currentRobotPos);
 
         // I punti successivi sono i "futuri" del path
@@ -343,50 +349,77 @@ public class MovementWithAStar : MonoBehaviour
     private void ModifyNextNodesWeight(string obstacleDirection)
     {
         Vector3 currentPos = robotToMove.transform.position;
-        Node currentNode = grid.NodeFromWorldPoint(currentPos);
-        int currentIndex = currentPathNodes.IndexOf(currentNode);
-
-        if (currentIndex == -1 || currentIndex >= currentPathNodes.Count - 1) return;
-
-        // Resetta i pesi precedenti
-        ResetModifiedNodeWeights();
-
-        // Penalizza primo nodo frontale (o corrispondente all'ostacoloDirection)
-        Node firstFrontNode = currentPathNodes[currentIndex + 1];
-        ModifyNode(firstFrontNode);
-
-        Vector3 directionVector = Vector3.zero;
-
-        if (obstacleDirection == "Sinistra")
-            directionVector = -robotToMove.transform.right;
-        else if (obstacleDirection == "Destra")
-            directionVector = robotToMove.transform.right;
-        else if (obstacleDirection == "Dietro")
-            directionVector = -robotToMove.transform.forward;
 
         float nodeSize = grid.nodeRadius * 2; // Diametro del nodo
 
-        // 1. Penalizza nodo adiacente alla posizione corrente
-        Vector3 currentPenaltyPos = currentPos + directionVector * nodeSize;
-        Node currentPenaltyNode = grid.NodeFromWorldPoint(currentPenaltyPos);
-        ModifyNode(currentPenaltyNode);
+        // Ottieni la direzione forward del robot (considerando la rotazione Y)
+        Vector3 forwardDirection = robotToMove.transform.forward;
+        Vector3 rightDirection = robotToMove.transform.right;
+        Vector3 leftDirection = -rightDirection;
+        Vector3 backwardDirection = -forwardDirection;
 
-        // 2. Penalizza nodo adiacente al prossimo nodo nel percorso
-        Node frontNode = currentPathNodes[currentIndex + 1];
-        if (frontNode != null)
+        // Penalizza i 2 nodi davanti al robot
+        for (int i = 1; i <= 2; i++)
         {
-            Vector3 frontPenaltyPos = frontNode.worldPosition + directionVector * nodeSize;
-            Node frontPenaltyNode = grid.NodeFromWorldPoint(frontPenaltyPos);
-            ModifyNode(frontPenaltyNode);
+            Vector3 frontNodePos = currentPos + forwardDirection * nodeSize * i;
+            Node frontNode = grid.NodeFromWorldPoint(frontNodePos);
+            ModifyNode(frontNode);
         }
 
-        // Richiedi nuovo percorso
-        start = currentPos;
-        PathRequestManager.RequestPath(start, end, OnPathFound);
+        // Se l'ostacolo Ã¨ a sinistra, penalizza i 2 nodi a sinistra dei 2 nodi davanti e i 2 nodi a sinistra del nodo corrente
+        if (obstacleDirection == "Sinistra")
+        {
+            // Penalizza i 2 nodi a sinistra dei 2 nodi davanti
+            for (int i = 1; i <= 2; i++)
+            {
+                Vector3 frontLeftNodePos = currentPos + forwardDirection * nodeSize * i + leftDirection * nodeSize;
+                Node frontLeftNode = grid.NodeFromWorldPoint(frontLeftNodePos);
+                ModifyNode(frontLeftNode);
+            }
+
+            // Penalizza i 2 nodi a sinistra del nodo corrente
+            for (int i = 1; i <= 2; i++)
+            {
+                Vector3 leftNodePos = currentPos + leftDirection * nodeSize * i;
+                Node leftNode = grid.NodeFromWorldPoint(leftNodePos);
+                ModifyNode(leftNode);
+            }
+        }
+
+        // Se l'ostacolo Ã¨ a destra, penalizza i 2 nodi a destra dei 2 nodi davanti e i 2 nodi a destra del nodo corrente
+        if (obstacleDirection == "Destra")
+        {
+            // Penalizza i 2 nodi a destra dei 2 nodi davanti
+            for (int i = 1; i <= 2; i++)
+            {
+                Vector3 frontRightNodePos = currentPos + forwardDirection * nodeSize * i + rightDirection * nodeSize;
+                Node frontRightNode = grid.NodeFromWorldPoint(frontRightNodePos);
+                ModifyNode(frontRightNode);
+            }
+
+            // Penalizza i 2 nodi a destra del nodo corrente
+            for (int i = 1; i <= 2; i++)
+            {
+                Vector3 rightNodePos = currentPos + rightDirection * nodeSize * i;
+                Node rightNode = grid.NodeFromWorldPoint(rightNodePos);
+                ModifyNode(rightNode);
+            }
+        }
+
+        // Se l'ostacolo Ã¨ dietro, penalizza i 2 nodi dietro al robot
+        if (obstacleDirection == "Dietro")
+        {
+            for (int i = 1; i <= 2; i++)
+            {
+                Vector3 backNodePos = currentPos + backwardDirection * nodeSize * i;
+                Node backNode = grid.NodeFromWorldPoint(backNodePos);
+                ModifyNode(backNode);
+            }
+        }
     }
 
     /// <summary>
-    /// Aumenta la penalità di un nodo walkable, se non è già stato modificato.
+    /// Aumenta la penalitï¿½ di un nodo walkable, se non ï¿½ giï¿½ stato modificato.
     /// </summary>
     private void ModifyNode(Node node)
     {
