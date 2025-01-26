@@ -155,6 +155,7 @@ public class ForkliftNavController : MonoBehaviour
             // Controllo ostacoli
             yield return new WaitForSeconds(1f);
             hasObstacle = CheckForObstacle(slotPosition);
+            yield return StartCoroutine(LiftMastToHeight(slotPosition.y));
             if (hasObstacle)
             {
                 explainability.ShowExplanation("Trovato un ostacolo nello slot. Cerco un nuovo slot.");
