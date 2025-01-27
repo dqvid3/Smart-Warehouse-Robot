@@ -53,7 +53,6 @@ public class DatabaseManager : MonoBehaviour
         RETURN l.x AS x, l.z AS z
         LIMIT 1";
 
-        // Esegui la query con il parametro id
         var parameters = new Dictionary<string, object>
     {
         { "id", id }
@@ -61,7 +60,6 @@ public class DatabaseManager : MonoBehaviour
 
         var result = await neo4jHelper.ExecuteReadListAsync(query, parameters);
 
-        // Itera sui risultati (ci aspettiamo al massimo un record per il LIMIT 1)
         foreach (var record in result)
         {
             float x = record["x"].As<float>();
@@ -69,14 +67,10 @@ public class DatabaseManager : MonoBehaviour
             return new Vector3(x, 0, z);
         }
 
-        // Se nessun record � trovato, ritorna un valore di default o lancia un'eccezione
         Debug.LogWarning($"No landmark found with ID: {id}");
         return Vector3.zero;
     }
 
-
-
-    // Aggiorna lo stato di un robot
     public async Task UpdateRobotStateAsync(
         int robotId, float xPosition, float zPosition, bool isActive, string currentTask, string newState, float batteryLevel)
     {

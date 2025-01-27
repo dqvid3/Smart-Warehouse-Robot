@@ -47,7 +47,6 @@ public class Grid : MonoBehaviour {
     {
         foreach (Node node in nodes)
         {
-            //Controlla se il nodo era gia stato occupato
             if (!occupiedNodes.Contains(node)) {
                 occupiedNodes.Add(node);
                 node.movementPenalty += occupiedNodePenalty;

@@ -340,10 +340,10 @@ public class ForkliftNavController : MonoBehaviour
 
     private bool HasObstacleBehind()
     {
-        int rayCount = 10; // Numero di raggi
-        float rayLength = 2f; // Lunghezza massima dei raggi
-        float rayHeight = 0.5f; // Altezza dei raggi rispetto al suolo
-        float angleRange = 45f; // Angolo massimo da -45° a 45°
+        int rayCount = 10;
+        float rayLength = 2f; 
+        float rayHeight = 0.5f; 
+        float angleRange = 45f; 
         Vector3 origin = transform.position + Vector3.up * rayHeight; // Punto di origine dei raggi
 
         bool obstacleDetected = false;
@@ -355,7 +355,6 @@ public class ForkliftNavController : MonoBehaviour
             // Ruota la direzione del raggio rispetto alla direzione posteriore del robot
             Vector3 direction = Quaternion.Euler(0, angle, 0) * -transform.forward;
 
-            // Esegui il Raycast
             if (Physics.Raycast(origin, direction, out RaycastHit hitInfo, rayLength, layerMask))
             {
                 obstacleDetected = true;

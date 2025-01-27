@@ -358,7 +358,7 @@ public class RobotManager : MonoBehaviour
             var explainability = robot.GetComponent<RobotExplainability>();
             if (explainability != null)
             {
-                explainability.ToggleExplanation(isPaused); // Show/hide explanations
+                explainability.ToggleExplanation(isPaused); 
                 explainability.ToggleExplanation(isPaused);
             }
         }

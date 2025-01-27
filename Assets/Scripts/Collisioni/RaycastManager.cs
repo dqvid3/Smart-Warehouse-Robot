@@ -1,7 +1,7 @@
 using UnityEngine;
 using static Cinemachine.CinemachineFreeLook;
 
-[RequireComponent(typeof(RobotExplainability))] // Assicuriamoci di avere il componente RobotExplainability
+[RequireComponent(typeof(RobotExplainability))]
 public class RaycastManager : MonoBehaviour
 {
     public float raycastLength = 3.7f; // Maximum raycast distance
@@ -79,7 +79,7 @@ public class RaycastManager : MonoBehaviour
             }
         }
 
-        // 3. Logica di pausa solo per ostacoli completi
+        // 3. Logica di pausa solo per ostacoli in ogni direzione
         if (frontObstacle && leftObstacle && rightObstacle)
         {
             return "Pausa";

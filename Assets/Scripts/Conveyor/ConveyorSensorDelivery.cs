@@ -44,7 +44,7 @@ public class ConveyorSensorDelivery : MonoBehaviour
     {
         Collider triggerCollider = GetComponent<Collider>();
         Collider[] colliders = Physics.OverlapBox(triggerCollider.bounds.center, triggerCollider.bounds.extents, transform.rotation);
-        // Se non ci sono oggetti nel trigger, imposta hasParcel a false (Ignora se stesso)
+        // Se non ci sono oggetti nel trigger, imposta hasParcel a false
         if (colliders.Length == 1)
             _ = neo4jHelper.UpdateParcelPositionStatusAsync(positionId, false);
     }

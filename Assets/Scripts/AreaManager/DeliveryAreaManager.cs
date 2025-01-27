@@ -101,10 +101,8 @@ public class DeliveryAreaManager : MonoBehaviour
 
     private void SpawnParcel(string qrCodeString, Vector3 position)
     {
-        // Instantiate the parcel prefab at the specified position
         GameObject parcelObject = Instantiate(parcelPrefab, position, Quaternion.identity);
 
-        // Set the QR Code on the instantiated parcel
         QRCodeGenerator qRCodeGenerator = parcelObject.GetComponentInChildren<QRCodeGenerator>();
         qRCodeGenerator.qrCodeString = qrCodeString;
     }

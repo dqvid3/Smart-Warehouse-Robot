@@ -10,7 +10,6 @@ public class Pathfinding : MonoBehaviour
         Node startNode = grid.NodeFromWorldPoint(startPos);
         Node targetNode = grid.NodeFromWorldPoint(targetPos);
 
-        // Cambia la tua openSet in un Heap di nodi
         Heap<Node> openSet = new Heap<Node>(grid.MaxSize);
         HashSet<Node> closedSet = new HashSet<Node>();
 
@@ -31,7 +30,6 @@ public class Pathfinding : MonoBehaviour
             {
                 if (!neighbor.walkable || closedSet.Contains(neighbor)) continue;
 
-                // (Usa la penalty qui!)
                 int newCostToNeighbor = currentNode.gCost 
                                         + GetDistance(currentNode, neighbor) 
                                         + neighbor.movementPenalty;
@@ -48,7 +46,6 @@ public class Pathfinding : MonoBehaviour
                     }
                     else
                     {
-                        // Se già esiste, aggiorna la sua posizione nell'heap
                         openSet.UpdateItem(neighbor);
                     }
                 }

@@ -14,7 +14,6 @@ public class ForkliftController : MonoBehaviour
     {
         mastRigidbody[currentMastIndex].isKinematic = false;
         Rigidbody currentMast = mastRigidbody[currentMastIndex];
-        // Calculate the target position
         Transform mastTransform = currentMast.transform;
         Vector3 newPosition = mastTransform.localPosition;
 

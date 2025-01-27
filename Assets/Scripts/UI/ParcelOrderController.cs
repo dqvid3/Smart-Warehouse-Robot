@@ -206,8 +206,7 @@ public class ParcelOrderController : MonoBehaviour
 
         try
         {
-            // Creare un nodo Order
-            string orderId = Guid.NewGuid().ToString(); // Genera un ID univoco per l'ordine
+            string orderId = Guid.NewGuid().ToString();
             string orderTimestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
 
             await neo4jHelper.ExecuteWriteAsync(@"
@@ -224,7 +223,6 @@ public class ParcelOrderController : MonoBehaviour
                 string productName = item.Key;
                 int quantity = item.Value;
 
-                // 2. Trovare i parcel corrispondenti e collegarli all'ordine
                 await neo4jHelper.ExecuteWriteAsync(@"
                 MATCH (o:Order {orderId: $orderId})
                 MATCH (parcel:Parcel)<-[:CONTAINS]-(slot:Slot)

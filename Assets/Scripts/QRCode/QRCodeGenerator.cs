@@ -9,14 +9,11 @@ public class QRCodeGenerator : MonoBehaviour
 
     void Start()
     {
-        // Crea il QR code
         QRCodeWriter writer = new();
         BitMatrix matrix = writer.encode(qrCodeString, BarcodeFormat.QR_CODE, 256, 256);
 
-        // Crea la texture del QR code
         Texture2D qrCodeTexture = new(matrix.Width, matrix.Height);
 
-        // Disegna il QR code sulla texture
         for (int x = 0; x < matrix.Width; x++)
         {
             for (int y = 0; y < matrix.Height; y++)
@@ -25,7 +22,6 @@ public class QRCodeGenerator : MonoBehaviour
             }
         }
 
-        // Applica il materiale al Quad
         qrCodeTexture.Apply();
         GetComponent<MeshRenderer>().material.mainTexture = qrCodeTexture;
     }

@@ -19,7 +19,7 @@ public class MovementWithAStar : MonoBehaviour
     public float moveSpeed = 2f;
     public float arrivalTolerance = .5f;
 
-    public Grid grid; // Assegna questo riferimento nell'Inspector
+    public Grid grid;
     private List<Node> currentPathNodes = new List<Node>();
 
     private List<Node> nodesWithModifiedWeight = new List<Node>();
@@ -39,9 +39,6 @@ public class MovementWithAStar : MonoBehaviour
         this.start = forkliftNavController.defaultPosition;
     }
 
-    /// <summary>
-    /// Restituisce i prossimi 'count' nodi del percorso rispetto alla posizione corrente del robot.
-    /// </summary>
     public List<Node> GetNextNodes(int count)
     {
         List<Node> nextNodes = new List<Node>();
@@ -58,9 +55,6 @@ public class MovementWithAStar : MonoBehaviour
         return nextNodes;
     }
 
-    /// <summary>
-    /// Coroutine principale: attende il calcolo del path e poi sposta il robot nella destinazione.
-    /// </summary>
     public IEnumerator MovementToPosition(Vector3 destination)
     {
         EnableSensors();
@@ -70,10 +64,8 @@ public class MovementWithAStar : MonoBehaviour
         // Richiede il calcolo del path
         PathRequestManager.RequestPath(start, end, OnPathFound);
 
-        // Attende finch� il robot non si avvicina alla destinazione
         while (Vector3.Distance(robotToMove.transform.position, end) > 0.1f)
         {
-            // Se siamo vicinissimi, disabilitiamo i sensori (non � questo il problema specifico, ma la logica resta)
             if (Vector3.Distance(robotToMove.transform.position, end) <= arrivalTolerance && raycastManager.sensorsEnabled)
             {
                 DisableSensors();
@@ -81,21 +73,16 @@ public class MovementWithAStar : MonoBehaviour
             yield return null;
         }
 
-        // Una volta arrivato, se vogliamo far sparire la linea:
         if (showPath)
         {
             lineRenderer.positionCount = 0;
         }
     }
 
-    /// <summary>
-    /// Callback chiamata da PathRequestManager dopo il calcolo del path.
-    /// </summary>
     private void OnPathFound(Vector3[] path, bool success)
     {
         if (success)
         {
-            // Creiamo un array di punti del percorso che includa anche lo start e l'end
             Vector3[] fullPath = new Vector3[path.Length + 2];
             fullPath[0] = start;
             for (int i = 0; i < path.Length; i++)
@@ -104,16 +91,13 @@ public class MovementWithAStar : MonoBehaviour
             }
             fullPath[fullPath.Length - 1] = end;
 
-            // Correggi il percorso per eliminare piccole deviazioni finali
             fullPath = CorrectFinalPath(fullPath);
 
-            // Disegna inizialmente il path completo
             if (showPath)
             {
                 DrawPath(fullPath);
             }
 
-            // Aggiorna la lista di nodi occupati
             currentPathNodes.Clear();
             for (int i = 1; i < fullPath.Length - 1; i++)
             {
@@ -122,7 +106,6 @@ public class MovementWithAStar : MonoBehaviour
             }
             grid.OccupyNodes(currentPathNodes);
 
-            // Avvia la Coroutine che muove il robot lungo il percorso
             StartCoroutine(MoveAlongPath(fullPath));
         }
         else
@@ -132,33 +115,24 @@ public class MovementWithAStar : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Se il path non � stato trovato, aspetta un attimo e riprova.
-    /// </summary>
     private IEnumerator RetryPath(float waitTime)
     {
         yield return new WaitForSeconds(waitTime);
-        // Reinviamo la richiesta di path dalla posizione attuale (start) all'end
-        // Nota: aggiorniamo "start" in caso il robot si sia mosso un minimo (o se stava gi� l�)
         this.start = robotToMove.transform.position;
 
         PathRequestManager.RequestPath(start, end, OnPathFound);
     }
 
-    /// <summary>
-    /// Rimuove eventuale "nodo di mezzo" se l'angolo formato con l'ultimo tratto � troppo stretto.
-    /// </summary>
     private Vector3[] CorrectFinalPath(Vector3[] path)
     {
         if (path.Length < 3)
             return path;
 
-        // Calcola i vettori degli ultimi due segmenti
         Vector3 lastSegment = (path[path.Length - 1] - path[path.Length - 2]).normalized;
         Vector3 secondLastSegment = (path[path.Length - 2] - path[path.Length - 3]).normalized;
 
         // Se i segmenti formano un angolo troppo "acuto", rimuovi il nodo intermedio
-        if (Vector3.Dot(lastSegment, secondLastSegment) < 0.95f) // Soglia regolabile
+        if (Vector3.Dot(lastSegment, secondLastSegment) < 0.95f)
         {
             List<Vector3> correctedPath = new List<Vector3>(path);
             correctedPath.RemoveAt(correctedPath.Count - 2); // Rimuove il penultimo nodo
@@ -168,9 +142,6 @@ public class MovementWithAStar : MonoBehaviour
         return path;
     }
 
-    /// <summary>
-    /// Disegna il percorso nel LineRenderer.
-    /// </summary>
     private void DrawPath(Vector3[] path)
     {
         lineRenderer.positionCount = path.Length;
@@ -180,12 +151,8 @@ public class MovementWithAStar : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Coroutine che gestisce il movimento lungo un vettore di posizioni (fullPath).
-    /// </summary>
     private IEnumerator MoveAlongPath(Vector3[] path)
     {
-        // Ruota gradualmente il robot verso la prima direzione (se esiste un prossimo punto)
         if (path.Length > 1)
         {
             Vector3 initialDirection = (path[1] - path[0]).normalized;
@@ -209,7 +176,6 @@ public class MovementWithAStar : MonoBehaviour
             Vector3 targetPosition = path[i];
             Vector3 direction = (targetPosition - startPosition).normalized;
 
-            // Calcoliamo la rotazione target
             Quaternion targetRotation = direction != Vector3.zero
                 ? Quaternion.LookRotation(direction)
                 : Quaternion.identity;
@@ -297,16 +263,12 @@ public class MovementWithAStar : MonoBehaviour
             currentPathNodes.Remove(lastNode);
         }
 
-        // Svuoto il line renderer alla fine, se lo desideri
         if (showPath)
         {
             lineRenderer.positionCount = 0;
         }
     }
 
-    /// <summary>
-    /// Aggiornamento dinamico del LineRenderer durante il movimento, per far �scomparire� il tragitto gi� percorso.
-    /// </summary>
     private void UpdateLineDuringMovement(Vector3[] path, int currentIndex, float journey, Vector3 startPosition, Vector3 targetPosition)
     {
         Vector3 currentRobotPos = Vector3.Lerp(startPosition, targetPosition, journey);
@@ -317,26 +279,20 @@ public class MovementWithAStar : MonoBehaviour
         lineRenderer.positionCount = positionCount;
         if (positionCount == 0) return;
 
-        // Il primo punto � la posizione corrente del robot
         lineRenderer.SetPosition(0, currentRobotPos);
 
-        // I punti successivi sono i "futuri" del path
         for (int i = 1; i < positionCount; i++)
         {
             lineRenderer.SetPosition(i, path[currentIndex + i - 1]);
         }
     }
 
-    /// <summary>
-    /// Penalizza i nodi prossimi al robot (o a un ostacolo) per forzare un ricalcolo del percorso.
-    /// </summary>
     private void ModifyNextNodesWeight(string obstacleDirection)
     {
         Vector3 currentPos = robotToMove.transform.position;
 
-        float nodeSize = grid.nodeRadius * 2; // Diametro del nodo
+        float nodeSize = grid.nodeRadius * 2; 
 
-        // Ottieni la direzione forward del robot (considerando la rotazione Y)
         Vector3 forwardDirection = robotToMove.transform.forward;
         Vector3 rightDirection = robotToMove.transform.right;
         Vector3 leftDirection = -rightDirection;
@@ -402,9 +358,6 @@ public class MovementWithAStar : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Aumenta la penalit� di un nodo walkable, se non � gi� stato modificato.
-    /// </summary>
     private void ModifyNode(Node node)
     {
         if (node != null && node.walkable && !nodesWithModifiedWeight.Contains(node))
@@ -414,9 +367,6 @@ public class MovementWithAStar : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Reset di tutti i nodi precedentemente modificati.
-    /// </summary>
     private void ResetModifiedNodeWeights()
     {
         foreach (Node node in nodesWithModifiedWeight)
@@ -426,25 +376,16 @@ public class MovementWithAStar : MonoBehaviour
         nodesWithModifiedWeight.Clear();
     }
 
-    /// <summary>
-    /// Disabilita i sensori (sulla RaycastManager).
-    /// </summary>
     private void DisableSensors()
     {
         raycastManager.sensorsEnabled = false;
     }
 
-    /// <summary>
-    /// Abilita i sensori (sulla RaycastManager).
-    /// </summary>
     private void EnableSensors()
     {
         raycastManager.sensorsEnabled = true;
     }
 
-    /// <summary>
-    /// Restituisce la posizione del robot con un piccolo rumore simulato.
-    /// </summary>
     public Vector3 GetOdometry()
     {
         float noiseX = Random.Range(-0.1f, 0.1f);
@@ -459,3 +400,4 @@ public class MovementWithAStar : MonoBehaviour
         return noisyPosition;
     }
 }
+

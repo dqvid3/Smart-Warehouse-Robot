@@ -12,7 +12,6 @@ public class ConveyorSensorShipping : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        // Aggiorna lo stato nel database
         _ = neo4jHelper.UpdateParcelPositionStatusAsync(positionId, false);
 
         // Distrugge il parent (sunoko) e quindi tutti i figli (incluso il parcel)
@@ -22,7 +21,7 @@ public class ConveyorSensorShipping : MonoBehaviour
         }
         else
         {
-            // Se non c'� un parent, distruggi solo l'oggetto che ha attivato il trigger
+            // Se non c'è un parent, distruggi solo l'oggetto che ha attivato il trigger
             Destroy(other.gameObject);
         }
     }

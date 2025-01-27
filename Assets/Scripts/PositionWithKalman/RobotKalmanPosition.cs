@@ -39,10 +39,8 @@ public class RobotKalmanPosition : MonoBehaviour
 
     public async void Update()
     {
-        // Predizione della posizione basata sull'odometria
         Vector3 predictedPosition = PredictPositionFromOdometry();
 
-        // Correzione della posizione con i landmark
         numLandmarksDetected = PerformRaycastDetection();
         if (numLandmarksDetected >= 3)
         {
@@ -75,7 +73,6 @@ public class RobotKalmanPosition : MonoBehaviour
 
         return predictedPosition;
     }
-
 
     private int PerformRaycastDetection()
     {
@@ -141,17 +138,13 @@ public class RobotKalmanPosition : MonoBehaviour
         {
             Vector3 correctedPosition = weightedSum / totalWeight;
             float actualDistance = Vector3.Distance(transform.position, correctedPosition);
-            //Debug.Log($"Estimated Position: {correctedPosition}, Actual Position: {transform.position}, Distance: {actualDistance}");
-            //Debug.DrawLine(transform.position, predictedPosition, Color.red, 0.1f);
-            //Debug.DrawLine(predictedPosition, correctedPosition, Color.blue, 0.1f);
-            return Vector3.Lerp(predictedPosition, correctedPosition, Mathf.Clamp(totalWeight / 10f, 0f, 1f)); // Peso variabile per casi in cui non vi sono Landmark rilevati
+            return Vector3.Lerp(predictedPosition, correctedPosition, Mathf.Clamp(totalWeight / 10f, 0f, 1f));
         }
         else
         {
             return predictedPosition;
         }
     }
-
 
     private void UpdateEstimatedPosition(Vector3 correctedPosition)
     {
@@ -165,7 +158,6 @@ public class RobotKalmanPosition : MonoBehaviour
     {
         return estimatedPosition;
     }
-
     private void OnDrawGizmos()
     {
         if (Application.isPlaying)
