@@ -78,9 +78,10 @@ public class ForkliftNavController : MonoBehaviour
         IRecord placedRecord = null;
         bool usedBackupShelf = false; // Inizializzata a false
 
-        yield return StartCoroutine(PlaceParcelOnShelf(category, robotId, timestamp, (record, isBackup) => {
+        yield return StartCoroutine(PlaceParcelOnShelf(category, robotId, timestamp, (record, isBackup) =>
+        {
             placedRecord = record;
-            usedBackupShelf = isBackup; 
+            usedBackupShelf = isBackup;
         }));
 
         // Aggiornamento della posizione del pacco nel database
@@ -117,7 +118,8 @@ public class ForkliftNavController : MonoBehaviour
                 record = robotManager.AskSlot(category, robotId);
                 if (record == null)
                 {
-                    if (onComplete == null){ // se si sta facendo disposal allora non voglio riusare il backupshelf
+                    if (onComplete == null)
+                    { // se si sta facendo disposal allora non voglio riusare il backupshelf
                         yield return GetParcelBack(robotId, timestamp);
                         yield break;
                     }
@@ -249,9 +251,24 @@ public class ForkliftNavController : MonoBehaviour
         // Allontanamento dallo scaffale
         yield return MoveBackwards(-qrCodeDirection, takeBoxDistance);
         explainability.ShowExplanation("Mi allontano dallo scaffale con la box.");
+        yield return FreeSlotAsync(slotPosition);
         robotManager.FreeSlotPosition(robotId);
-        _ = FreeSlot(slotPosition);
         robotManager.NotifyTaskCompletion(robotId);
+    }
+
+    private IEnumerator FreeSlotAsync(Vector3 slotPosition)
+    {
+        // Avvia il Task asincrono e attendi il completamento
+        Task freeSlotTask = FreeSlot(slotPosition);
+        while (!freeSlotTask.IsCompleted)
+        {
+            yield return null; // Aspetta un frame finché il Task non è completato
+        }
+
+        if (freeSlotTask.IsFaulted)
+        {
+            Debug.LogError("Errore durante l'esecuzione di FreeSlot: " + freeSlotTask.Exception);
+        }
     }
 
     public IEnumerator PlaceParcelOnConveyor(int robotId, Vector3 conveyorDestination)
@@ -343,9 +360,9 @@ public class ForkliftNavController : MonoBehaviour
     private bool HasObstacleBehind()
     {
         int rayCount = 10;
-        float rayLength = 2f; 
-        float rayHeight = 0.5f; 
-        float angleRange = 45f; 
+        float rayLength = 2f;
+        float rayHeight = 0.5f;
+        float angleRange = 45f;
         Vector3 origin = transform.position + Vector3.up * rayHeight; // Punto di origine dei raggi
 
         bool obstacleDetected = false;
@@ -447,7 +464,7 @@ public class ForkliftNavController : MonoBehaviour
         // Definisci la direzione del raggio (avanti rispetto al forklift)
         Vector3 rayDirection = transform.forward;
         // Definisci la lunghezza massima del raggio
-        rayOrigin.y = height; 
+        rayOrigin.y = height;
         if (Physics.Raycast(rayOrigin, rayDirection, out RaycastHit hit, 3f, layerMask))
             return hit.collider.gameObject.transform.root.gameObject;
         return null;
