@@ -176,16 +176,16 @@ FOREACH (robot_data IN [
   {id: 1, x: 0, z: 30, paused: false, task: "None", state: "Idle", battery: 100},
   {id: 2, x: 15, z: 0, paused: false, task: "None", state: "Idle", battery: 100}
 ] |
-  CREATE (:Robot {
-    id: robot_data.id, 
-    x: robot_data.x, 
-    z: robot_data.z, 
-    paused: robot_data.paused, 
-    task: robot_data.task, 
-    state: robot_data.state,
-    battery: robot_data.battery
-  })
+  MERGE (r:Robot {id: robot_data.id})  // Usa un vincolo unico basato sull'ID
+  ON CREATE SET 
+    r.x = robot_data.x, 
+    r.z = robot_data.z, 
+    r.paused = robot_data.paused, 
+    r.task = robot_data.task, 
+    r.state = robot_data.state,
+    r.battery = robot_data.battery
 );
+
 
 // Link each robot to every area 
 MATCH (r:Robot), (a:Area)
