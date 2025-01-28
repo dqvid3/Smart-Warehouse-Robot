@@ -1,4 +1,3 @@
-
 // Create areas 
 CREATE (warehouse:Area {type: "Warehouse", center_x: 0, center_z: 0, length: 50, width: 50})
 CREATE (shipping:Area {type: "Shipping", center_x: -40, center_z: 0, length: 30, width: 50})
@@ -168,7 +167,7 @@ FOREACH (landmark IN [
     
 // Aggiungi la relazione LOCATED_IN tra i Landmark e l'area Warehouse
 MATCH (landmark:Landmark), (warehouse:Area {type: "Warehouse"})
-CREATE (landmark)-[:LOCATED_IN]->(warehouse)
+CREATE (landmark)-[:LOCATED_IN]->(warehouse);
 
 // Create robots
 FOREACH (robot_data IN [
@@ -176,16 +175,16 @@ FOREACH (robot_data IN [
   {id: 1, x: 0, z: 30, paused: false, task: "None", state: "Idle", battery: 100},
   {id: 2, x: 15, z: 0, paused: false, task: "None", state: "Idle", battery: 100}
 ] |
-  MERGE (r:Robot {id: robot_data.id})  // Usa un vincolo unico basato sull'ID
-  ON CREATE SET 
-    r.x = robot_data.x, 
-    r.z = robot_data.z, 
-    r.paused = robot_data.paused, 
-    r.task = robot_data.task, 
-    r.state = robot_data.state,
-    r.battery = robot_data.battery
+  CREATE (:Robot {
+    id: robot_data.id, 
+    x: robot_data.x, 
+    z: robot_data.z, 
+    paused: robot_data.paused, 
+    task: robot_data.task, 
+    state: robot_data.state,
+    battery: robot_data.battery
+  })
 );
-
 
 // Link each robot to every area 
 MATCH (r:Robot), (a:Area)
