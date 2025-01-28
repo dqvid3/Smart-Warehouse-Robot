@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using static Robot;
 
 public class RobotManager : MonoBehaviour
-{ 
+{
     public List<Robot> robots = new();
     private bool isPaused = false;
     public DatabaseManager databaseManager;
@@ -47,10 +47,10 @@ public class RobotManager : MonoBehaviour
     private void UpdateRobotPauseTimers()
     {
         List<int> robotsToRemove = new();
-        List<int> keysToRemove = robotPauseTimers.Keys.ToList(); // Create a copy of the keys
-        foreach (var robotId in keysToRemove) // Iterate over the copy of keys
+        List<int> keysToRemove = robotPauseTimers.Keys.ToList(); 
+        foreach (var robotId in keysToRemove) 
         {
-            if (robotPauseTimers.ContainsKey(robotId)) // Check if the key still exists before accessing
+            if (robotPauseTimers.ContainsKey(robotId)) 
             {
                 robotPauseTimers[robotId] -= Time.deltaTime;
                 if (robotPauseTimers[robotId] <= 0)
@@ -94,7 +94,7 @@ public class RobotManager : MonoBehaviour
                 if (distance < collisionCheckRadius - 4)
                 {
                     Debug.Log($"Collisione imminente per prossimità: Robot {robots[i].id} e {robots[j].id} " +
-                            $"a {distance.ToString("F2")} unità di distanza");
+                              $"a {distance.ToString("F2")} unità di distanza");
                     HandlePotentialCollision(robots[i], robots[j], CollisionType.Proximity);
                 }
 
@@ -107,8 +107,8 @@ public class RobotManager : MonoBehaviour
                         $"Nodo B[{n.nodeB.gridX},{n.nodeB.gridY}] ({n.positionB})"));
 
                     Debug.Log($"Conflitto di percorso tra Robot {robots[i].id} e {robots[j].id}:\n" +
-                                $"Distanza: {distance.ToString("F2")}\n" +
-                                $"Nodi in conflitto:\n- {nodeList}");
+                              $"Distanza: {distance.ToString("F2")}\n" +
+                              $"Nodi in conflitto:\n- {nodeList}");
 
                     HandlePotentialCollision(robots[i], robots[j], CollisionType.PathConflict);
                 }
@@ -154,7 +154,6 @@ public class RobotManager : MonoBehaviour
             if (robotAssignments.ContainsKey(robotB.id))
                 destinationB = robotAssignments[robotB.id];
 
-            // Calculate distances to each other's destinations
             float distanceAtoBDest = Vector3.Distance(robotA.GetEstimatedPosition(), destinationB);
             float distanceBtoADest = Vector3.Distance(robotB.GetEstimatedPosition(), destinationA);
 
@@ -163,40 +162,47 @@ public class RobotManager : MonoBehaviour
 
             Robot robotToPause;
 
-            // Determine which robot to pause based on proximity to other's destination
             if (aNearBDest)
             {
-                robotToPause = robotB; // Pause B since A is near B's destination
+                robotToPause = robotB; 
             }
             else if (bNearADest)
             {
-                robotToPause = robotA; // Pause A since B is near A's destination
+                robotToPause = robotA;
             }
             else
             {
-                // Fallback to original distance comparison
                 float distanceToDestinationA = Vector3.Distance(robotA.GetEstimatedPosition(), destinationA);
                 float distanceToDestinationB = Vector3.Distance(robotB.GetEstimatedPosition(), destinationB);
                 robotToPause = (distanceToDestinationA > distanceToDestinationB) ? robotA : robotB;
             }
 
-            // Apply pause and update timers
             robotToPause.isPaused = true;
             robotToPause.GetComponent<RaycastManager>().sensorsEnabled = false;
             robotPauseTimers[robotToPause.id] = collisionAvoidancePauseTime;
             Debug.LogWarning($"Collision potential detected between:\n" +
-                $"Robot {robotA.id} (Position: {robotA.GetEstimatedPosition()}, Destination: {destinationA})\n" +
-                $"Robot {robotB.id} (Position: {robotB.GetEstimatedPosition()}, Destination: {destinationB})\n" +
-                $"Pausing Robot {robotToPause.id} based on proximity rules.");
+                             $"Robot {robotA.id} (Position: {robotA.GetEstimatedPosition()}, Destination: {destinationA})\n" +
+                             $"Robot {robotB.id} (Position: {robotB.GetEstimatedPosition()}, Destination: {destinationB})\n" +
+                             $"Pausing Robot {robotToPause.id} based on proximity rules.");
             robotToPause.ShowCollisionWarning(true);
+
+            // Messaggio di explainability
             string collisionReason = collisionType switch
             {
                 CollisionType.Proximity => $"Troppo vicini (distanza: {Vector3.Distance(robotA.GetEstimatedPosition(), robotB.GetEstimatedPosition()).ToString("F2")})",
                 CollisionType.PathConflict => "Conflitto di percorso",
                 _ => "Sconosciuto"
             };
+
             Debug.LogWarning($"Motivo pausa: {collisionReason}\n" +
-                            $"Robot {robotToPause.id} in pausa per {collisionAvoidancePauseTime} secondi");
+                             $"Robot {robotToPause.id} in pausa per {collisionAvoidancePauseTime} secondi");
+
+            // Mostra spiegazione sul robot messo in pausa
+            var explainabilityComponent = robotToPause.GetComponent<RobotExplainability>();
+            if (explainabilityComponent != null)
+            {
+                explainabilityComponent.ShowExplanation($"Il robot si è fermato perché: {collisionReason}");
+            }
         }
     }
 
@@ -352,14 +358,12 @@ public class RobotManager : MonoBehaviour
         isPaused = !isPaused;
         Time.timeScale = isPaused ? 0 : 1;
 
-        // Show/hide explanations for all robots
         foreach (var robot in robots)
         {
             var explainability = robot.GetComponent<RobotExplainability>();
             if (explainability != null)
             {
                 explainability.ToggleExplanation(isPaused); 
-                explainability.ToggleExplanation(isPaused);
             }
         }
     }
