@@ -295,7 +295,7 @@ public class ForkliftNavController : MonoBehaviour
     public IEnumerator MoveToOriginPosition()
     {
         if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
-
+        explainability.ShowExplanation("Torno alla posizione iniziale...");
         yield return MoveToPosition(defaultPosition);
         yield return StartCoroutine(SmoothRotateToDirection(Vector3.back));
     }
@@ -377,6 +377,7 @@ public class ForkliftNavController : MonoBehaviour
 
     private IEnumerator MoveBackwards(Vector3 direction, float distance)
     {
+        string startMessage = explainability.GetExplanationText();
         while (GetComponent<Robot>().isPaused)
         {
             yield return null; // Aspetta finché non viene tolta la pausa
@@ -421,6 +422,7 @@ public class ForkliftNavController : MonoBehaviour
 
             yield return new WaitForFixedUpdate();
         }
+        explainability.ShowExplanation(startMessage);
     }
 
     public IEnumerator MoveTakeBoxDistance(Vector3 approachPosition, Vector3 qrCodeDirection, float speed = 2f)

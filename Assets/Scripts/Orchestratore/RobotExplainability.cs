@@ -29,4 +29,9 @@ public class RobotExplainability : MonoBehaviour
             explanationCanvas.gameObject.SetActive(show);
         }
     }
+
+    public string GetExplanationText()
+    {
+        return explanationText.text;
+    }
 }
