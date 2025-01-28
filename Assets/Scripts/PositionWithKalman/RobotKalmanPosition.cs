@@ -61,7 +61,7 @@ public class RobotKalmanPosition : MonoBehaviour
 
     private Vector3 PredictPositionFromOdometry()
     {
-        Vector3 currentRealPosition = movement.robotToMove.transform.position;
+        Vector3 currentRealPosition = movement.GetOdometry();
 
         Vector3 deltaOdometry = currentRealPosition - lastRealPosition;
 
