@@ -42,7 +42,7 @@ FOREACH (pos_data IN [
 // Create a position relative to the backup area
 CREATE (backup_pos:Position {
   id: "backup_0", 
-  x: 27.325, 
+  x: 28.5, 
   z: -30,
   y: 0.995, 
   hasParcel: false
