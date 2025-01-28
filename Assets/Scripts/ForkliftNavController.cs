@@ -131,6 +131,8 @@ public class ForkliftNavController : MonoBehaviour
             }
             else
             {
+                yield return StartCoroutine(LiftMastToHeight(2));
+                yield return StartCoroutine(MoveBackwards(-qrCodeDirection, takeBoxDistance));
                 record = robotManager.AskSlot("Backup", robotId);
                 if (record == null)
                 {
