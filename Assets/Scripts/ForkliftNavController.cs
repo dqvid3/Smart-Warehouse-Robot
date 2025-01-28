@@ -190,7 +190,7 @@ public class ForkliftNavController : MonoBehaviour
         if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
 
         explainability.ShowExplanation("Nessun slot disponibile nello scaffale principale. Mando il pacco indietro.");
-        yield return StartCoroutine(PlaceParcelOnConveyor(robotId, backupPosition));
+        yield return StartCoroutine(PlaceParcelOnConveyor(robotId, backupPosition, true));
         _ = neo4jHelper.DeleteParcel(timestamp);
         yield return StartCoroutine(LiftMastToHeight(0));
         if (!robotManager.AreThereTask())
@@ -271,14 +271,23 @@ public class ForkliftNavController : MonoBehaviour
         }
     }
 
-    public IEnumerator PlaceParcelOnConveyor(int robotId, Vector3 conveyorDestination)
+    public IEnumerator PlaceParcelOnConveyor(int robotId, Vector3 conveyorDestination, bool backup = false)
     {
         if (GetComponent<Robot>().isPaused) yield break; // Ferma l'azione se il robot è in pausa
 
         robotManager.AssignConveyorPosition(robotId, conveyorDestination);
         // Direzione e posizione di approccio al nastro trasportatore
-        Vector3 qrCodeDirection = Vector3.right;
-        Vector3 approachPosition = conveyorDestination + qrCodeDirection * approachDistance;
+        Vector3 qrCodeDirection ;
+        Vector3 approachPosition;
+        if (backup)
+        {
+            qrCodeDirection = Vector3.left;
+        }
+        else
+        {
+            qrCodeDirection = Vector3.right;
+        }
+        approachPosition = conveyorDestination + qrCodeDirection * approachDistance;
         approachPosition.y = transform.position.y;
 
         // Spostamento verso la posizione di approccio
