@@ -92,23 +92,6 @@ FOREACH (layer_id IN range(0, 3) |
 )
 CREATE (backup_shelf)-[:LOCATED_IN]->(backup)
 
-// Create robots
-FOREACH (robot_data IN [
-  {id: 0, x: -15, z: 30, active: true, task: "None", state: "Idle", battery: 100},
-  {id: 1, x: 0, z: 30, active: true, task: "None", state: "Idle", battery: 100},
-  {id: 2, x: 15, z: 0, active: true, task: "None", state: "Idle", battery: 100}
-] |
-  CREATE (:Robot {
-    id: robot_data.id, 
-    x: robot_data.x, 
-    z: robot_data.z, 
-    active: robot_data.active, 
-    task: robot_data.task, 
-    state: robot_data.state,
-    battery: robot_data.battery
-  })
-);
-
 // Create products
 FOREACH (product_data IN [
   {category: "Books", product_name: "The Great Gatsby"},
@@ -124,10 +107,6 @@ FOREACH (product_data IN [
 ] |
   CREATE (p:Product {product_name: product_data.product_name, category: product_data.category})
 );
-
-// Link each robot to every area 
-MATCH (r:Robot), (a:Area)
-MERGE (r)-[:OPERATES_IN]->(a);
 
 FOREACH (landmark IN [
 {id: 0, x: -14.50, z: -33.50},
@@ -186,3 +165,28 @@ FOREACH (landmark IN [
 {id: 53, x: -29.50, z: 21.00}
 ] |
     CREATE (:Landmark {id: landmark.id, x: landmark.x, z: landmark.z}));
+    
+// Aggiungi la relazione LOCATED_IN tra i Landmark e l'area Warehouse
+MATCH (landmark:Landmark), (warehouse:Area {type: "Warehouse"})
+CREATE (landmark)-[:LOCATED_IN]->(warehouse)
+
+// Create robots
+FOREACH (robot_data IN [
+  {id: 0, x: -15, z: 30, paused: false, task: "None", state: "Idle", battery: 100},
+  {id: 1, x: 0, z: 30, paused: false, task: "None", state: "Idle", battery: 100},
+  {id: 2, x: 15, z: 0, paused: false, task: "None", state: "Idle", battery: 100}
+] |
+  CREATE (:Robot {
+    id: robot_data.id, 
+    x: robot_data.x, 
+    z: robot_data.z, 
+    paused: robot_data.paused, 
+    task: robot_data.task, 
+    state: robot_data.state,
+    battery: robot_data.battery
+  })
+);
+
+// Link each robot to every area 
+MATCH (r:Robot), (a:Area)
+MERGE (r)-[:OPERATES_IN]->(a);

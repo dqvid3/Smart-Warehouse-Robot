@@ -213,7 +213,7 @@ public class DatabaseManager : MonoBehaviour
     {
         string query = @"
         MATCH (s:Shelf {category: 'Backup'})-[:HAS_LAYER]->(l:Layer)-[:HAS_SLOT]->(slot:Slot)-[:CONTAINS]->(p:Parcel)
-        WHERE p.expirationDuration < timestamp()
+        WHERE p.expirationTime < timestamp()
         RETURN p, s.x + slot.x AS x, l.y AS y, s.z AS z, p.category AS category, p.timestamp as timestamp"; 
 
         var result = await neo4jHelper.ExecuteReadListAsync(query);
