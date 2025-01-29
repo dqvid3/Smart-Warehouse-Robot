@@ -10,7 +10,7 @@ public class ForkliftNavController : MonoBehaviour
     Vector3 slotPosition;
     public RobotManager robotManager;
     public MovementWithAStar movementWithAStar;
-    [SerializeField] private LayerMask layerMask; // Layer mask for detecting parcels
+    [SerializeField] private LayerMask layerMask; 
     [SerializeField] private Transform grabPoint;
     private ForkliftController forkliftController;
     private float approachDistance = 3.2f;

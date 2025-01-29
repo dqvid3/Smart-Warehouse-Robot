@@ -10,9 +10,9 @@ public class DeliveryAreaManager : MonoBehaviour
     public GameObject parcelPrefab;
     private Neo4jHelper neo4jHelper;
     private List<Vector3> predefinedPositions = new();
-    private HashSet<string> spawnedParcels = new(); // Keep track of spawned parcels
-    private HashSet<Vector3> occupiedPositions = new(); // Track occupied positions locally
-    private float checkInterval = 5f; // Check for new parcels every 5 seconds
+    private HashSet<string> spawnedParcels = new(); 
+    private HashSet<Vector3> occupiedPositions = new(); 
+    private float checkInterval = 5f; 
     private float lastCheckTime = 0f;
 
     private async void Start()
@@ -42,14 +42,14 @@ public class DeliveryAreaManager : MonoBehaviour
 
             foreach (var pos in positions)
             {
-                float x = pos["x"].As<float>() + 24; // Add 24 to x (start of the belt)
+                float x = pos["x"].As<float>() + 24; 
                 float y = pos["y"].As<float>();
                 float z = pos["z"].As<float>();
                 Vector3 position = new(x, y, z);
                 predefinedPositions.Add(position);
             }
 
-            // Remove positions that are no longer available
+ 
             occupiedPositions.RemoveWhere(pos => predefinedPositions.Contains(pos));
         }
         catch (Exception ex)
@@ -62,7 +62,6 @@ public class DeliveryAreaManager : MonoBehaviour
     {
         try
         {
-            // Refresh available positions
             await GetPredefinedPositions();
 
             var parcelsInDelivery = await neo4jHelper.ExecuteReadListAsync(@"
@@ -70,18 +69,15 @@ public class DeliveryAreaManager : MonoBehaviour
             RETURN p.timestamp AS timestamp, p.category AS category, p.product_name AS productName");
             HashSet<string> currentParcels = new HashSet<string>(parcelsInDelivery.Select(record => record["timestamp"].As<string>()));
 
-            // Remove delivered parcels
             spawnedParcels.IntersectWith(currentParcels);
 
-            // Filter out already spawned parcels
             var parcelsToSpawn = parcelsInDelivery.Where(record => !spawnedParcels.Contains(record["timestamp"].As<string>())).ToList();
 
             int spawnedCount = 0;
-            // Iterate through available positions and spawn parcels
             for (int i = 0; i < predefinedPositions.Count && spawnedCount < parcelsToSpawn.Count; i++)
             {
                 var position = predefinedPositions[i];
-                if (occupiedPositions.Contains(position)) continue; // Skip if position is occupied
+                if (occupiedPositions.Contains(position)) continue; 
                 var record = parcelsToSpawn[spawnedCount];
                 string timestamp = record["timestamp"].As<string>();
                 string category = record["category"].As<string>();
@@ -89,7 +85,7 @@ public class DeliveryAreaManager : MonoBehaviour
                 string qrCodeString = $"{timestamp}|{category}|{productName}";
                 SpawnParcel(qrCodeString, position);
                 spawnedParcels.Add(timestamp);
-                occupiedPositions.Add(position); // Mark the position as occupied
+                occupiedPositions.Add(position);
                 spawnedCount++;
             }
         }

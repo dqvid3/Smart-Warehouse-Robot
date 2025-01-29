@@ -34,7 +34,6 @@ public class PathRequestManager : MonoBehaviour
             {
                 if (success)
                 {
-                    // Convert List<Node> to Vector3[]
                     Vector3[] path = nodes.ConvertAll(node => node.worldPosition).ToArray();
                     FinishProcessingPath(path, true);
                 }

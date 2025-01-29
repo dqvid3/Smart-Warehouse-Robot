@@ -4,14 +4,14 @@ using static Cinemachine.CinemachineFreeLook;
 [RequireComponent(typeof(RobotExplainability))]
 public class RaycastManager : MonoBehaviour
 {
-    public float raycastLength = 3.7f; // Maximum raycast distance
-    public float threshold = 3.7f; // Distance threshold
-    public float rayHeight = 1.5f; // Raycast height relative to the robot
-    public int numberOfRays = 90; // Number of rays simulating the arc
-    public int additionalRays = 20; // Additional rays for slots
+    public float raycastLength = 3.7f; // Distanza massima del raycast
+    public float threshold = 3.7f; // Soglia di distanza
+    public float rayHeight = 1.5f; // Altezza del raycast rispetto al robot
+    public int numberOfRays = 90; // Numero di raggi che simulano l'arco
+    public int additionalRays = 20; // Raggi aggiuntivi per gli slot
 
     [Range(0f, 90f)]
-    public float frontRayAngle = 45f; // Angle covered by the front rays (green)
+    public float frontRayAngle = 45f; // Angolo coperto dai raggi frontali (raggi verdi)
 
     private RaycastHit hitInfo;
     public bool sensorsEnabled = true;

@@ -52,7 +52,7 @@ public class Pathfinding : MonoBehaviour
             }
         }
 
-        callback(null, false); // Path not found
+        callback(null, false);
     }
 
 

@@ -4,7 +4,7 @@ using UnityEngine;
 public class ForkliftController : MonoBehaviour
 {
     [Header("Mast Settings")]
-    public Rigidbody[] mastRigidbody; // Array of Rigidbodies for each mast
+    public Rigidbody[] mastRigidbody; // Array di Rigidbodies per ogni mast
     public float liftForce = 1f;
     private float maxLiftHeight = 2f;
     private int currentMastIndex = 0; // Indice del mast attualmente controllato

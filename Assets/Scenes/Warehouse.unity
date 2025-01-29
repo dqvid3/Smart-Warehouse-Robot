@@ -5121,7 +5121,7 @@ PrefabInstance:
       objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: moveSpeed
-      value: 200
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: deviationAngle
@@ -8528,7 +8528,7 @@ PrefabInstance:
       objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: moveSpeed
-      value: 200
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: deviationAngle
@@ -10897,7 +10897,7 @@ PrefabInstance:
       objectReference: {fileID: 1627360915}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: moveSpeed
-      value: 200
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6997144608973667529, guid: a5a52669f52454d7c975506bb0542f2d, type: 3}
       propertyPath: deviationAngle
